@@ -1,0 +1,24 @@
+version: "2"
+sql:
+    - schema: "internal/store/migrations/"
+      queries: "internal/store/queries/"
+      engine: "postgresql"
+      gen:
+          go:
+              package: "store"
+              out: "internal/store"
+              emit_json_tags: true
+              emit_prepared_queries: false
+              emit_interface: true
+              emit_exact_table_names: false
+              overrides:
+                  - db_type: "user_role_type"
+                    go_type: "string"
+                  - db_type: "artifact_status"
+                    go_type: "string"
+                  - db_type: "artifact_type"
+                    go_type: "string"
+                  - db_type: "run_status"
+                    go_type: "string"
+                  - db_type: "eval_type"
+                    go_type: "string"
