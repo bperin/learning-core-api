@@ -1,4 +1,4 @@
-package suites
+package evals
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// Service defines the interface for eval suite business logic
-type Service interface {
+// SuiteService defines the interface for eval suite business logic.
+type SuiteService interface {
 	Create(ctx context.Context, req CreateSuiteRequest) (*Suite, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Suite, error)
 	GetByName(ctx context.Context, name string) (*Suite, error)
@@ -17,20 +17,20 @@ type Service interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-// service implements the Service interface
-type service struct {
-	repo Repository
+// suiteService implements the SuiteService interface.
+type suiteService struct {
+	repo SuiteRepository
 }
 
-// NewService creates a new eval suite service
-func NewService(repo Repository) Service {
-	return &service{
+// NewSuiteService creates a new eval suite service.
+func NewSuiteService(repo SuiteRepository) SuiteService {
+	return &suiteService{
 		repo: repo,
 	}
 }
 
-// Create creates a new eval suite with business logic validation
-func (s *service) Create(ctx context.Context, req CreateSuiteRequest) (*Suite, error) {
+// Create creates a new eval suite with business logic validation.
+func (s *suiteService) Create(ctx context.Context, req CreateSuiteRequest) (*Suite, error) {
 	// Business logic validation
 	if req.Name == "" {
 		return nil, errors.New("suite name is required")
@@ -51,8 +51,8 @@ func (s *service) Create(ctx context.Context, req CreateSuiteRequest) (*Suite, e
 	return s.repo.Create(ctx, suite)
 }
 
-// GetByID retrieves an eval suite by ID
-func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*Suite, error) {
+// GetByID retrieves an eval suite by ID.
+func (s *suiteService) GetByID(ctx context.Context, id uuid.UUID) (*Suite, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("eval suite ID is required")
 	}
@@ -60,8 +60,8 @@ func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*Suite, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-// GetByName retrieves an eval suite by name
-func (s *service) GetByName(ctx context.Context, name string) (*Suite, error) {
+// GetByName retrieves an eval suite by name.
+func (s *suiteService) GetByName(ctx context.Context, name string) (*Suite, error) {
 	if name == "" {
 		return nil, errors.New("eval suite name is required")
 	}
@@ -69,13 +69,13 @@ func (s *service) GetByName(ctx context.Context, name string) (*Suite, error) {
 	return s.repo.GetByName(ctx, name)
 }
 
-// List retrieves all eval suites
-func (s *service) List(ctx context.Context) ([]Suite, error) {
+// List retrieves all eval suites.
+func (s *suiteService) List(ctx context.Context) ([]Suite, error) {
 	return s.repo.List(ctx)
 }
 
-// Update updates an eval suite with business logic validation
-func (s *service) Update(ctx context.Context, id uuid.UUID, name string, description string) (*Suite, error) {
+// Update updates an eval suite with business logic validation.
+func (s *suiteService) Update(ctx context.Context, id uuid.UUID, name string, description string) (*Suite, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("eval suite ID is required")
 	}
@@ -93,8 +93,8 @@ func (s *service) Update(ctx context.Context, id uuid.UUID, name string, descrip
 	return s.repo.Update(ctx, id, name, description)
 }
 
-// Delete deletes an eval suite
-func (s *service) Delete(ctx context.Context, id uuid.UUID) error {
+// Delete deletes an eval suite.
+func (s *suiteService) Delete(ctx context.Context, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return errors.New("eval suite ID is required")
 	}

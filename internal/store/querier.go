@@ -17,9 +17,11 @@ type Querier interface {
 	CreateEvalRule(ctx context.Context, arg CreateEvalRuleParams) (EvalRule, error)
 	CreateEvalRun(ctx context.Context, arg CreateEvalRunParams) (EvalRun, error)
 	CreateEvalSuite(ctx context.Context, arg CreateEvalSuiteParams) (EvalSuite, error)
+	CreateFileSearchStore(ctx context.Context, arg CreateFileSearchStoreParams) (FileSearchStore, error)
 	CreateGenerationRun(ctx context.Context, arg CreateGenerationRunParams) (GenerationRun, error)
 	CreateModule(ctx context.Context, arg CreateModuleParams) (Module, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
+	CreateSubject(ctx context.Context, arg CreateSubjectParams) (Subject, error)
 	CreateTenant(ctx context.Context, arg CreateTenantParams) (Tenant, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserRole(ctx context.Context, arg CreateUserRoleParams) error
@@ -31,27 +33,33 @@ type Querier interface {
 	DeleteEvalRulesBySuite(ctx context.Context, suiteID uuid.UUID) error
 	DeleteEvalRun(ctx context.Context, id uuid.UUID) error
 	DeleteEvalSuite(ctx context.Context, id uuid.UUID) error
+	DeleteFileSearchStore(ctx context.Context, id uuid.UUID) error
 	DeleteGenerationRun(ctx context.Context, id uuid.UUID) error
 	DeleteModule(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, id uuid.UUID) error
+	DeleteSubject(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteUserRole(ctx context.Context, arg DeleteUserRoleParams) error
 	GetAllTenants(ctx context.Context) ([]Tenant, error)
 	GetArtifact(ctx context.Context, id uuid.UUID) (Artifact, error)
 	GetAttempt(ctx context.Context, id uuid.UUID) (Attempt, error)
 	GetDocument(ctx context.Context, id uuid.UUID) (Document, error)
-	GetDocumentByModuleAndSourceURI(ctx context.Context, arg GetDocumentByModuleAndSourceURIParams) (Document, error)
+	GetDocumentBySubjectAndSourceURI(ctx context.Context, arg GetDocumentBySubjectAndSourceURIParams) (Document, error)
 	GetEvalResultByID(ctx context.Context, id uuid.UUID) (EvalResult, error)
 	GetEvalRule(ctx context.Context, id uuid.UUID) (EvalRule, error)
 	GetEvalRuleBySuiteAndType(ctx context.Context, arg GetEvalRuleBySuiteAndTypeParams) (EvalRule, error)
 	GetEvalRunByID(ctx context.Context, id uuid.UUID) (EvalRun, error)
 	GetEvalSuiteByID(ctx context.Context, id uuid.UUID) (EvalSuite, error)
 	GetEvalSuiteByName(ctx context.Context, name string) (EvalSuite, error)
+	GetFileSearchStore(ctx context.Context, id uuid.UUID) (FileSearchStore, error)
+	GetFileSearchStoreBySubjectID(ctx context.Context, subjectID uuid.UUID) (FileSearchStore, error)
 	GetGenerationRun(ctx context.Context, id uuid.UUID) (GenerationRun, error)
 	GetLatestEvalRunForArtifact(ctx context.Context, artifactID uuid.UUID) (EvalRun, error)
 	GetModule(ctx context.Context, id uuid.UUID) (Module, error)
 	GetModuleByName(ctx context.Context, arg GetModuleByNameParams) (Module, error)
 	GetSession(ctx context.Context, id uuid.UUID) (Session, error)
+	GetSubject(ctx context.Context, id uuid.UUID) (Subject, error)
+	GetSubjectByUserAndName(ctx context.Context, arg GetSubjectByUserAndNameParams) (Subject, error)
 	GetTenantById(ctx context.Context, id uuid.UUID) (Tenant, error)
 	GetUser(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (User, error)
@@ -61,7 +69,7 @@ type Querier interface {
 	ListArtifactsByModuleAndType(ctx context.Context, arg ListArtifactsByModuleAndTypeParams) ([]Artifact, error)
 	ListAttemptsBySession(ctx context.Context, sessionID uuid.UUID) ([]Attempt, error)
 	ListAttemptsByTenant(ctx context.Context, tenantID uuid.UUID) ([]Attempt, error)
-	ListDocumentsByModule(ctx context.Context, moduleID uuid.UUID) ([]Document, error)
+	ListDocumentsBySubject(ctx context.Context, subjectID uuid.UUID) ([]Document, error)
 	ListEvalResultsByRule(ctx context.Context, ruleID uuid.UUID) ([]EvalResult, error)
 	ListEvalResultsByRun(ctx context.Context, evalRunID uuid.UUID) ([]EvalResult, error)
 	ListEvalRulesByEvalType(ctx context.Context, evalType string) ([]EvalRule, error)
@@ -73,6 +81,7 @@ type Querier interface {
 	ListModulesByTenant(ctx context.Context, tenantID uuid.UUID) ([]Module, error)
 	ListSessionsByModule(ctx context.Context, moduleID uuid.UUID) ([]Session, error)
 	ListSessionsByUser(ctx context.Context, userID uuid.UUID) ([]Session, error)
+	ListSubjectsByUser(ctx context.Context, userID uuid.UUID) ([]Subject, error)
 	ListUsersByRole(ctx context.Context, arg ListUsersByRoleParams) ([]User, error)
 	ListUsersByTenant(ctx context.Context, tenantID uuid.UUID) ([]User, error)
 	UpdateArtifactStatus(ctx context.Context, arg UpdateArtifactStatusParams) error
@@ -80,8 +89,10 @@ type Querier interface {
 	UpdateEvalRule(ctx context.Context, arg UpdateEvalRuleParams) (EvalRule, error)
 	UpdateEvalRunResult(ctx context.Context, arg UpdateEvalRunResultParams) (EvalRun, error)
 	UpdateEvalSuite(ctx context.Context, arg UpdateEvalSuiteParams) (EvalSuite, error)
+	UpdateFileSearchStore(ctx context.Context, arg UpdateFileSearchStoreParams) (FileSearchStore, error)
 	UpdateGenerationRun(ctx context.Context, arg UpdateGenerationRunParams) error
 	UpdateModule(ctx context.Context, arg UpdateModuleParams) error
+	UpdateSubject(ctx context.Context, arg UpdateSubjectParams) (Subject, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) error
 	UpsertEvalResult(ctx context.Context, arg UpsertEvalResultParams) (EvalResult, error)
 }

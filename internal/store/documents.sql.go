@@ -14,13 +14,13 @@ import (
 )
 
 const createDocument = `-- name: CreateDocument :one
-INSERT INTO documents (module_id, store_id, title, source_uri, sha256, metadata, file_name, doc_name)
+INSERT INTO documents (subject_id, store_id, title, source_uri, sha256, metadata, file_name, doc_name)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING id, module_id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at
+RETURNING id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at, subject_id
 `
 
 type CreateDocumentParams struct {
-	ModuleID  uuid.UUID       `json:"module_id"`
+	SubjectID uuid.UUID       `json:"subject_id"`
 	StoreID   uuid.UUID       `json:"store_id"`
 	Title     sql.NullString  `json:"title"`
 	SourceUri string          `json:"source_uri"`
@@ -32,7 +32,7 @@ type CreateDocumentParams struct {
 
 func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error) {
 	row := q.db.QueryRowContext(ctx, createDocument,
-		arg.ModuleID,
+		arg.SubjectID,
 		arg.StoreID,
 		arg.Title,
 		arg.SourceUri,
@@ -44,7 +44,6 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 	var i Document
 	err := row.Scan(
 		&i.ID,
-		&i.ModuleID,
 		&i.StoreID,
 		&i.Title,
 		&i.SourceUri,
@@ -54,6 +53,7 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 		&i.DocName,
 		&i.IndexedAt,
 		&i.CreatedAt,
+		&i.SubjectID,
 	)
 	return i, err
 }
@@ -68,7 +68,7 @@ func (q *Queries) DeleteDocument(ctx context.Context, id uuid.UUID) error {
 }
 
 const getDocument = `-- name: GetDocument :one
-SELECT id, module_id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at FROM documents
+SELECT id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at, subject_id FROM documents
 WHERE id = $1 LIMIT 1
 `
 
@@ -77,7 +77,6 @@ func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, erro
 	var i Document
 	err := row.Scan(
 		&i.ID,
-		&i.ModuleID,
 		&i.StoreID,
 		&i.Title,
 		&i.SourceUri,
@@ -87,26 +86,26 @@ func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, erro
 		&i.DocName,
 		&i.IndexedAt,
 		&i.CreatedAt,
+		&i.SubjectID,
 	)
 	return i, err
 }
 
-const getDocumentByModuleAndSourceURI = `-- name: GetDocumentByModuleAndSourceURI :one
-SELECT id, module_id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at FROM documents
-WHERE module_id = $1 AND source_uri = $2 LIMIT 1
+const getDocumentBySubjectAndSourceURI = `-- name: GetDocumentBySubjectAndSourceURI :one
+SELECT id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at, subject_id FROM documents
+WHERE subject_id = $1 AND source_uri = $2 LIMIT 1
 `
 
-type GetDocumentByModuleAndSourceURIParams struct {
-	ModuleID  uuid.UUID `json:"module_id"`
+type GetDocumentBySubjectAndSourceURIParams struct {
+	SubjectID uuid.UUID `json:"subject_id"`
 	SourceUri string    `json:"source_uri"`
 }
 
-func (q *Queries) GetDocumentByModuleAndSourceURI(ctx context.Context, arg GetDocumentByModuleAndSourceURIParams) (Document, error) {
-	row := q.db.QueryRowContext(ctx, getDocumentByModuleAndSourceURI, arg.ModuleID, arg.SourceUri)
+func (q *Queries) GetDocumentBySubjectAndSourceURI(ctx context.Context, arg GetDocumentBySubjectAndSourceURIParams) (Document, error) {
+	row := q.db.QueryRowContext(ctx, getDocumentBySubjectAndSourceURI, arg.SubjectID, arg.SourceUri)
 	var i Document
 	err := row.Scan(
 		&i.ID,
-		&i.ModuleID,
 		&i.StoreID,
 		&i.Title,
 		&i.SourceUri,
@@ -116,17 +115,18 @@ func (q *Queries) GetDocumentByModuleAndSourceURI(ctx context.Context, arg GetDo
 		&i.DocName,
 		&i.IndexedAt,
 		&i.CreatedAt,
+		&i.SubjectID,
 	)
 	return i, err
 }
 
-const listDocumentsByModule = `-- name: ListDocumentsByModule :many
-SELECT id, module_id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at FROM documents
-WHERE module_id = $1
+const listDocumentsBySubject = `-- name: ListDocumentsBySubject :many
+SELECT id, store_id, title, source_uri, sha256, metadata, file_name, doc_name, indexed_at, created_at, subject_id FROM documents
+WHERE subject_id = $1
 `
 
-func (q *Queries) ListDocumentsByModule(ctx context.Context, moduleID uuid.UUID) ([]Document, error) {
-	rows, err := q.db.QueryContext(ctx, listDocumentsByModule, moduleID)
+func (q *Queries) ListDocumentsBySubject(ctx context.Context, subjectID uuid.UUID) ([]Document, error) {
+	rows, err := q.db.QueryContext(ctx, listDocumentsBySubject, subjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,6 @@ func (q *Queries) ListDocumentsByModule(ctx context.Context, moduleID uuid.UUID)
 		var i Document
 		if err := rows.Scan(
 			&i.ID,
-			&i.ModuleID,
 			&i.StoreID,
 			&i.Title,
 			&i.SourceUri,
@@ -146,6 +145,7 @@ func (q *Queries) ListDocumentsByModule(ctx context.Context, moduleID uuid.UUID)
 			&i.DocName,
 			&i.IndexedAt,
 			&i.CreatedAt,
+			&i.SubjectID,
 		); err != nil {
 			return nil, err
 		}

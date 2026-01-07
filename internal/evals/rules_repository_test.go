@@ -1,4 +1,4 @@
-package rules_test
+package evals_test
 
 import (
 	"context"

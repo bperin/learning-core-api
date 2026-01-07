@@ -11,9 +11,6 @@ import (
 	"testing/quick"
 	"time"
 
-	"learning-core-api/internal/evals/results"
-	"learning-core-api/internal/evals/rules"
-	"learning-core-api/internal/evals/runs"
 	"learning-core-api/internal/generation"
 	"learning-core-api/internal/store"
 	"learning-core-api/internal/testutil"
@@ -32,28 +29,28 @@ func TestAggregateEvalRun_Cases(t *testing.T) {
 
 	tests := []struct {
 		name      string
-		rulesList []rules.Rule
-		results   []results.Result
+		rulesList []Rule
+		results   []Result
 		wantPass  bool
 		wantScore *float64
 	}{
 		{
 			name: "hard fail rule fails",
-			rulesList: []rules.Rule{
+			rulesList: []Rule{
 				{ID: ruleA, HardFail: true, Weight: 1},
 			},
-			results: []results.Result{
+			results: []Result{
 				{RuleID: ruleA, Pass: false, Score: &score09},
 			},
 			wantPass: false,
 		},
 		{
 			name: "hard fail passes, score ok",
-			rulesList: []rules.Rule{
+			rulesList: []Rule{
 				{ID: ruleA, HardFail: true, Weight: 1},
 				{ID: ruleB, HardFail: false, Weight: 1},
 			},
-			results: []results.Result{
+			results: []Result{
 				{RuleID: ruleA, Pass: true, Score: &score09},
 				{RuleID: ruleB, Pass: true, Score: &score08},
 			},
@@ -62,29 +59,29 @@ func TestAggregateEvalRun_Cases(t *testing.T) {
 		},
 		{
 			name: "missing result fails",
-			rulesList: []rules.Rule{
+			rulesList: []Rule{
 				{ID: ruleA, HardFail: false, Weight: 1},
 			},
-			results:  []results.Result{},
+			results:  []Result{},
 			wantPass: false,
 		},
 		{
 			name: "zero weights pass",
-			rulesList: []rules.Rule{
+			rulesList: []Rule{
 				{ID: ruleA, HardFail: false, Weight: 0},
 			},
-			results: []results.Result{
+			results: []Result{
 				{RuleID: ruleA, Pass: true},
 			},
 			wantPass: true,
 		},
 		{
 			name: "weighted average",
-			rulesList: []rules.Rule{
+			rulesList: []Rule{
 				{ID: ruleA, Weight: 2},
 				{ID: ruleB, Weight: 1},
 			},
-			results: []results.Result{
+			results: []Result{
 				{RuleID: ruleA, Pass: true, Score: &score09},
 				{RuleID: ruleB, Pass: true, Score: &score06},
 			},
@@ -120,9 +117,9 @@ func TestAggregateAndFinalize_Integration(t *testing.T) {
 	defer db.Close()
 
 	queries := store.New(db)
-	runsRepo := runs.NewRepository(queries)
-	rulesRepo := rules.NewRepository(queries)
-	resultsRepo := results.NewRepository(queries)
+	runsRepo := NewRunRepository(queries)
+	rulesRepo := NewRuleRepository(queries)
+	resultsRepo := NewResultRepository(queries)
 	artifactRepo := generation.NewRepository(queries)
 
 	svc := NewService(runsRepo, rulesRepo, resultsRepo, artifactRepo)
@@ -267,8 +264,8 @@ func TestAggregateEvalRun_ZeroWeightNoImpact(t *testing.T) {
 		agg1 := AggregateEvalRun(c.Rules, c.Results)
 
 		ruleID := uuid.New()
-		zeroRule := rules.Rule{ID: ruleID, HardFail: false, Weight: 0}
-		zeroResult := results.Result{RuleID: ruleID, Pass: true}
+		zeroRule := Rule{ID: ruleID, HardFail: false, Weight: 0}
+		zeroResult := Result{RuleID: ruleID, Pass: true}
 
 		rulesCopy := append(cloneRules(c.Rules), zeroRule)
 		resultsCopy := append(cloneResults(c.Results), zeroResult)
@@ -287,8 +284,8 @@ func TestAggregateEvalRun_HardFailDominates(t *testing.T) {
 
 	err := quick.Check(func(c evalCase) bool {
 		ruleID := uuid.New()
-		hardFailRule := rules.Rule{ID: ruleID, HardFail: true, Weight: 1}
-		hardFailResult := results.Result{RuleID: ruleID, Pass: false}
+		hardFailRule := Rule{ID: ruleID, HardFail: true, Weight: 1}
+		hardFailResult := Result{RuleID: ruleID, Pass: false}
 
 		rulesCopy := append(cloneRules(c.Rules), hardFailRule)
 		resultsCopy := append(cloneResults(c.Results), hardFailResult)
@@ -300,21 +297,21 @@ func TestAggregateEvalRun_HardFailDominates(t *testing.T) {
 }
 
 type evalCase struct {
-	Rules   []rules.Rule
-	Results []results.Result
+	Rules   []Rule
+	Results []Result
 }
 
 func (evalCase) Generate(r *rand.Rand, size int) reflect.Value {
 	ruleCount := r.Intn(5) + 1
-	rulesList := make([]rules.Rule, ruleCount)
-	resultsList := make([]results.Result, ruleCount)
+	rulesList := make([]Rule, ruleCount)
+	resultsList := make([]Result, ruleCount)
 
 	for i := 0; i < ruleCount; i++ {
 		ruleID := uuid.New()
 		weightOptions := []float32{0, 0.5, 1, 2}
 		weight := weightOptions[r.Intn(len(weightOptions))]
 
-		rulesList[i] = rules.Rule{
+		rulesList[i] = Rule{
 			ID:       ruleID,
 			Weight:   weight,
 			HardFail: r.Intn(2) == 0,
@@ -327,7 +324,7 @@ func (evalCase) Generate(r *rand.Rand, size int) reflect.Value {
 			score = &s
 		}
 
-		resultsList[i] = results.Result{
+		resultsList[i] = Result{
 			RuleID: ruleID,
 			Pass:   pass,
 			Score:  score,
@@ -340,20 +337,20 @@ func (evalCase) Generate(r *rand.Rand, size int) reflect.Value {
 	})
 }
 
-func cloneRules(input []rules.Rule) []rules.Rule {
+func cloneRules(input []Rule) []Rule {
 	if input == nil {
 		return nil
 	}
-	out := make([]rules.Rule, len(input))
+	out := make([]Rule, len(input))
 	copy(out, input)
 	return out
 }
 
-func cloneResults(input []results.Result) []results.Result {
+func cloneResults(input []Result) []Result {
 	if input == nil {
 		return nil
 	}
-	out := make([]results.Result, len(input))
+	out := make([]Result, len(input))
 	copy(out, input)
 	return out
 }
@@ -371,7 +368,7 @@ func aggregatesEqual(a, b EvalAggregate) bool {
 	return math.Abs(*a.OverallScore-*b.OverallScore) <= 1e-9
 }
 
-func equalRules(a, b []rules.Rule) bool {
+func equalRules(a, b []Rule) bool {
 	if len(a) != len(b) {
 		return false
 	}
@@ -383,7 +380,7 @@ func equalRules(a, b []rules.Rule) bool {
 	return true
 }
 
-func equalResults(a, b []results.Result) bool {
+func equalResults(a, b []Result) bool {
 	if len(a) != len(b) {
 		return false
 	}

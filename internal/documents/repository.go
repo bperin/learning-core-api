@@ -16,9 +16,9 @@ import (
 type Repository interface {
 	Create(ctx context.Context, document Document) (*Document, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Document, error)
-	GetByModuleAndSourceURI(ctx context.Context, moduleID uuid.UUID, sourceURI string) (*Document, error)
-	ListByModule(ctx context.Context, moduleID uuid.UUID) ([]Document, error)
-	Update(ctx context.Context, id uuid.UUID, title *string, metadata map[string]interface{}, indexedAt *time.Time) error
+	GetBySubjectAndSourceURI(ctx context.Context, subjectID uuid.UUID, sourceURI string) (*Document, error)
+	ListBySubject(ctx context.Context, subjectID uuid.UUID) ([]Document, error)
+	Update(ctx context.Context, id uuid.UUID, title *string, metadata json.RawMessage, indexedAt *time.Time) error
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
@@ -42,18 +42,10 @@ func nullStringToString(ns sql.NullString) string {
 	return ""
 }
 
-func bytesToMap(data []byte) map[string]interface{} {
-	var result map[string]interface{}
-	if len(data) > 0 {
-		json.Unmarshal(data, &result)
-	}
-	return result
-}
-
 // Create creates a new document
 func (r *repository) Create(ctx context.Context, document Document) (*Document, error) {
 	params := store.CreateDocumentParams{
-		ModuleID:  document.ModuleID,
+		SubjectID: document.SubjectID,
 		StoreID:   document.StoreID,
 		SourceUri: document.SourceURI,
 	}
@@ -84,11 +76,11 @@ func (r *repository) Create(ctx context.Context, document Document) (*Document, 
 	}
 
 	// Handle JSON metadata
-	metadataBytes, err := json.Marshal(document.Metadata)
-	if err != nil {
-		return nil, err
+	if len(document.Metadata) == 0 {
+		params.Metadata = []byte(`{}`)
+	} else {
+		params.Metadata = document.Metadata
 	}
-	params.Metadata = metadataBytes
 
 	dbDocument, err := r.queries.CreateDocument(ctx, params)
 	if err != nil {
@@ -97,12 +89,12 @@ func (r *repository) Create(ctx context.Context, document Document) (*Document, 
 
 	return &Document{
 		ID:        dbDocument.ID,
-		ModuleID:  dbDocument.ModuleID,
+		SubjectID: dbDocument.SubjectID,
 		StoreID:   dbDocument.StoreID,
 		Title:     nullStringToString(dbDocument.Title),
 		SourceURI: dbDocument.SourceUri,
 		SHA256:    nullStringToString(dbDocument.Sha256),
-		Metadata:  bytesToMap(dbDocument.Metadata),
+		Metadata:  dbDocument.Metadata,
 		FileName:  nullStringToString(dbDocument.FileName),
 		DocName:   nullStringToString(dbDocument.DocName),
 		IndexedAt: utils.NullTimeToPtr(dbDocument.IndexedAt),
@@ -119,12 +111,12 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*Document, erro
 
 	return &Document{
 		ID:        dbDocument.ID,
-		ModuleID:  dbDocument.ModuleID,
+		SubjectID: dbDocument.SubjectID,
 		StoreID:   dbDocument.StoreID,
 		Title:     nullStringToString(dbDocument.Title),
 		SourceURI: dbDocument.SourceUri,
 		SHA256:    nullStringToString(dbDocument.Sha256),
-		Metadata:  bytesToMap(dbDocument.Metadata),
+		Metadata:  dbDocument.Metadata,
 		FileName:  nullStringToString(dbDocument.FileName),
 		DocName:   nullStringToString(dbDocument.DocName),
 		IndexedAt: utils.NullTimeToPtr(dbDocument.IndexedAt),
@@ -132,10 +124,10 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*Document, erro
 	}, nil
 }
 
-// GetByModuleAndSourceURI retrieves a document by module ID and source URI
-func (r *repository) GetByModuleAndSourceURI(ctx context.Context, moduleID uuid.UUID, sourceURI string) (*Document, error) {
-	dbDocument, err := r.queries.GetDocumentByModuleAndSourceURI(ctx, store.GetDocumentByModuleAndSourceURIParams{
-		ModuleID:  moduleID,
+// GetBySubjectAndSourceURI retrieves a document by subject ID and source URI.
+func (r *repository) GetBySubjectAndSourceURI(ctx context.Context, subjectID uuid.UUID, sourceURI string) (*Document, error) {
+	dbDocument, err := r.queries.GetDocumentBySubjectAndSourceURI(ctx, store.GetDocumentBySubjectAndSourceURIParams{
+		SubjectID: subjectID,
 		SourceUri: sourceURI,
 	})
 	if err != nil {
@@ -144,12 +136,12 @@ func (r *repository) GetByModuleAndSourceURI(ctx context.Context, moduleID uuid.
 
 	return &Document{
 		ID:        dbDocument.ID,
-		ModuleID:  dbDocument.ModuleID,
+		SubjectID: dbDocument.SubjectID,
 		StoreID:   dbDocument.StoreID,
 		Title:     nullStringToString(dbDocument.Title),
 		SourceURI: dbDocument.SourceUri,
 		SHA256:    nullStringToString(dbDocument.Sha256),
-		Metadata:  bytesToMap(dbDocument.Metadata),
+		Metadata:  dbDocument.Metadata,
 		FileName:  nullStringToString(dbDocument.FileName),
 		DocName:   nullStringToString(dbDocument.DocName),
 		IndexedAt: utils.NullTimeToPtr(dbDocument.IndexedAt),
@@ -157,9 +149,9 @@ func (r *repository) GetByModuleAndSourceURI(ctx context.Context, moduleID uuid.
 	}, nil
 }
 
-// ListByModule retrieves all documents for a module
-func (r *repository) ListByModule(ctx context.Context, moduleID uuid.UUID) ([]Document, error) {
-	dbDocuments, err := r.queries.ListDocumentsByModule(ctx, moduleID)
+// ListBySubject retrieves all documents for a subject.
+func (r *repository) ListBySubject(ctx context.Context, subjectID uuid.UUID) ([]Document, error) {
+	dbDocuments, err := r.queries.ListDocumentsBySubject(ctx, subjectID)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +160,7 @@ func (r *repository) ListByModule(ctx context.Context, moduleID uuid.UUID) ([]Do
 	for i, dbDocument := range dbDocuments {
 		documents[i] = Document{
 			ID:        dbDocument.ID,
-			ModuleID:  dbDocument.ModuleID,
+			SubjectID: dbDocument.SubjectID,
 			StoreID:   dbDocument.StoreID,
 			Title:     nullStringToString(dbDocument.Title),
 			SourceURI: dbDocument.SourceUri,
@@ -185,7 +177,7 @@ func (r *repository) ListByModule(ctx context.Context, moduleID uuid.UUID) ([]Do
 }
 
 // Update updates a document
-func (r *repository) Update(ctx context.Context, id uuid.UUID, title *string, metadata map[string]interface{}, indexedAt *time.Time) error {
+func (r *repository) Update(ctx context.Context, id uuid.UUID, title *string, metadata json.RawMessage, indexedAt *time.Time) error {
 	// Get current document to preserve values if not updating
 	current, err := r.GetByID(ctx, id)
 	if err != nil {
@@ -204,18 +196,12 @@ func (r *repository) Update(ctx context.Context, id uuid.UUID, title *string, me
 	}
 
 	// Set metadata parameter
-	if metadata != nil {
-		metadataBytes, err := json.Marshal(metadata)
-		if err != nil {
-			return err
-		}
-		params.Metadata = metadataBytes
+	if len(metadata) > 0 {
+		params.Metadata = metadata
+	} else if len(current.Metadata) > 0 {
+		params.Metadata = current.Metadata
 	} else {
-		metadataBytes, err := json.Marshal(current.Metadata)
-		if err != nil {
-			return err
-		}
-		params.Metadata = metadataBytes
+		params.Metadata = []byte(`{}`)
 	}
 
 	// Set indexedAt parameter

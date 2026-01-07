@@ -37,6 +37,19 @@ const (
 	RunStatusFailed    RunStatus = "FAILED"
 )
 
+// CreateGenerationRunRequest represents the request to create a generation run
+type CreateGenerationRunRequest struct {
+	ModuleID       uuid.UUID       `json:"module_id"`
+	AgentName      string          `json:"agent_name"`
+	AgentVersion   string          `json:"agent_version"`
+	Model          string          `json:"model"`
+	ModelParams    json.RawMessage `json:"model_params"`
+	PromptID       *uuid.UUID      `json:"prompt_id,omitempty"`
+	StoreName      string          `json:"store_name"`
+	MetadataFilter json.RawMessage `json:"metadata_filter"`
+	InputPayload   json.RawMessage `json:"input_payload"`
+}
+
 // Artifact represents an artifact generated during a run
 type Artifact struct {
 	ID              uuid.UUID       `json:"id"`
@@ -73,19 +86,6 @@ const (
 	ArtifactStatusApproved    ArtifactStatus = "APPROVED"
 	ArtifactStatusRejected    ArtifactStatus = "REJECTED"
 )
-
-// CreateGenerationRunRequest represents the request to create a generation run
-type CreateGenerationRunRequest struct {
-	ModuleID       uuid.UUID       `json:"module_id"`
-	AgentName      string          `json:"agent_name"`
-	AgentVersion   string          `json:"agent_version"`
-	Model          string          `json:"model"`
-	ModelParams    json.RawMessage `json:"model_params"`
-	PromptID       *uuid.UUID      `json:"prompt_id,omitempty"`
-	StoreName      string          `json:"store_name"`
-	MetadataFilter json.RawMessage `json:"metadata_filter"`
-	InputPayload   json.RawMessage `json:"input_payload"`
-}
 
 // CreateArtifactRequest represents the request to create an artifact
 type CreateArtifactRequest struct {

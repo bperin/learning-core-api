@@ -1,4 +1,4 @@
-package suites_test
+package evals_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"learning-core-api/internal/evals/suites"
+	"learning-core-api/internal/evals"
 	"learning-core-api/internal/store"
 	"learning-core-api/internal/testutil"
 )
@@ -26,11 +26,11 @@ func TestSuiteRepository(t *testing.T) {
 	db, queries := setupTestDB(t)
 	defer db.Close()
 
-	repo := suites.NewRepository(queries)
+	repo := evals.NewSuiteRepository(queries)
 	ctx := context.Background()
 
 	t.Run("Create and GetByID", func(t *testing.T) {
-		expectedSuite := suites.Suite{
+		expectedSuite := evals.Suite{
 			Name:        "Test Suite",
 			Description: "Quality gate for MCQ items",
 		}
@@ -51,7 +51,7 @@ func TestSuiteRepository(t *testing.T) {
 	})
 
 	t.Run("GetByName", func(t *testing.T) {
-		expectedSuite := suites.Suite{
+		expectedSuite := evals.Suite{
 			Name:        "Named Suite",
 			Description: "Gate for flashcards",
 		}
@@ -66,11 +66,11 @@ func TestSuiteRepository(t *testing.T) {
 	})
 
 	t.Run("List", func(t *testing.T) {
-		suite1 := suites.Suite{
+		suite1 := evals.Suite{
 			Name:        "Suite 1",
 			Description: "First suite",
 		}
-		suite2 := suites.Suite{
+		suite2 := evals.Suite{
 			Name:        "Suite 2",
 			Description: "Second suite",
 		}
@@ -102,7 +102,7 @@ func TestSuiteRepository(t *testing.T) {
 	})
 
 	t.Run("Update", func(t *testing.T) {
-		originalSuite := suites.Suite{
+		originalSuite := evals.Suite{
 			Name:        "Update Test Suite",
 			Description: "Original description",
 		}
@@ -119,7 +119,7 @@ func TestSuiteRepository(t *testing.T) {
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		suiteToDelete := suites.Suite{
+		suiteToDelete := evals.Suite{
 			Name:        "Delete Test Suite",
 			Description: "Suite to delete",
 		}

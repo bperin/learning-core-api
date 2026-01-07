@@ -1,26 +1,27 @@
-package results_test
+package evals_test
 
 import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"learning-core-api/internal/evals/results"
+	"testing"
+
+	"learning-core-api/internal/evals"
 	"learning-core-api/internal/modules"
 	"learning-core-api/internal/store"
 	"learning-core-api/internal/testutil"
-	"testing"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func setupTest(t *testing.T) (results.Repository, *store.Queries, context.Context, func()) {
+func setupTest(t *testing.T) (evals.ResultRepository, *store.Queries, context.Context, func()) {
 	ctx := context.Background()
 	db := testutil.NewTestDB(t)
 
 	queries := store.New(db)
-	repo := results.NewRepository(queries)
+	repo := evals.NewResultRepository(queries)
 
 	cleanup := func() {
 		db.Close()
@@ -110,7 +111,7 @@ func TestRepository_Create(t *testing.T) {
 	runID, ruleID, _ := seedDependencies(ctx, t, queries)
 
 	score := float32(0.85)
-	res := results.Result{
+	res := evals.Result{
 		EvalRunID: runID,
 		RuleID:    ruleID,
 		Pass:      true,
@@ -135,7 +136,7 @@ func TestRepository_GetByID(t *testing.T) {
 	runID, ruleID, _ := seedDependencies(ctx, t, queries)
 
 	score := float32(0.85)
-	res := results.Result{
+	res := evals.Result{
 		EvalRunID: runID,
 		RuleID:    ruleID,
 		Pass:      true,
@@ -168,14 +169,14 @@ func TestRepository_ListByRun(t *testing.T) {
 		Params:   []byte(`{}`),
 	})
 
-	repo.Create(ctx, results.Result{
+	repo.Create(ctx, evals.Result{
 		EvalRunID: runID,
 		RuleID:    ruleID,
 		Pass:      true,
 		Details:   json.RawMessage(`{}`),
 	})
 
-	repo.Create(ctx, results.Result{
+	repo.Create(ctx, evals.Result{
 		EvalRunID: runID,
 		RuleID:    rule2.ID,
 		Pass:      false,
@@ -193,7 +194,7 @@ func TestRepository_ListByRule(t *testing.T) {
 
 	runID, ruleID, _ := seedDependencies(ctx, t, queries)
 
-	repo.Create(ctx, results.Result{
+	repo.Create(ctx, evals.Result{
 		EvalRunID: runID,
 		RuleID:    ruleID,
 		Pass:      true,
@@ -212,7 +213,7 @@ func TestRepository_DeleteByRun(t *testing.T) {
 
 	runID, ruleID, _ := seedDependencies(ctx, t, queries)
 
-	repo.Create(ctx, results.Result{
+	repo.Create(ctx, evals.Result{
 		EvalRunID: runID,
 		RuleID:    ruleID,
 		Pass:      true,

@@ -1,4 +1,4 @@
-package runs
+package evals
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// Service defines the interface for eval run business logic
-type Service interface {
+// RunService defines the interface for eval run business logic.
+type RunService interface {
 	Create(ctx context.Context, req CreateRunRequest) (*Run, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Run, error)
 	GetLatestForArtifact(ctx context.Context, artifactID uuid.UUID) (*Run, error)
@@ -17,20 +17,20 @@ type Service interface {
 	Delete(ctx context.Context, id uuid.UUID) error
 }
 
-// service implements the Service interface
-type service struct {
-	repo Repository
+// runService implements the RunService interface.
+type runService struct {
+	repo RunRepository
 }
 
-// NewService creates a new eval run service
-func NewService(repo Repository) Service {
-	return &service{
+// NewRunService creates a new eval run service.
+func NewRunService(repo RunRepository) RunService {
+	return &runService{
 		repo: repo,
 	}
 }
 
-// Create creates a new eval run with business logic validation
-func (s *service) Create(ctx context.Context, req CreateRunRequest) (*Run, error) {
+// Create creates a new eval run with business logic validation.
+func (s *runService) Create(ctx context.Context, req CreateRunRequest) (*Run, error) {
 	// Business logic validation
 	if req.ArtifactID == uuid.Nil {
 		return nil, errors.New("artifact ID is required")
@@ -57,8 +57,8 @@ func (s *service) Create(ctx context.Context, req CreateRunRequest) (*Run, error
 	return s.repo.Create(ctx, run)
 }
 
-// GetByID retrieves an eval run by ID
-func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*Run, error) {
+// GetByID retrieves an eval run by ID.
+func (s *runService) GetByID(ctx context.Context, id uuid.UUID) (*Run, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("eval run ID is required")
 	}
@@ -66,8 +66,8 @@ func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*Run, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-// GetLatestForArtifact retrieves the latest eval run for an artifact
-func (s *service) GetLatestForArtifact(ctx context.Context, artifactID uuid.UUID) (*Run, error) {
+// GetLatestForArtifact retrieves the latest eval run for an artifact.
+func (s *runService) GetLatestForArtifact(ctx context.Context, artifactID uuid.UUID) (*Run, error) {
 	if artifactID == uuid.Nil {
 		return nil, errors.New("artifact ID is required")
 	}
@@ -75,8 +75,8 @@ func (s *service) GetLatestForArtifact(ctx context.Context, artifactID uuid.UUID
 	return s.repo.GetLatestForArtifact(ctx, artifactID)
 }
 
-// ListByArtifact retrieves all eval runs for an artifact
-func (s *service) ListByArtifact(ctx context.Context, artifactID uuid.UUID) ([]Run, error) {
+// ListByArtifact retrieves all eval runs for an artifact.
+func (s *runService) ListByArtifact(ctx context.Context, artifactID uuid.UUID) ([]Run, error) {
 	if artifactID == uuid.Nil {
 		return nil, errors.New("artifact ID is required")
 	}
@@ -84,8 +84,8 @@ func (s *service) ListByArtifact(ctx context.Context, artifactID uuid.UUID) ([]R
 	return s.repo.ListByArtifact(ctx, artifactID)
 }
 
-// UpdateResult updates an eval run's result with business logic validation
-func (s *service) UpdateResult(ctx context.Context, id uuid.UUID, req UpdateRunResultRequest) (*Run, error) {
+// UpdateResult updates an eval run's result with business logic validation.
+func (s *runService) UpdateResult(ctx context.Context, id uuid.UUID, req UpdateRunResultRequest) (*Run, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("eval run ID is required")
 	}
@@ -104,8 +104,8 @@ func (s *service) UpdateResult(ctx context.Context, id uuid.UUID, req UpdateRunR
 	return s.repo.UpdateResult(ctx, id, req.Status, req.OverallPass, req.OverallScore, req.Error)
 }
 
-// Delete deletes an eval run
-func (s *service) Delete(ctx context.Context, id uuid.UUID) error {
+// Delete deletes an eval run.
+func (s *runService) Delete(ctx context.Context, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return errors.New("eval run ID is required")
 	}

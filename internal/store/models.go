@@ -42,7 +42,6 @@ type Attempt struct {
 
 type Document struct {
 	ID        uuid.UUID       `json:"id"`
-	ModuleID  uuid.UUID       `json:"module_id"`
 	StoreID   uuid.UUID       `json:"store_id"`
 	Title     sql.NullString  `json:"title"`
 	SourceUri string          `json:"source_uri"`
@@ -52,6 +51,7 @@ type Document struct {
 	DocName   sql.NullString  `json:"doc_name"`
 	IndexedAt sql.NullTime    `json:"indexed_at"`
 	CreatedAt time.Time       `json:"created_at"`
+	SubjectID uuid.UUID       `json:"subject_id"`
 }
 
 type EvalResult struct {
@@ -101,11 +101,11 @@ type EvalSuite struct {
 
 type FileSearchStore struct {
 	ID             uuid.UUID       `json:"id"`
-	ModuleID       uuid.UUID       `json:"module_id"`
 	StoreName      string          `json:"store_name"`
 	DisplayName    sql.NullString  `json:"display_name"`
 	ChunkingConfig json.RawMessage `json:"chunking_config"`
 	CreatedAt      time.Time       `json:"created_at"`
+	SubjectID      uuid.UUID       `json:"subject_id"`
 }
 
 type GenerationRun struct {
@@ -154,6 +154,14 @@ type Session struct {
 	MasteryState json.RawMessage `json:"mastery_state"`
 	CreatedAt    time.Time       `json:"created_at"`
 	CompletedAt  sql.NullTime    `json:"completed_at"`
+}
+
+type Subject struct {
+	ID          uuid.UUID      `json:"id"`
+	UserID      uuid.UUID      `json:"user_id"`
+	Name        string         `json:"name"`
+	Description sql.NullString `json:"description"`
+	CreatedAt   time.Time      `json:"created_at"`
 }
 
 type Tenant struct {

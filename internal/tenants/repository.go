@@ -37,12 +37,8 @@ func (r *repository) Create(ctx context.Context, tenant Tenant) (*Tenant, error)
 		return nil, err
 	}
 
-	return &Tenant{
-		ID:        dbTenant.ID,
-		Name:      dbTenant.Name,
-		IsActive:  dbTenant.IsActive,
-		CreatedAt: dbTenant.CreatedAt,
-	}, nil
+	tenant := toDomainTenant(dbTenant)
+	return &tenant, nil
 }
 
 // GetByID retrieves a tenant by ID
@@ -52,10 +48,15 @@ func (r *repository) GetByID(ctx context.Context, id uuid.UUID) (*Tenant, error)
 		return nil, err
 	}
 
-	return &Tenant{
+	tenant := toDomainTenant(dbTenant)
+	return &tenant, nil
+}
+
+func toDomainTenant(dbTenant store.Tenant) Tenant {
+	return Tenant{
 		ID:        dbTenant.ID,
 		Name:      dbTenant.Name,
 		IsActive:  dbTenant.IsActive,
 		CreatedAt: dbTenant.CreatedAt,
-	}, nil
+	}
 }

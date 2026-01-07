@@ -5,9 +5,6 @@ import (
 	"errors"
 	"time"
 
-	"learning-core-api/internal/evals/results"
-	"learning-core-api/internal/evals/rules"
-	"learning-core-api/internal/evals/runs"
 	"learning-core-api/internal/generation"
 
 	"github.com/google/uuid"
@@ -25,17 +22,17 @@ type Service interface {
 }
 
 type service struct {
-	runsRepo     runs.Repository
-	rulesRepo    rules.Repository
-	resultsRepo  results.Repository
+	runsRepo     RunRepository
+	rulesRepo    RuleRepository
+	resultsRepo  ResultRepository
 	artifactRepo generation.Repository
 }
 
 // NewService creates a new eval aggregation service.
 func NewService(
-	runsRepo runs.Repository,
-	rulesRepo rules.Repository,
-	resultsRepo results.Repository,
+	runsRepo RunRepository,
+	rulesRepo RuleRepository,
+	resultsRepo ResultRepository,
 	artifactRepo generation.Repository,
 ) Service {
 	return &service{
@@ -48,10 +45,10 @@ func NewService(
 
 // AggregateEvalRun computes overall pass/score for an eval run.
 func AggregateEvalRun(
-	rulesList []rules.Rule,
-	resultsList []results.Result,
+	rulesList []Rule,
+	resultsList []Result,
 ) EvalAggregate {
-	resultByRule := make(map[uuid.UUID]results.Result, len(resultsList))
+	resultByRule := make(map[uuid.UUID]Result, len(resultsList))
 	for _, res := range resultsList {
 		resultByRule[res.RuleID] = res
 	}

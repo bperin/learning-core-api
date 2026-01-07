@@ -52,19 +52,8 @@ func (r *repository) CreateUser(ctx context.Context, user User) (*User, error) {
 		return nil, err
 	}
 
-	var displayName *string
-	if dbUser.DisplayName.Valid {
-		displayName = &dbUser.DisplayName.String
-	}
-
-	return &User{
-		ID:          dbUser.ID,
-		TenantID:    dbUser.TenantID,
-		Email:       dbUser.Email,
-		DisplayName: displayName,
-		IsActive:    dbUser.IsActive,
-		CreatedAt:   dbUser.CreatedAt,
-	}, nil
+	user := toDomainUser(dbUser)
+	return &user, nil
 }
 
 // GetUserByID retrieves a user by ID
@@ -74,19 +63,8 @@ func (r *repository) GetUserByID(ctx context.Context, id uuid.UUID) (*User, erro
 		return nil, err
 	}
 
-	var displayName *string
-	if dbUser.DisplayName.Valid {
-		displayName = &dbUser.DisplayName.String
-	}
-
-	return &User{
-		ID:          dbUser.ID,
-		TenantID:    dbUser.TenantID,
-		Email:       dbUser.Email,
-		DisplayName: displayName,
-		IsActive:    dbUser.IsActive,
-		CreatedAt:   dbUser.CreatedAt,
-	}, nil
+	user := toDomainUser(dbUser)
+	return &user, nil
 }
 
 // GetUserByEmail retrieves a user by email and tenant ID
@@ -99,19 +77,8 @@ func (r *repository) GetUserByEmail(ctx context.Context, tenantID uuid.UUID, ema
 		return nil, err
 	}
 
-	var displayName *string
-	if dbUser.DisplayName.Valid {
-		displayName = &dbUser.DisplayName.String
-	}
-
-	return &User{
-		ID:          dbUser.ID,
-		TenantID:    dbUser.TenantID,
-		Email:       dbUser.Email,
-		DisplayName: displayName,
-		IsActive:    dbUser.IsActive,
-		CreatedAt:   dbUser.CreatedAt,
-	}, nil
+	user := toDomainUser(dbUser)
+	return &user, nil
 }
 
 // ListUsersByTenant retrieves all users for a tenant
@@ -121,24 +88,7 @@ func (r *repository) ListUsersByTenant(ctx context.Context, tenantID uuid.UUID) 
 		return nil, err
 	}
 
-	users := make([]User, len(dbUsers))
-	for i, dbUser := range dbUsers {
-		var displayName *string
-		if dbUser.DisplayName.Valid {
-			displayName = &dbUser.DisplayName.String
-		}
-
-		users[i] = User{
-			ID:          dbUser.ID,
-			TenantID:    dbUser.TenantID,
-			Email:       dbUser.Email,
-			DisplayName: displayName,
-			IsActive:    dbUser.IsActive,
-			CreatedAt:   dbUser.CreatedAt,
-		}
-	}
-
-	return users, nil
+	return toDomainUsers(dbUsers), nil
 }
 
 // UpdateUser updates a user
@@ -191,16 +141,7 @@ func (r *repository) GetUserRoles(ctx context.Context, userID uuid.UUID) ([]User
 		return nil, err
 	}
 
-	userRoles := make([]UserRole, len(dbUserRoles))
-	for i, dbUserRole := range dbUserRoles {
-		userRoles[i] = UserRole{
-			UserID:    dbUserRole.UserID,
-			Role:      UserRoleType(dbUserRole.Role),
-			GrantedAt: dbUserRole.GrantedAt,
-		}
-	}
-
-	return userRoles, nil
+	return toDomainUserRoles(dbUserRoles), nil
 }
 
 // DeleteUserRole deletes a user role
@@ -209,4 +150,46 @@ func (r *repository) DeleteUserRole(ctx context.Context, userID uuid.UUID, role 
 		UserID: userID,
 		Role:   string(role),
 	})
+}
+
+func toDomainUser(dbUser store.User) User {
+	return User{
+		ID:          dbUser.ID,
+		TenantID:    dbUser.TenantID,
+		Email:       dbUser.Email,
+		DisplayName: nullStringToPtr(dbUser.DisplayName),
+		IsActive:    dbUser.IsActive,
+		CreatedAt:   dbUser.CreatedAt,
+	}
+}
+
+func toDomainUsers(dbUsers []store.User) []User {
+	users := make([]User, len(dbUsers))
+	for i, dbUser := range dbUsers {
+		users[i] = toDomainUser(dbUser)
+	}
+	return users
+}
+
+func toDomainUserRole(dbUserRole store.UserRole) UserRole {
+	return UserRole{
+		UserID:    dbUserRole.UserID,
+		Role:      UserRoleType(dbUserRole.Role),
+		GrantedAt: dbUserRole.GrantedAt,
+	}
+}
+
+func toDomainUserRoles(dbUserRoles []store.UserRole) []UserRole {
+	userRoles := make([]UserRole, len(dbUserRoles))
+	for i, dbUserRole := range dbUserRoles {
+		userRoles[i] = toDomainUserRole(dbUserRole)
+	}
+	return userRoles
+}
+
+func nullStringToPtr(value sql.NullString) *string {
+	if value.Valid {
+		return &value.String
+	}
+	return nil
 }

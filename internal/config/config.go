@@ -12,6 +12,7 @@ type Config struct {
 	DBURL           string
 	GoogleProjectID string
 	PubSubTopicID   string
+	GoogleAPIKey    string
 	JWTSecret       string
 }
 
@@ -25,6 +26,7 @@ func Load() *Config {
 		DBURL:           os.Getenv("DB_URL"),
 		GoogleProjectID: os.Getenv("GOOGLE_PROJECT_ID"),
 		PubSubTopicID:   os.Getenv("PUBSUB_TOPIC_ID"),
+		GoogleAPIKey:    os.Getenv("GOOGLE_API_KEY"),
 		JWTSecret:       os.Getenv("JWT_SECRET"),
 	}
 }

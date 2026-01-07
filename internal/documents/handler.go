@@ -1,6 +1,7 @@
 package documents
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -26,7 +27,7 @@ func NewHandler(service Service) *Handler {
 func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/{id}", h.GetByID)
 	r.Post("/", h.Create)
-	r.Get("/module/{moduleID}", h.ListByModule)
+	r.Get("/subject/{subjectID}", h.ListBySubject)
 	r.Put("/{id}", h.Update)
 	r.Delete("/{id}", h.Delete)
 }
@@ -68,17 +69,17 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, http.StatusOK, document)
 }
 
-// ListByModule handles GET /documents/module/{moduleID}
-func (h *Handler) ListByModule(w http.ResponseWriter, r *http.Request) {
-	moduleIDStr := chi.URLParam(r, "moduleID")
-	moduleID, err := uuid.Parse(moduleIDStr)
+// ListBySubject handles GET /documents/subject/{subjectID}
+func (h *Handler) ListBySubject(w http.ResponseWriter, r *http.Request) {
+	subjectIDStr := chi.URLParam(r, "subjectID")
+	subjectID, err := uuid.Parse(subjectIDStr)
 	if err != nil {
-		render.Error(w, http.StatusBadRequest, "Invalid module ID")
+		render.Error(w, http.StatusBadRequest, "Invalid subject ID")
 		return
 	}
 
 	ctx := r.Context()
-	documents, err := h.service.ListByModule(ctx, moduleID)
+	documents, err := h.service.ListBySubject(ctx, subjectID)
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
@@ -97,9 +98,9 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req struct {
-		Title     *string                `json:"title,omitempty"`
-		Metadata  map[string]interface{} `json:"metadata,omitempty"`
-		IndexedAt *time.Time             `json:"indexedAt,omitempty"`
+		Title     *string         `json:"title,omitempty"`
+		Metadata  json.RawMessage `json:"metadata,omitempty"`
+		IndexedAt *time.Time      `json:"indexedAt,omitempty"`
 	}
 	if err := render.DecodeJSON(r, &req); err != nil {
 		render.Error(w, http.StatusBadRequest, "Invalid JSON")

@@ -1,4 +1,4 @@
-package rules
+package evals
 
 import (
 	"context"
@@ -7,8 +7,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// Service defines the interface for eval rule business logic
-type Service interface {
+// RuleService defines the interface for eval rule business logic.
+type RuleService interface {
 	Create(ctx context.Context, req CreateRuleRequest) (*Rule, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*Rule, error)
 	GetBySuiteAndType(ctx context.Context, suiteID uuid.UUID, evalType string) (*Rule, error)
@@ -19,20 +19,20 @@ type Service interface {
 	DeleteBySuite(ctx context.Context, suiteID uuid.UUID) error
 }
 
-// service implements the Service interface
-type service struct {
-	repo Repository
+// ruleService implements the RuleService interface.
+type ruleService struct {
+	repo RuleRepository
 }
 
-// NewService creates a new eval rule service
-func NewService(repo Repository) Service {
-	return &service{
+// NewRuleService creates a new eval rule service.
+func NewRuleService(repo RuleRepository) RuleService {
+	return &ruleService{
 		repo: repo,
 	}
 }
 
-// Create creates a new eval rule with business logic validation
-func (s *service) Create(ctx context.Context, req CreateRuleRequest) (*Rule, error) {
+// Create creates a new eval rule with business logic validation.
+func (s *ruleService) Create(ctx context.Context, req CreateRuleRequest) (*Rule, error) {
 	// Business logic validation
 	if req.SuiteID == uuid.Nil {
 		return nil, errors.New("suite ID is required")
@@ -71,8 +71,8 @@ func (s *service) Create(ctx context.Context, req CreateRuleRequest) (*Rule, err
 	return s.repo.Create(ctx, rule)
 }
 
-// GetByID retrieves an eval rule by ID
-func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*Rule, error) {
+// GetByID retrieves an eval rule by ID.
+func (s *ruleService) GetByID(ctx context.Context, id uuid.UUID) (*Rule, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("eval rule ID is required")
 	}
@@ -80,8 +80,8 @@ func (s *service) GetByID(ctx context.Context, id uuid.UUID) (*Rule, error) {
 	return s.repo.GetByID(ctx, id)
 }
 
-// GetBySuiteAndType retrieves an eval rule by suite ID and eval type
-func (s *service) GetBySuiteAndType(ctx context.Context, suiteID uuid.UUID, evalType string) (*Rule, error) {
+// GetBySuiteAndType retrieves an eval rule by suite ID and eval type.
+func (s *ruleService) GetBySuiteAndType(ctx context.Context, suiteID uuid.UUID, evalType string) (*Rule, error) {
 	if suiteID == uuid.Nil {
 		return nil, errors.New("suite ID is required")
 	}
@@ -93,8 +93,8 @@ func (s *service) GetBySuiteAndType(ctx context.Context, suiteID uuid.UUID, eval
 	return s.repo.GetBySuiteAndType(ctx, suiteID, evalType)
 }
 
-// ListBySuite retrieves all eval rules for a suite
-func (s *service) ListBySuite(ctx context.Context, suiteID uuid.UUID) ([]Rule, error) {
+// ListBySuite retrieves all eval rules for a suite.
+func (s *ruleService) ListBySuite(ctx context.Context, suiteID uuid.UUID) ([]Rule, error) {
 	if suiteID == uuid.Nil {
 		return nil, errors.New("suite ID is required")
 	}
@@ -102,8 +102,8 @@ func (s *service) ListBySuite(ctx context.Context, suiteID uuid.UUID) ([]Rule, e
 	return s.repo.ListBySuite(ctx, suiteID)
 }
 
-// ListByEvalType retrieves all eval rules for an eval type
-func (s *service) ListByEvalType(ctx context.Context, evalType string) ([]Rule, error) {
+// ListByEvalType retrieves all eval rules for an eval type.
+func (s *ruleService) ListByEvalType(ctx context.Context, evalType string) ([]Rule, error) {
 	if evalType == "" {
 		return nil, errors.New("eval type is required")
 	}
@@ -111,8 +111,8 @@ func (s *service) ListByEvalType(ctx context.Context, evalType string) ([]Rule, 
 	return s.repo.ListByEvalType(ctx, evalType)
 }
 
-// Update updates an eval rule with business logic validation
-func (s *service) Update(ctx context.Context, id uuid.UUID, req UpdateRuleRequest) (*Rule, error) {
+// Update updates an eval rule with business logic validation.
+func (s *ruleService) Update(ctx context.Context, id uuid.UUID, req UpdateRuleRequest) (*Rule, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("eval rule ID is required")
 	}
@@ -139,8 +139,8 @@ func (s *service) Update(ctx context.Context, id uuid.UUID, req UpdateRuleReques
 	return s.repo.Update(ctx, id, req)
 }
 
-// Delete deletes an eval rule
-func (s *service) Delete(ctx context.Context, id uuid.UUID) error {
+// Delete deletes an eval rule.
+func (s *ruleService) Delete(ctx context.Context, id uuid.UUID) error {
 	if id == uuid.Nil {
 		return errors.New("eval rule ID is required")
 	}
@@ -154,8 +154,8 @@ func (s *service) Delete(ctx context.Context, id uuid.UUID) error {
 	return s.repo.Delete(ctx, id)
 }
 
-// DeleteBySuite deletes all eval rules for a suite
-func (s *service) DeleteBySuite(ctx context.Context, suiteID uuid.UUID) error {
+// DeleteBySuite deletes all eval rules for a suite.
+func (s *ruleService) DeleteBySuite(ctx context.Context, suiteID uuid.UUID) error {
 	if suiteID == uuid.Nil {
 		return errors.New("suite ID is required")
 	}

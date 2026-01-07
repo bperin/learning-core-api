@@ -11,6 +11,7 @@ import (
 
 	"learning-core-api/internal/config"
 	"learning-core-api/internal/infra"
+	"learning-core-api/internal/store"
 )
 
 func main() {
@@ -39,8 +40,11 @@ func main() {
 	}
 
 	// 5. Start HTTP Server
+	queries := store.New(db)
 	router := infra.NewRouter(infra.RouterDeps{
-		JWTSecret: cfg.JWTSecret,
+		JWTSecret:    cfg.JWTSecret,
+		Queries:      queries,
+		GoogleAPIKey: cfg.GoogleAPIKey,
 	})
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
