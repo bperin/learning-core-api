@@ -7,6 +7,7 @@ package store
 import (
 	"database/sql"
 	"database/sql/driver"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -111,23 +112,52 @@ func (ns NullReviewVerdict) Value() (driver.Value, error) {
 }
 
 type Artifact struct {
-	ID         uuid.UUID             `json:"id"`
-	Type       string                `json:"type"`
-	Status     string                `json:"status"`
-	DocumentID uuid.NullUUID         `json:"document_id"`
-	EvalID     uuid.NullUUID         `json:"eval_id"`
-	EvalItemID uuid.NullUUID         `json:"eval_item_id"`
-	AttemptID  uuid.NullUUID         `json:"attempt_id"`
-	UserID     uuid.NullUUID         `json:"user_id"`
-	Text       sql.NullString        `json:"text"`
-	Json       pqtype.NullRawMessage `json:"json"`
+	ID         uuid.UUID     `json:"id"`
+	Type       string        `json:"type"`
+	Status     string        `json:"status"`
+	EvalID     uuid.NullUUID `json:"eval_id"`
+	EvalItemID uuid.NullUUID `json:"eval_item_id"`
+	AttemptID  uuid.NullUUID `json:"attempt_id"`
+	// User who reviewed or created the artifact
+	ReviewerID uuid.NullUUID  `json:"reviewer_id"`
+	Text       sql.NullString `json:"text"`
+	// Structured output payload from the model
+	OutputJson pqtype.NullRawMessage `json:"output_json"`
 	Model      sql.NullString        `json:"model"`
 	Prompt     sql.NullString        `json:"prompt"`
 	InputHash  sql.NullString        `json:"input_hash"`
 	Meta       pqtype.NullRawMessage `json:"meta"`
 	Error      sql.NullString        `json:"error"`
 	CreatedAt  time.Time             `json:"created_at"`
-	// When the artifact was last updated
+	// Prompt template used for generation
+	PromptTemplateID uuid.NullUUID `json:"prompt_template_id"`
+	// Schema template used to validate output
+	SchemaTemplateID uuid.NullUUID `json:"schema_template_id"`
+	// Model parameters (temperature, top_p, etc.)
+	ModelParams pqtype.NullRawMessage `json:"model_params"`
+	// Rendered prompt text sent to the model
+	PromptRender sql.NullString `json:"prompt_render"`
+}
+
+type Curricula struct {
+	ID uuid.UUID `json:"id"`
+	// Subject this curriculum belongs to
+	SubjectID uuid.UUID `json:"subject_id"`
+	// Parent curriculum node; NULL is root
+	ParentID uuid.NullUUID `json:"parent_id"`
+	// Human-readable curriculum label
+	Label string `json:"label"`
+	// Optional standardized curriculum code
+	Code sql.NullString `json:"code"`
+	// Optional curriculum description
+	Description sql.NullString `json:"description"`
+	// Sort order within parent curriculum
+	OrderIndex int32 `json:"order_index"`
+	// Grade or level alignment
+	GradeLevel sql.NullString `json:"grade_level"`
+	// Whether curriculum unit is active
+	IsActive  bool      `json:"is_active"`
+	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
@@ -147,6 +177,8 @@ type Document struct {
 	Curricular sql.NullString `json:"curricular"`
 	// List of academic subjects associated with this document
 	Subjects []string `json:"subjects"`
+	// Curriculum unit associated with this document
+	CurriculumID uuid.NullUUID `json:"curriculum_id"`
 }
 
 type Eval struct {
@@ -204,6 +236,22 @@ type PromptTemplate struct {
 	CreatedBy   sql.NullString        `json:"created_by"`
 	CreatedAt   time.Time             `json:"created_at"`
 	UpdatedAt   time.Time             `json:"updated_at"`
+}
+
+type SchemaTemplate struct {
+	ID uuid.UUID `json:"id"`
+	// Schema purpose (eval_generation, intent_extraction, etc.)
+	SchemaType string `json:"schema_type"`
+	Version    int32  `json:"version"`
+	// JSON schema defining expected AI output
+	SchemaJson   json.RawMessage `json:"schema_json"`
+	SubjectID    uuid.NullUUID   `json:"subject_id"`
+	CurriculumID uuid.NullUUID   `json:"curriculum_id"`
+	IsActive     bool            `json:"is_active"`
+	CreatedBy    uuid.UUID       `json:"created_by"`
+	CreatedAt    time.Time       `json:"created_at"`
+	// Timestamp when version becomes immutable
+	LockedAt sql.NullTime `json:"locked_at"`
 }
 
 type Subject struct {

@@ -27,18 +27,6 @@ INSERT INTO evals (
   $1, $2, $3, $4, $5, $6, $7, $8
 ) RETURNING *;
 
--- name: UpdateEval :one
-UPDATE evals SET
-  title = COALESCE($2, title),
-  description = COALESCE($3, description),
-  difficulty = COALESCE($4, difficulty),
-  instructions = COALESCE($5, instructions),
-  rubric = COALESCE($6, rubric),
-  subject_id = COALESCE($7, subject_id),
-  updated_at = now()
-WHERE id = $1 AND status = 'draft'
-RETURNING *;
-
 -- name: PublishEval :one
 UPDATE evals SET
   status = 'published',
@@ -54,9 +42,6 @@ UPDATE evals SET
   updated_at = now()
 WHERE id = $1 AND status IN ('draft', 'published')
 RETURNING *;
-
--- name: DeleteEval :exec
-DELETE FROM evals WHERE id = $1 AND status = 'draft';
 
 -- name: SearchEvalsByTitle :many
 SELECT * FROM evals 

@@ -22,18 +22,6 @@ INSERT INTO user_answers (
   $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
--- name: UpdateUserAnswer :one
-UPDATE user_answers SET
-  selected_idx = $2,
-  is_correct = $3,
-  time_spent = COALESCE($4, time_spent),
-  hints_used = COALESCE($5, hints_used)
-WHERE id = $1
-RETURNING *;
-
--- name: DeleteUserAnswer :exec
-DELETE FROM user_answers WHERE id = $1;
-
 -- name: GetAnswersByUserAndEval :many
 SELECT ua.*, ei.prompt, ei.options, ei.correct_idx, ei.explanation
 FROM user_answers ua

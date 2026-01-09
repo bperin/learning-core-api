@@ -23,16 +23,6 @@ INSERT INTO prompt_templates (
   $1, $2, $3, $4, $5, $6, $7, $8
 ) RETURNING *;
 
--- name: UpdatePromptTemplate :one
-UPDATE prompt_templates SET
-  title = COALESCE($2, title),
-  description = COALESCE($3, description),
-  template = COALESCE($4, template),
-  metadata = COALESCE($5, metadata),
-  updated_at = now()
-WHERE id = $1
-RETURNING *;
-
 -- name: ActivatePromptTemplate :one
 UPDATE prompt_templates SET
   is_active = true,
@@ -52,9 +42,6 @@ UPDATE prompt_templates SET
   is_active = false,
   updated_at = now()
 WHERE key = $1 AND id != $2;
-
--- name: DeletePromptTemplate :exec
-DELETE FROM prompt_templates WHERE id = $1;
 
 -- name: GetLatestVersionByKey :one
 SELECT COALESCE(MAX(version), 0) as latest_version

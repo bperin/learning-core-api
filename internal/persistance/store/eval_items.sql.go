@@ -59,17 +59,6 @@ func (q *Queries) CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) 
 	return i, err
 }
 
-const deleteEvalItem = `-- name: DeleteEvalItem :exec
-DELETE FROM eval_items 
-WHERE eval_items.id = $1 
-AND eval_items.eval_id IN (SELECT e.id FROM evals e WHERE e.status = 'draft')
-`
-
-func (q *Queries) DeleteEvalItem(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteEvalItem, id)
-	return err
-}
-
 const getEvalItem = `-- name: GetEvalItem :one
 SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at FROM eval_items WHERE id = $1 LIMIT 1
 `
@@ -386,54 +375,4 @@ func (q *Queries) SearchEvalItemsByPrompt(ctx context.Context, arg SearchEvalIte
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateEvalItem = `-- name: UpdateEvalItem :one
-UPDATE eval_items SET
-  prompt = COALESCE($2, prompt),
-  options = COALESCE($3, options),
-  correct_idx = COALESCE($4, correct_idx),
-  hint = COALESCE($5, hint),
-  explanation = COALESCE($6, explanation),
-  metadata = COALESCE($7, metadata),
-  updated_at = now()
-WHERE eval_items.id = $1
-AND eval_items.eval_id IN (SELECT e.id FROM evals e WHERE e.status = 'draft')
-RETURNING id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at
-`
-
-type UpdateEvalItemParams struct {
-	ID          uuid.UUID             `json:"id"`
-	Prompt      string                `json:"prompt"`
-	Options     []string              `json:"options"`
-	CorrectIdx  int32                 `json:"correct_idx"`
-	Hint        sql.NullString        `json:"hint"`
-	Explanation sql.NullString        `json:"explanation"`
-	Metadata    pqtype.NullRawMessage `json:"metadata"`
-}
-
-func (q *Queries) UpdateEvalItem(ctx context.Context, arg UpdateEvalItemParams) (EvalItem, error) {
-	row := q.db.QueryRowContext(ctx, updateEvalItem,
-		arg.ID,
-		arg.Prompt,
-		pq.Array(arg.Options),
-		arg.CorrectIdx,
-		arg.Hint,
-		arg.Explanation,
-		arg.Metadata,
-	)
-	var i EvalItem
-	err := row.Scan(
-		&i.ID,
-		&i.EvalID,
-		&i.Prompt,
-		pq.Array(&i.Options),
-		&i.CorrectIdx,
-		&i.Hint,
-		&i.Explanation,
-		&i.Metadata,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

@@ -15,43 +15,50 @@ import (
 
 const createArtifact = `-- name: CreateArtifact :one
 INSERT INTO artifacts (
-  type, status, document_id, eval_id, eval_item_id, attempt_id, user_id,
-  text, json, model, prompt, input_hash, meta, error
+  type, status, eval_id, eval_item_id, attempt_id, reviewer_id,
+  text, output_json, model, prompt, prompt_template_id, schema_template_id,
+  model_params, prompt_render, input_hash, meta, error
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-) RETURNING id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+) RETURNING id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render
 `
 
 type CreateArtifactParams struct {
-	Type       string                `json:"type"`
-	Status     string                `json:"status"`
-	DocumentID uuid.NullUUID         `json:"document_id"`
-	EvalID     uuid.NullUUID         `json:"eval_id"`
-	EvalItemID uuid.NullUUID         `json:"eval_item_id"`
-	AttemptID  uuid.NullUUID         `json:"attempt_id"`
-	UserID     uuid.NullUUID         `json:"user_id"`
-	Text       sql.NullString        `json:"text"`
-	Json       pqtype.NullRawMessage `json:"json"`
-	Model      sql.NullString        `json:"model"`
-	Prompt     sql.NullString        `json:"prompt"`
-	InputHash  sql.NullString        `json:"input_hash"`
-	Meta       pqtype.NullRawMessage `json:"meta"`
-	Error      sql.NullString        `json:"error"`
+	Type             string                `json:"type"`
+	Status           string                `json:"status"`
+	EvalID           uuid.NullUUID         `json:"eval_id"`
+	EvalItemID       uuid.NullUUID         `json:"eval_item_id"`
+	AttemptID        uuid.NullUUID         `json:"attempt_id"`
+	ReviewerID       uuid.NullUUID         `json:"reviewer_id"`
+	Text             sql.NullString        `json:"text"`
+	OutputJson       pqtype.NullRawMessage `json:"output_json"`
+	Model            sql.NullString        `json:"model"`
+	Prompt           sql.NullString        `json:"prompt"`
+	PromptTemplateID uuid.NullUUID         `json:"prompt_template_id"`
+	SchemaTemplateID uuid.NullUUID         `json:"schema_template_id"`
+	ModelParams      pqtype.NullRawMessage `json:"model_params"`
+	PromptRender     sql.NullString        `json:"prompt_render"`
+	InputHash        sql.NullString        `json:"input_hash"`
+	Meta             pqtype.NullRawMessage `json:"meta"`
+	Error            sql.NullString        `json:"error"`
 }
 
 func (q *Queries) CreateArtifact(ctx context.Context, arg CreateArtifactParams) (Artifact, error) {
 	row := q.db.QueryRowContext(ctx, createArtifact,
 		arg.Type,
 		arg.Status,
-		arg.DocumentID,
 		arg.EvalID,
 		arg.EvalItemID,
 		arg.AttemptID,
-		arg.UserID,
+		arg.ReviewerID,
 		arg.Text,
-		arg.Json,
+		arg.OutputJson,
 		arg.Model,
 		arg.Prompt,
+		arg.PromptTemplateID,
+		arg.SchemaTemplateID,
+		arg.ModelParams,
+		arg.PromptRender,
 		arg.InputHash,
 		arg.Meta,
 		arg.Error,
@@ -61,35 +68,28 @@ func (q *Queries) CreateArtifact(ctx context.Context, arg CreateArtifactParams) 
 		&i.ID,
 		&i.Type,
 		&i.Status,
-		&i.DocumentID,
 		&i.EvalID,
 		&i.EvalItemID,
 		&i.AttemptID,
-		&i.UserID,
+		&i.ReviewerID,
 		&i.Text,
-		&i.Json,
+		&i.OutputJson,
 		&i.Model,
 		&i.Prompt,
 		&i.InputHash,
 		&i.Meta,
 		&i.Error,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.PromptTemplateID,
+		&i.SchemaTemplateID,
+		&i.ModelParams,
+		&i.PromptRender,
 	)
 	return i, err
 }
 
-const deleteArtifact = `-- name: DeleteArtifact :exec
-DELETE FROM artifacts WHERE id = $1
-`
-
-func (q *Queries) DeleteArtifact(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteArtifact, id)
-	return err
-}
-
 const getArtifact = `-- name: GetArtifact :one
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE id = $1 LIMIT 1
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetArtifact(ctx context.Context, id uuid.UUID) (Artifact, error) {
@@ -99,20 +99,22 @@ func (q *Queries) GetArtifact(ctx context.Context, id uuid.UUID) (Artifact, erro
 		&i.ID,
 		&i.Type,
 		&i.Status,
-		&i.DocumentID,
 		&i.EvalID,
 		&i.EvalItemID,
 		&i.AttemptID,
-		&i.UserID,
+		&i.ReviewerID,
 		&i.Text,
-		&i.Json,
+		&i.OutputJson,
 		&i.Model,
 		&i.Prompt,
 		&i.InputHash,
 		&i.Meta,
 		&i.Error,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.PromptTemplateID,
+		&i.SchemaTemplateID,
+		&i.ModelParams,
+		&i.PromptRender,
 	)
 	return i, err
 }
@@ -149,7 +151,7 @@ func (q *Queries) GetArtifactStats(ctx context.Context) (GetArtifactStatsRow, er
 }
 
 const getArtifactsByAttempt = `-- name: GetArtifactsByAttempt :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE attempt_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE attempt_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByAttempt(ctx context.Context, attemptID uuid.NullUUID) ([]Artifact, error) {
@@ -165,65 +167,22 @@ func (q *Queries) GetArtifactsByAttempt(ctx context.Context, attemptID uuid.Null
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getArtifactsByDocument = `-- name: GetArtifactsByDocument :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE document_id = $1 ORDER BY created_at DESC
-`
-
-func (q *Queries) GetArtifactsByDocument(ctx context.Context, documentID uuid.NullUUID) ([]Artifact, error) {
-	rows, err := q.db.QueryContext(ctx, getArtifactsByDocument, documentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Artifact
-	for rows.Next() {
-		var i Artifact
-		if err := rows.Scan(
-			&i.ID,
-			&i.Type,
-			&i.Status,
-			&i.DocumentID,
-			&i.EvalID,
-			&i.EvalItemID,
-			&i.AttemptID,
-			&i.UserID,
-			&i.Text,
-			&i.Json,
-			&i.Model,
-			&i.Prompt,
-			&i.InputHash,
-			&i.Meta,
-			&i.Error,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -239,7 +198,7 @@ func (q *Queries) GetArtifactsByDocument(ctx context.Context, documentID uuid.Nu
 }
 
 const getArtifactsByEval = `-- name: GetArtifactsByEval :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE eval_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE eval_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByEval(ctx context.Context, evalID uuid.NullUUID) ([]Artifact, error) {
@@ -255,20 +214,22 @@ func (q *Queries) GetArtifactsByEval(ctx context.Context, evalID uuid.NullUUID) 
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -284,7 +245,7 @@ func (q *Queries) GetArtifactsByEval(ctx context.Context, evalID uuid.NullUUID) 
 }
 
 const getArtifactsByEvalItem = `-- name: GetArtifactsByEvalItem :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE eval_item_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE eval_item_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByEvalItem(ctx context.Context, evalItemID uuid.NullUUID) ([]Artifact, error) {
@@ -300,20 +261,22 @@ func (q *Queries) GetArtifactsByEvalItem(ctx context.Context, evalItemID uuid.Nu
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -329,7 +292,7 @@ func (q *Queries) GetArtifactsByEvalItem(ctx context.Context, evalItemID uuid.Nu
 }
 
 const getArtifactsByInputHash = `-- name: GetArtifactsByInputHash :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts 
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts 
 WHERE input_hash = $1 
 ORDER BY created_at DESC
 `
@@ -347,20 +310,69 @@ func (q *Queries) GetArtifactsByInputHash(ctx context.Context, inputHash sql.Nul
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getArtifactsByReviewer = `-- name: GetArtifactsByReviewer :many
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE reviewer_id = $1 ORDER BY created_at DESC
+`
+
+func (q *Queries) GetArtifactsByReviewer(ctx context.Context, reviewerID uuid.NullUUID) ([]Artifact, error) {
+	rows, err := q.db.QueryContext(ctx, getArtifactsByReviewer, reviewerID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Artifact
+	for rows.Next() {
+		var i Artifact
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.Status,
+			&i.EvalID,
+			&i.EvalItemID,
+			&i.AttemptID,
+			&i.ReviewerID,
+			&i.Text,
+			&i.OutputJson,
+			&i.Model,
+			&i.Prompt,
+			&i.InputHash,
+			&i.Meta,
+			&i.Error,
+			&i.CreatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -376,7 +388,7 @@ func (q *Queries) GetArtifactsByInputHash(ctx context.Context, inputHash sql.Nul
 }
 
 const getArtifactsByStatus = `-- name: GetArtifactsByStatus :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE status = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE status = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByStatus(ctx context.Context, status string) ([]Artifact, error) {
@@ -392,20 +404,22 @@ func (q *Queries) GetArtifactsByStatus(ctx context.Context, status string) ([]Ar
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -421,7 +435,7 @@ func (q *Queries) GetArtifactsByStatus(ctx context.Context, status string) ([]Ar
 }
 
 const getArtifactsByType = `-- name: GetArtifactsByType :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE type = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE type = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByType(ctx context.Context, type_ string) ([]Artifact, error) {
@@ -437,20 +451,22 @@ func (q *Queries) GetArtifactsByType(ctx context.Context, type_ string) ([]Artif
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -466,20 +482,18 @@ func (q *Queries) GetArtifactsByType(ctx context.Context, type_ string) ([]Artif
 }
 
 const getArtifactsByTypeAndEntity = `-- name: GetArtifactsByTypeAndEntity :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts 
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts 
 WHERE type = $1 
 AND (
-  (document_id = $2 AND $2 IS NOT NULL) OR
-  (eval_id = $3 AND $3 IS NOT NULL) OR
-  (eval_item_id = $4 AND $4 IS NOT NULL) OR
-  (attempt_id = $5 AND $5 IS NOT NULL)
+  (eval_id = $2 AND $2 IS NOT NULL) OR
+  (eval_item_id = $3 AND $3 IS NOT NULL) OR
+  (attempt_id = $4 AND $4 IS NOT NULL)
 )
 ORDER BY created_at DESC
 `
 
 type GetArtifactsByTypeAndEntityParams struct {
 	Type       string        `json:"type"`
-	DocumentID uuid.NullUUID `json:"document_id"`
 	EvalID     uuid.NullUUID `json:"eval_id"`
 	EvalItemID uuid.NullUUID `json:"eval_item_id"`
 	AttemptID  uuid.NullUUID `json:"attempt_id"`
@@ -488,7 +502,6 @@ type GetArtifactsByTypeAndEntityParams struct {
 func (q *Queries) GetArtifactsByTypeAndEntity(ctx context.Context, arg GetArtifactsByTypeAndEntityParams) ([]Artifact, error) {
 	rows, err := q.db.QueryContext(ctx, getArtifactsByTypeAndEntity,
 		arg.Type,
-		arg.DocumentID,
 		arg.EvalID,
 		arg.EvalItemID,
 		arg.AttemptID,
@@ -504,65 +517,22 @@ func (q *Queries) GetArtifactsByTypeAndEntity(ctx context.Context, arg GetArtifa
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getArtifactsByUser = `-- name: GetArtifactsByUser :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts WHERE user_id = $1 ORDER BY created_at DESC
-`
-
-func (q *Queries) GetArtifactsByUser(ctx context.Context, userID uuid.NullUUID) ([]Artifact, error) {
-	rows, err := q.db.QueryContext(ctx, getArtifactsByUser, userID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Artifact
-	for rows.Next() {
-		var i Artifact
-		if err := rows.Scan(
-			&i.ID,
-			&i.Type,
-			&i.Status,
-			&i.DocumentID,
-			&i.EvalID,
-			&i.EvalItemID,
-			&i.AttemptID,
-			&i.UserID,
-			&i.Text,
-			&i.Json,
-			&i.Model,
-			&i.Prompt,
-			&i.InputHash,
-			&i.Meta,
-			&i.Error,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -578,13 +548,12 @@ func (q *Queries) GetArtifactsByUser(ctx context.Context, userID uuid.NullUUID) 
 }
 
 const getLatestArtifactByTypeAndEntity = `-- name: GetLatestArtifactByTypeAndEntity :one
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts 
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts 
 WHERE type = $1 
 AND (
-  (document_id = $2 AND $2 IS NOT NULL) OR
-  (eval_id = $3 AND $3 IS NOT NULL) OR
-  (eval_item_id = $4 AND $4 IS NOT NULL) OR
-  (attempt_id = $5 AND $5 IS NOT NULL)
+  (eval_id = $2 AND $2 IS NOT NULL) OR
+  (eval_item_id = $3 AND $3 IS NOT NULL) OR
+  (attempt_id = $4 AND $4 IS NOT NULL)
 )
 ORDER BY created_at DESC 
 LIMIT 1
@@ -592,7 +561,6 @@ LIMIT 1
 
 type GetLatestArtifactByTypeAndEntityParams struct {
 	Type       string        `json:"type"`
-	DocumentID uuid.NullUUID `json:"document_id"`
 	EvalID     uuid.NullUUID `json:"eval_id"`
 	EvalItemID uuid.NullUUID `json:"eval_item_id"`
 	AttemptID  uuid.NullUUID `json:"attempt_id"`
@@ -601,7 +569,6 @@ type GetLatestArtifactByTypeAndEntityParams struct {
 func (q *Queries) GetLatestArtifactByTypeAndEntity(ctx context.Context, arg GetLatestArtifactByTypeAndEntityParams) (Artifact, error) {
 	row := q.db.QueryRowContext(ctx, getLatestArtifactByTypeAndEntity,
 		arg.Type,
-		arg.DocumentID,
 		arg.EvalID,
 		arg.EvalItemID,
 		arg.AttemptID,
@@ -611,26 +578,28 @@ func (q *Queries) GetLatestArtifactByTypeAndEntity(ctx context.Context, arg GetL
 		&i.ID,
 		&i.Type,
 		&i.Status,
-		&i.DocumentID,
 		&i.EvalID,
 		&i.EvalItemID,
 		&i.AttemptID,
-		&i.UserID,
+		&i.ReviewerID,
 		&i.Text,
-		&i.Json,
+		&i.OutputJson,
 		&i.Model,
 		&i.Prompt,
 		&i.InputHash,
 		&i.Meta,
 		&i.Error,
 		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.PromptTemplateID,
+		&i.SchemaTemplateID,
+		&i.ModelParams,
+		&i.PromptRender,
 	)
 	return i, err
 }
 
 const listArtifacts = `-- name: ListArtifacts :many
-SELECT id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
 type ListArtifactsParams struct {
@@ -651,20 +620,22 @@ func (q *Queries) ListArtifacts(ctx context.Context, arg ListArtifactsParams) ([
 			&i.ID,
 			&i.Type,
 			&i.Status,
-			&i.DocumentID,
 			&i.EvalID,
 			&i.EvalItemID,
 			&i.AttemptID,
-			&i.UserID,
+			&i.ReviewerID,
 			&i.Text,
-			&i.Json,
+			&i.OutputJson,
 			&i.Model,
 			&i.Prompt,
 			&i.InputHash,
 			&i.Meta,
 			&i.Error,
 			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
 		); err != nil {
 			return nil, err
 		}
@@ -677,99 +648,4 @@ func (q *Queries) ListArtifacts(ctx context.Context, arg ListArtifactsParams) ([
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateArtifact = `-- name: UpdateArtifact :one
-UPDATE artifacts SET
-  status = COALESCE($2, status),
-  text = COALESCE($3, text),
-  json = COALESCE($4, json),
-  model = COALESCE($5, model),
-  prompt = COALESCE($6, prompt),
-  meta = COALESCE($7, meta),
-  error = COALESCE($8, error)
-WHERE id = $1
-RETURNING id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at
-`
-
-type UpdateArtifactParams struct {
-	ID     uuid.UUID             `json:"id"`
-	Status string                `json:"status"`
-	Text   sql.NullString        `json:"text"`
-	Json   pqtype.NullRawMessage `json:"json"`
-	Model  sql.NullString        `json:"model"`
-	Prompt sql.NullString        `json:"prompt"`
-	Meta   pqtype.NullRawMessage `json:"meta"`
-	Error  sql.NullString        `json:"error"`
-}
-
-func (q *Queries) UpdateArtifact(ctx context.Context, arg UpdateArtifactParams) (Artifact, error) {
-	row := q.db.QueryRowContext(ctx, updateArtifact,
-		arg.ID,
-		arg.Status,
-		arg.Text,
-		arg.Json,
-		arg.Model,
-		arg.Prompt,
-		arg.Meta,
-		arg.Error,
-	)
-	var i Artifact
-	err := row.Scan(
-		&i.ID,
-		&i.Type,
-		&i.Status,
-		&i.DocumentID,
-		&i.EvalID,
-		&i.EvalItemID,
-		&i.AttemptID,
-		&i.UserID,
-		&i.Text,
-		&i.Json,
-		&i.Model,
-		&i.Prompt,
-		&i.InputHash,
-		&i.Meta,
-		&i.Error,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const updateArtifactStatus = `-- name: UpdateArtifactStatus :one
-UPDATE artifacts SET
-  status = $2
-WHERE id = $1
-RETURNING id, type, status, document_id, eval_id, eval_item_id, attempt_id, user_id, text, json, model, prompt, input_hash, meta, error, created_at, updated_at
-`
-
-type UpdateArtifactStatusParams struct {
-	ID     uuid.UUID `json:"id"`
-	Status string    `json:"status"`
-}
-
-func (q *Queries) UpdateArtifactStatus(ctx context.Context, arg UpdateArtifactStatusParams) (Artifact, error) {
-	row := q.db.QueryRowContext(ctx, updateArtifactStatus, arg.ID, arg.Status)
-	var i Artifact
-	err := row.Scan(
-		&i.ID,
-		&i.Type,
-		&i.Status,
-		&i.DocumentID,
-		&i.EvalID,
-		&i.EvalItemID,
-		&i.AttemptID,
-		&i.UserID,
-		&i.Text,
-		&i.Json,
-		&i.Model,
-		&i.Prompt,
-		&i.InputHash,
-		&i.Meta,
-		&i.Error,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

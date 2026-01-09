@@ -25,7 +25,7 @@ UPDATE test_attempts SET
   feedback = $4,
   summary = $5,
   completed_at = now()
-WHERE id = $1
+WHERE id = $1 AND completed_at IS NULL
 RETURNING id, user_id, eval_id, score, total, percentage, total_time, feedback, summary, started_at, completed_at
 `
 
@@ -93,15 +93,6 @@ func (q *Queries) CreateTestAttempt(ctx context.Context, arg CreateTestAttemptPa
 		&i.CompletedAt,
 	)
 	return i, err
-}
-
-const deleteTestAttempt = `-- name: DeleteTestAttempt :exec
-DELETE FROM test_attempts WHERE id = $1
-`
-
-func (q *Queries) DeleteTestAttempt(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteTestAttempt, id)
-	return err
 }
 
 const getActiveAttempts = `-- name: GetActiveAttempts :many
@@ -490,7 +481,7 @@ UPDATE test_attempts SET
     ELSE 0 
   END,
   updated_at = now()
-WHERE id = $1
+WHERE id = $1 AND completed_at IS NULL
 RETURNING id, user_id, eval_id, score, total, percentage, total_time, feedback, summary, started_at, completed_at
 `
 
@@ -521,7 +512,7 @@ func (q *Queries) UpdateTestAttemptScore(ctx context.Context, arg UpdateTestAtte
 const updateTestAttemptTime = `-- name: UpdateTestAttemptTime :one
 UPDATE test_attempts SET
   total_time = $2
-WHERE id = $1
+WHERE id = $1 AND completed_at IS NULL
 RETURNING id, user_id, eval_id, score, total, percentage, total_time, feedback, summary, started_at, completed_at
 `
 

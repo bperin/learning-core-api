@@ -36,7 +36,7 @@ UPDATE test_attempts SET
     ELSE 0 
   END,
   updated_at = now()
-WHERE id = $1
+WHERE id = $1 AND completed_at IS NULL
 RETURNING *;
 
 -- name: CompleteTestAttempt :one
@@ -50,17 +50,14 @@ UPDATE test_attempts SET
   feedback = $4,
   summary = $5,
   completed_at = now()
-WHERE id = $1
+WHERE id = $1 AND completed_at IS NULL
 RETURNING *;
 
 -- name: UpdateTestAttemptTime :one
 UPDATE test_attempts SET
   total_time = $2
-WHERE id = $1
+WHERE id = $1 AND completed_at IS NULL
 RETURNING *;
-
--- name: DeleteTestAttempt :exec
-DELETE FROM test_attempts WHERE id = $1;
 
 -- name: GetTestAttemptWithAnswers :one
 SELECT 

@@ -52,15 +52,6 @@ func (q *Queries) CreateEvalItemReview(ctx context.Context, arg CreateEvalItemRe
 	return i, err
 }
 
-const deleteEvalItemReview = `-- name: DeleteEvalItemReview :exec
-DELETE FROM eval_item_reviews WHERE id = $1
-`
-
-func (q *Queries) DeleteEvalItemReview(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteEvalItemReview, id)
-	return err
-}
-
 const getEvalItemReview = `-- name: GetEvalItemReview :one
 SELECT id, eval_item_id, reviewer_id, verdict, reasons, comments, created_at, updated_at FROM eval_item_reviews WHERE id = $1 LIMIT 1
 `
@@ -436,41 +427,4 @@ func (q *Queries) ListEvalItemReviews(ctx context.Context, arg ListEvalItemRevie
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateEvalItemReview = `-- name: UpdateEvalItemReview :one
-UPDATE eval_item_reviews SET
-  verdict = COALESCE($2, verdict),
-  reasons = COALESCE($3, reasons),
-  comments = COALESCE($4, comments)
-WHERE id = $1
-RETURNING id, eval_item_id, reviewer_id, verdict, reasons, comments, created_at, updated_at
-`
-
-type UpdateEvalItemReviewParams struct {
-	ID       uuid.UUID      `json:"id"`
-	Verdict  ReviewVerdict  `json:"verdict"`
-	Reasons  []string       `json:"reasons"`
-	Comments sql.NullString `json:"comments"`
-}
-
-func (q *Queries) UpdateEvalItemReview(ctx context.Context, arg UpdateEvalItemReviewParams) (EvalItemReview, error) {
-	row := q.db.QueryRowContext(ctx, updateEvalItemReview,
-		arg.ID,
-		arg.Verdict,
-		pq.Array(arg.Reasons),
-		arg.Comments,
-	)
-	var i EvalItemReview
-	err := row.Scan(
-		&i.ID,
-		&i.EvalItemID,
-		&i.ReviewerID,
-		&i.Verdict,
-		pq.Array(&i.Reasons),
-		&i.Comments,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

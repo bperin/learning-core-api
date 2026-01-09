@@ -2,6 +2,7 @@ package utils
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -140,6 +141,13 @@ func SqlNullBool(b *bool) sql.NullBool {
 		return sql.NullBool{Valid: false}
 	}
 	return sql.NullBool{Bool: *b, Valid: true}
+}
+
+func SqlNullTime(t *time.Time) sql.NullTime {
+	if t == nil {
+		return sql.NullTime{Valid: false}
+	}
+	return sql.NullTime{Time: *t, Valid: true}
 }
 
 // NullBoolToPtr is already defined in conversions.go

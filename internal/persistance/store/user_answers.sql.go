@@ -55,15 +55,6 @@ func (q *Queries) CreateUserAnswer(ctx context.Context, arg CreateUserAnswerPara
 	return i, err
 }
 
-const deleteUserAnswer = `-- name: DeleteUserAnswer :exec
-DELETE FROM user_answers WHERE id = $1
-`
-
-func (q *Queries) DeleteUserAnswer(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteUserAnswer, id)
-	return err
-}
-
 const getAnswerStatsForEvalItem = `-- name: GetAnswerStatsForEvalItem :one
 SELECT 
   COUNT(*) as total_answers,
@@ -451,45 +442,4 @@ func (q *Queries) ListUserAnswers(ctx context.Context, arg ListUserAnswersParams
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateUserAnswer = `-- name: UpdateUserAnswer :one
-UPDATE user_answers SET
-  selected_idx = $2,
-  is_correct = $3,
-  time_spent = COALESCE($4, time_spent),
-  hints_used = COALESCE($5, hints_used)
-WHERE id = $1
-RETURNING id, attempt_id, eval_item_id, selected_idx, is_correct, time_spent, hints_used, created_at, updated_at
-`
-
-type UpdateUserAnswerParams struct {
-	ID          uuid.UUID     `json:"id"`
-	SelectedIdx int32         `json:"selected_idx"`
-	IsCorrect   bool          `json:"is_correct"`
-	TimeSpent   sql.NullInt32 `json:"time_spent"`
-	HintsUsed   int32         `json:"hints_used"`
-}
-
-func (q *Queries) UpdateUserAnswer(ctx context.Context, arg UpdateUserAnswerParams) (UserAnswer, error) {
-	row := q.db.QueryRowContext(ctx, updateUserAnswer,
-		arg.ID,
-		arg.SelectedIdx,
-		arg.IsCorrect,
-		arg.TimeSpent,
-		arg.HintsUsed,
-	)
-	var i UserAnswer
-	err := row.Scan(
-		&i.ID,
-		&i.AttemptID,
-		&i.EvalItemID,
-		&i.SelectedIdx,
-		&i.IsCorrect,
-		&i.TimeSpent,
-		&i.HintsUsed,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

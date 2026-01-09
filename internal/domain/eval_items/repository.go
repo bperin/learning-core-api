@@ -12,8 +12,6 @@ type Repository interface {
 	// CRUD operations
 	Create(ctx context.Context, req *CreateEvalItemRequest) (*EvalItem, error)
 	GetByID(ctx context.Context, id uuid.UUID) (*EvalItem, error)
-	Update(ctx context.Context, id uuid.UUID, req *UpdateEvalItemRequest) (*EvalItem, error)
-	Delete(ctx context.Context, id uuid.UUID) error
 
 	// Query operations
 	List(ctx context.Context, req *ListEvalItemsRequest) ([]*EvalItem, error)

@@ -178,15 +178,6 @@ func (q *Queries) DeactivatePromptTemplate(ctx context.Context, id uuid.UUID) (P
 	return i, err
 }
 
-const deletePromptTemplate = `-- name: DeletePromptTemplate :exec
-DELETE FROM prompt_templates WHERE id = $1
-`
-
-func (q *Queries) DeletePromptTemplate(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deletePromptTemplate, id)
-	return err
-}
-
 const getActivePromptTemplates = `-- name: GetActivePromptTemplates :many
 SELECT id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at FROM prompt_templates WHERE is_active = true ORDER BY key ASC
 `
@@ -518,48 +509,4 @@ func (q *Queries) SearchPromptTemplatesByTitle(ctx context.Context, arg SearchPr
 		return nil, err
 	}
 	return items, nil
-}
-
-const updatePromptTemplate = `-- name: UpdatePromptTemplate :one
-UPDATE prompt_templates SET
-  title = COALESCE($2, title),
-  description = COALESCE($3, description),
-  template = COALESCE($4, template),
-  metadata = COALESCE($5, metadata),
-  updated_at = now()
-WHERE id = $1
-RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
-`
-
-type UpdatePromptTemplateParams struct {
-	ID          uuid.UUID             `json:"id"`
-	Title       string                `json:"title"`
-	Description sql.NullString        `json:"description"`
-	Template    string                `json:"template"`
-	Metadata    pqtype.NullRawMessage `json:"metadata"`
-}
-
-func (q *Queries) UpdatePromptTemplate(ctx context.Context, arg UpdatePromptTemplateParams) (PromptTemplate, error) {
-	row := q.db.QueryRowContext(ctx, updatePromptTemplate,
-		arg.ID,
-		arg.Title,
-		arg.Description,
-		arg.Template,
-		arg.Metadata,
-	)
-	var i PromptTemplate
-	err := row.Scan(
-		&i.ID,
-		&i.Key,
-		&i.Version,
-		&i.IsActive,
-		&i.Title,
-		&i.Description,
-		&i.Template,
-		&i.Metadata,
-		&i.CreatedBy,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

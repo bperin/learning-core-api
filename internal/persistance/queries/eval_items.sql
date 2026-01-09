@@ -14,24 +14,6 @@ INSERT INTO eval_items (
   $1, $2, $3, $4, $5, $6, $7
 ) RETURNING *;
 
--- name: UpdateEvalItem :one
-UPDATE eval_items SET
-  prompt = COALESCE($2, prompt),
-  options = COALESCE($3, options),
-  correct_idx = COALESCE($4, correct_idx),
-  hint = COALESCE($5, hint),
-  explanation = COALESCE($6, explanation),
-  metadata = COALESCE($7, metadata),
-  updated_at = now()
-WHERE eval_items.id = $1
-AND eval_items.eval_id IN (SELECT e.id FROM evals e WHERE e.status = 'draft')
-RETURNING *;
-
--- name: DeleteEvalItem :exec
-DELETE FROM eval_items 
-WHERE eval_items.id = $1 
-AND eval_items.eval_id IN (SELECT e.id FROM evals e WHERE e.status = 'draft');
-
 -- name: GetEvalItemsWithAnswerStats :many
 SELECT 
   ei.*,

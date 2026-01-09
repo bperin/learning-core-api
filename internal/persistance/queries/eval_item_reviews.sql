@@ -20,17 +20,6 @@ INSERT INTO eval_item_reviews (
   $1, $2, $3, $4, $5
 ) RETURNING *;
 
--- name: UpdateEvalItemReview :one
-UPDATE eval_item_reviews SET
-  verdict = COALESCE($2, verdict),
-  reasons = COALESCE($3, reasons),
-  comments = COALESCE($4, comments)
-WHERE id = $1
-RETURNING *;
-
--- name: DeleteEvalItemReview :exec
-DELETE FROM eval_item_reviews WHERE id = $1;
-
 -- name: GetReviewsByEvalItemAndReviewer :one
 SELECT * FROM eval_item_reviews 
 WHERE eval_item_id = $1 AND reviewer_id = $2 

@@ -8,16 +8,16 @@ import (
 
 // EvalItem represents a single question or prompt within an evaluation
 type EvalItem struct {
-	ID          uuid.UUID `json:"id"`
-	EvalID      uuid.UUID `json:"eval_id"`
-	Prompt      string    `json:"prompt"`
-	Options     []string  `json:"options"`
-	CorrectIdx  int32     `json:"correct_idx"`
-	Hint        *string   `json:"hint,omitempty"`
-	Explanation *string   `json:"explanation,omitempty"`
+	ID          uuid.UUID              `json:"id"`
+	EvalID      uuid.UUID              `json:"eval_id"`
+	Prompt      string                 `json:"prompt"`
+	Options     []string               `json:"options"`
+	CorrectIdx  int32                  `json:"correct_idx"`
+	Hint        *string                `json:"hint,omitempty"`
+	Explanation *string                `json:"explanation,omitempty"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAt   time.Time              `json:"created_at"`
+	UpdatedAt   time.Time              `json:"updated_at"`
 }
 
 // CreateEvalItemRequest represents the data needed to create a new evaluation item
@@ -26,16 +26,6 @@ type CreateEvalItemRequest struct {
 	Prompt      string                 `json:"prompt" validate:"required,min=1,max=2000"`
 	Options     []string               `json:"options" validate:"required,min=2,max=10"`
 	CorrectIdx  int32                  `json:"correct_idx" validate:"required,min=0"`
-	Hint        *string                `json:"hint,omitempty" validate:"omitempty,max=500"`
-	Explanation *string                `json:"explanation,omitempty" validate:"omitempty,max=1000"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-}
-
-// UpdateEvalItemRequest represents the data that can be updated for an evaluation item
-type UpdateEvalItemRequest struct {
-	Prompt      *string                `json:"prompt,omitempty" validate:"omitempty,min=1,max=2000"`
-	Options     []string               `json:"options,omitempty" validate:"omitempty,min=2,max=10"`
-	CorrectIdx  *int32                 `json:"correct_idx,omitempty" validate:"omitempty,min=0"`
 	Hint        *string                `json:"hint,omitempty" validate:"omitempty,max=500"`
 	Explanation *string                `json:"explanation,omitempty" validate:"omitempty,max=1000"`
 	Metadata    map[string]interface{} `json:"metadata,omitempty"`
@@ -60,38 +50,19 @@ func (r *CreateEvalItemRequest) Validate() error {
 	if r.EvalID == uuid.Nil {
 		return ErrInvalidEvalID
 	}
-	
+
 	if len(r.Prompt) == 0 {
 		return ErrEmptyPrompt
 	}
-	
+
 	if len(r.Options) < 2 {
 		return ErrInsufficientOptions
 	}
-	
+
 	if r.CorrectIdx < 0 || int(r.CorrectIdx) >= len(r.Options) {
 		return ErrInvalidCorrectIndex
 	}
-	
-	return nil
-}
 
-// Validate validates the UpdateEvalItemRequest
-func (r *UpdateEvalItemRequest) Validate() error {
-	if r.Prompt != nil && len(*r.Prompt) == 0 {
-		return ErrEmptyPrompt
-	}
-	
-	if r.Options != nil && len(r.Options) < 2 {
-		return ErrInsufficientOptions
-	}
-	
-	if r.CorrectIdx != nil && r.Options != nil {
-		if *r.CorrectIdx < 0 || int(*r.CorrectIdx) >= len(r.Options) {
-			return ErrInvalidCorrectIndex
-		}
-	}
-	
 	return nil
 }
 

@@ -94,15 +94,6 @@ func (q *Queries) CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, e
 	return i, err
 }
 
-const deleteEval = `-- name: DeleteEval :exec
-DELETE FROM evals WHERE id = $1 AND status = 'draft'
-`
-
-func (q *Queries) DeleteEval(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.ExecContext(ctx, deleteEval, id)
-	return err
-}
-
 const getDraftEvals = `-- name: GetDraftEvals :many
 SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = 'draft' ORDER BY created_at DESC
 `
@@ -568,56 +559,4 @@ func (q *Queries) SearchEvalsByTitle(ctx context.Context, arg SearchEvalsByTitle
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateEval = `-- name: UpdateEval :one
-UPDATE evals SET
-  title = COALESCE($2, title),
-  description = COALESCE($3, description),
-  difficulty = COALESCE($4, difficulty),
-  instructions = COALESCE($5, instructions),
-  rubric = COALESCE($6, rubric),
-  subject_id = COALESCE($7, subject_id),
-  updated_at = now()
-WHERE id = $1 AND status = 'draft'
-RETURNING id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at
-`
-
-type UpdateEvalParams struct {
-	ID           uuid.UUID             `json:"id"`
-	Title        string                `json:"title"`
-	Description  sql.NullString        `json:"description"`
-	Difficulty   sql.NullString        `json:"difficulty"`
-	Instructions sql.NullString        `json:"instructions"`
-	Rubric       pqtype.NullRawMessage `json:"rubric"`
-	SubjectID    uuid.NullUUID         `json:"subject_id"`
-}
-
-func (q *Queries) UpdateEval(ctx context.Context, arg UpdateEvalParams) (Eval, error) {
-	row := q.db.QueryRowContext(ctx, updateEval,
-		arg.ID,
-		arg.Title,
-		arg.Description,
-		arg.Difficulty,
-		arg.Instructions,
-		arg.Rubric,
-		arg.SubjectID,
-	)
-	var i Eval
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Description,
-		&i.Status,
-		&i.Difficulty,
-		&i.Instructions,
-		&i.Rubric,
-		&i.SubjectID,
-		&i.UserID,
-		&i.PublishedAt,
-		&i.ArchivedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
 }

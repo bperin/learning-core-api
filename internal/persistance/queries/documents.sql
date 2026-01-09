@@ -16,9 +16,9 @@ SELECT * FROM documents ORDER BY created_at DESC LIMIT $1 OFFSET $2;
 -- name: CreateDocument :one
 INSERT INTO documents (
   filename, title, mime_type, content, storage_path, rag_status, 
-  user_id, subject_id, curricular, subjects
+  user_id, subject_id, curriculum_id, curricular, subjects
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 ) RETURNING *;
 
 -- name: UpdateDocument :one
@@ -28,8 +28,9 @@ UPDATE documents SET
   storage_path = COALESCE($4, storage_path),
   rag_status = COALESCE($5, rag_status),
   subject_id = COALESCE($6, subject_id),
-  curricular = COALESCE($7, curricular),
-  subjects = COALESCE($8, subjects),
+  curriculum_id = COALESCE($7, curriculum_id),
+  curricular = COALESCE($8, curricular),
+  subjects = COALESCE($9, subjects),
   updated_at = now()
 WHERE id = $1
 RETURNING *;
@@ -53,4 +54,9 @@ LIMIT @page_limit OFFSET @page_offset;
 -- name: GetDocumentsBySubjects :many
 SELECT * FROM documents 
 WHERE subjects && $1::text[]
+ORDER BY created_at DESC;
+
+-- name: GetDocumentsByCurriculum :many
+SELECT * FROM documents
+WHERE curriculum_id = $1
 ORDER BY created_at DESC;
