@@ -25,3 +25,6 @@ go.work.sum
 .env
 
 tmp/learning-api
+tmp/main
+test_docs/test.pdf
+tmp/main
