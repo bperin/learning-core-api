@@ -11,7 +11,10 @@ import (
 
 type contextKey string
 
-const UserIDKey contextKey = "user_id"
+const (
+	UserIDKey contextKey = "user_id"
+	RolesKey  contextKey = "roles"
+)
 
 func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -53,7 +56,23 @@ func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 				return
 			}
 
+			// Extract roles from claims (expected as []interface{} or string)
+			var roles []string
+			if rClaim, ok := claims["roles"]; ok {
+				switch v := rClaim.(type) {
+				case []interface{}:
+					for _, r := range v {
+						if s, ok := r.(string); ok {
+							roles = append(roles, s)
+						}
+					}
+				case string:
+					roles = strings.Split(v, ",")
+				}
+			}
+
 			ctx := context.WithValue(r.Context(), UserIDKey, userID)
+			ctx = context.WithValue(ctx, RolesKey, roles)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

@@ -11,7 +11,7 @@ import (
 
 	"learning-core-api/internal/config"
 	"learning-core-api/internal/infra"
-	"learning-core-api/internal/store"
+	"learning-core-api/internal/persistance/store"
 )
 
 func main() {

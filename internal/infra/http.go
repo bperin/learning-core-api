@@ -7,10 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
-	"learning-core-api/internal/documents"
-	"learning-core-api/internal/filesearch"
-	"learning-core-api/internal/store"
-	"learning-core-api/internal/subjects"
+	"learning-core-api/internal/persistance/store"
 )
 
 type RouterDeps struct {
@@ -43,21 +40,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 			return
 		}
 
-		subjectRepo := subjects.NewRepository(deps.Queries)
-		subjectService := subjects.NewService(subjectRepo)
-		subjectHandler := subjects.NewHandler(subjectService)
-
-		documentRepo := documents.NewRepository(deps.Queries)
-		documentService := documents.NewService(documentRepo)
-		documentHandler := documents.NewHandler(documentService)
-
-		fileSearchRepo := filesearch.NewRepository(deps.Queries)
-		fileSearchService := filesearch.NewService(deps.GoogleAPIKey, fileSearchRepo, subjectRepo, documentRepo)
-		fileSearchHandler := filesearch.NewHandler(fileSearchService)
-
-		r.Route("/subjects", subjectHandler.RegisterRoutes)
-		r.Route("/documents", documentHandler.RegisterRoutes)
-		r.Route("/file-search", fileSearchHandler.RegisterRoutes)
 	})
 
 	return r

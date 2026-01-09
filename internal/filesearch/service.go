@@ -13,8 +13,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"learning-core-api/internal/documents"
-	"learning-core-api/internal/subjects"
+	"learning-core-api/internal/domain/documents"
+	"learning-core-api/internal/domain/subjects"
 
 	"github.com/google/uuid"
 	"google.golang.org/genai"
