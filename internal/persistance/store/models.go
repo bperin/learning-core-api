@@ -6,11 +6,109 @@ package store
 
 import (
 	"database/sql"
+	"database/sql/driver"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
 )
+
+// Types of artifacts that can be generated in the system
+type ArtifactType string
+
+const (
+	ArtifactTypeINTENTS        ArtifactType = "INTENTS"
+	ArtifactTypePLAN           ArtifactType = "PLAN"
+	ArtifactTypeEVAL           ArtifactType = "EVAL"
+	ArtifactTypeEVALITEM       ArtifactType = "EVAL_ITEM"
+	ArtifactTypePROMPT         ArtifactType = "PROMPT"
+	ArtifactTypePROMPTPOLICY   ArtifactType = "PROMPT_POLICY"
+	ArtifactTypeQUALITYMETRICS ArtifactType = "QUALITY_METRICS"
+	ArtifactTypeHINT           ArtifactType = "HINT"
+	ArtifactTypeSUMMARY        ArtifactType = "SUMMARY"
+	ArtifactTypeOUTLINE        ArtifactType = "OUTLINE"
+	ArtifactTypeOTHER          ArtifactType = "OTHER"
+)
+
+func (e *ArtifactType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ArtifactType(s)
+	case string:
+		*e = ArtifactType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ArtifactType: %T", src)
+	}
+	return nil
+}
+
+type NullArtifactType struct {
+	ArtifactType ArtifactType `json:"artifact_type"`
+	Valid        bool         `json:"valid"` // Valid is true if ArtifactType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullArtifactType) Scan(value interface{}) error {
+	if value == nil {
+		ns.ArtifactType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ArtifactType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullArtifactType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ArtifactType), nil
+}
+
+// Possible verdicts for eval item reviews
+type ReviewVerdict string
+
+const (
+	ReviewVerdictAPPROVED      ReviewVerdict = "APPROVED"
+	ReviewVerdictREJECTED      ReviewVerdict = "REJECTED"
+	ReviewVerdictNEEDSREVISION ReviewVerdict = "NEEDS_REVISION"
+)
+
+func (e *ReviewVerdict) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ReviewVerdict(s)
+	case string:
+		*e = ReviewVerdict(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ReviewVerdict: %T", src)
+	}
+	return nil
+}
+
+type NullReviewVerdict struct {
+	ReviewVerdict ReviewVerdict `json:"review_verdict"`
+	Valid         bool          `json:"valid"` // Valid is true if ReviewVerdict is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullReviewVerdict) Scan(value interface{}) error {
+	if value == nil {
+		ns.ReviewVerdict, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ReviewVerdict.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullReviewVerdict) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ReviewVerdict), nil
+}
 
 type Artifact struct {
 	ID         uuid.UUID             `json:"id"`
@@ -29,6 +127,8 @@ type Artifact struct {
 	Meta       pqtype.NullRawMessage `json:"meta"`
 	Error      sql.NullString        `json:"error"`
 	CreatedAt  time.Time             `json:"created_at"`
+	// When the artifact was last updated
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type Document struct {
@@ -74,16 +174,22 @@ type EvalItem struct {
 	Hint        sql.NullString        `json:"hint"`
 	Explanation sql.NullString        `json:"explanation"`
 	Metadata    pqtype.NullRawMessage `json:"metadata"`
+	// When the eval item was created
+	CreatedAt time.Time `json:"created_at"`
+	// When the eval item was last updated
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type EvalItemReview struct {
 	ID         uuid.UUID      `json:"id"`
 	EvalItemID uuid.UUID      `json:"eval_item_id"`
 	ReviewerID uuid.UUID      `json:"reviewer_id"`
-	Verdict    string         `json:"verdict"`
+	Verdict    ReviewVerdict  `json:"verdict"`
 	Reasons    []string       `json:"reasons"`
 	Comments   sql.NullString `json:"comments"`
 	CreatedAt  time.Time      `json:"created_at"`
+	// When the review was last updated
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type PromptTemplate struct {
@@ -124,12 +230,17 @@ type TestAttempt struct {
 }
 
 type User struct {
-	ID        uuid.UUID `json:"id"`
-	Email     string    `json:"email"`
-	Password  string    `json:"password"`
+	ID       uuid.UUID `json:"id"`
+	Email    string    `json:"email"`
+	Password string    `json:"password"`
+	// True if the user has administrative privileges
 	IsAdmin   bool      `json:"is_admin"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+	// True if the user is a learner/student
+	IsLearner bool `json:"is_learner"`
+	// True if the user is a teacher/instructor
+	IsTeacher bool `json:"is_teacher"`
 }
 
 type UserAnswer struct {
@@ -141,4 +252,6 @@ type UserAnswer struct {
 	TimeSpent   sql.NullInt32 `json:"time_spent"`
 	HintsUsed   int32         `json:"hints_used"`
 	CreatedAt   time.Time     `json:"created_at"`
+	// When the user answer was last updated
+	UpdatedAt time.Time `json:"updated_at"`
 }

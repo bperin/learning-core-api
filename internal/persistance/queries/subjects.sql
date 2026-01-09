@@ -26,3 +26,22 @@ RETURNING *;
 -- name: DeleteSubject :exec
 DELETE FROM subjects
 WHERE id = $1;
+
+-- name: ListAllSubjects :many
+SELECT * FROM subjects
+ORDER BY name;
+
+-- name: SearchSubjectsByName :many
+SELECT * FROM subjects
+WHERE name ILIKE '%' || $1 || '%'
+ORDER BY name
+LIMIT $2 OFFSET $3;
+
+-- name: CountSubjectsByUser :one
+SELECT COUNT(*) FROM subjects
+WHERE user_id = $1;
+
+-- name: GetSubjectByUserAndName :one
+SELECT * FROM subjects
+WHERE user_id = $1 AND name = $2
+LIMIT 1;
