@@ -37,16 +37,20 @@ func (r *repositoryImpl) Create(ctx context.Context, req CreateDocumentRequest) 
 	}
 
 	params := store.CreateDocumentParams{
-		Filename:    req.Filename,
-		Title:       utils.SqlNullString(req.Title),
-		MimeType:    utils.SqlNullString(req.MimeType),
-		Content:     utils.SqlNullString(req.Content),
-		StoragePath: utils.SqlNullString(req.StoragePath),
-		RagStatus:   req.RagStatus,
-		UserID:      req.UserID,
-		SubjectID:   utils.SqlNullUUID(req.SubjectID),
-		Curricular:  utils.SqlNullString(req.Curricular),
-		Subjects:    req.Subjects,
+		Filename:          req.Filename,
+		Title:             utils.SqlNullString(req.Title),
+		MimeType:          utils.SqlNullString(req.MimeType),
+		Content:           utils.SqlNullString(req.Content),
+		StoragePath:       utils.SqlNullString(req.StoragePath),
+		StorageBucket:     utils.SqlNullString(req.StorageBucket),
+		FileStoreName:     utils.SqlNullString(req.FileStoreName),
+		FileStoreFileName: utils.SqlNullString(req.FileStoreFileName),
+		RagStatus:         req.RagStatus,
+		UserID:            req.UserID,
+		SubjectID:         utils.SqlNullUUID(req.SubjectID),
+		CurriculumID:      utils.SqlNullUUID(req.CurriculumID),
+		Curricular:        utils.SqlNullString(req.Curricular),
+		Subjects:          req.Subjects,
 	}
 
 	doc, err := r.queries.CreateDocument(ctx, params)
@@ -144,14 +148,18 @@ func (r *repositoryImpl) Search(ctx context.Context, title string, limit, offset
 // Update updates an existing document
 func (r *repositoryImpl) Update(ctx context.Context, id uuid.UUID, req UpdateDocumentRequest) (*Document, error) {
 	params := store.UpdateDocumentParams{
-		ID:          id,
-		Title:       utils.SqlNullString(req.Title),
-		Content:     utils.SqlNullString(req.Content),
-		StoragePath: utils.SqlNullString(req.StoragePath),
-		RagStatus:   utils.NullStringToString(utils.SqlNullString(req.RagStatus)),
-		SubjectID:   utils.SqlNullUUID(req.SubjectID),
-		Curricular:  utils.SqlNullString(req.Curricular),
-		Subjects:    req.Subjects,
+		ID:                id,
+		Title:             utils.SqlNullString(req.Title),
+		Content:           utils.SqlNullString(req.Content),
+		StoragePath:       utils.SqlNullString(req.StoragePath),
+		StorageBucket:     utils.SqlNullString(req.StorageBucket),
+		FileStoreName:     utils.SqlNullString(req.FileStoreName),
+		FileStoreFileName: utils.SqlNullString(req.FileStoreFileName),
+		RagStatus:         utils.NullStringToString(utils.SqlNullString(req.RagStatus)),
+		SubjectID:         utils.SqlNullUUID(req.SubjectID),
+		CurriculumID:      utils.SqlNullUUID(req.CurriculumID),
+		Curricular:        utils.SqlNullString(req.Curricular),
+		Subjects:          req.Subjects,
 	}
 
 	doc, err := r.queries.UpdateDocument(ctx, params)
@@ -229,19 +237,23 @@ func (r *repositoryImpl) Filter(ctx context.Context, filter DocumentFilter) ([]*
 
 func (r *repositoryImpl) toDomain(doc store.Document) *Document {
 	return &Document{
-		ID:          doc.ID,
-		Filename:    doc.Filename,
-		Title:       utils.NullStringToPtr(doc.Title),
-		MimeType:    utils.NullStringToPtr(doc.MimeType),
-		Content:     utils.NullStringToPtr(doc.Content),
-		StoragePath: utils.NullStringToPtr(doc.StoragePath),
-		RagStatus:   doc.RagStatus,
-		UserID:      doc.UserID,
-		SubjectID:   utils.NullUUIDToPtr(doc.SubjectID),
-		CreatedAt:   doc.CreatedAt,
-		UpdatedAt:   doc.UpdatedAt,
-		Curricular:  utils.NullStringToPtr(doc.Curricular),
-		Subjects:    doc.Subjects,
+		ID:                doc.ID,
+		Filename:          doc.Filename,
+		Title:             utils.NullStringToPtr(doc.Title),
+		MimeType:          utils.NullStringToPtr(doc.MimeType),
+		Content:           utils.NullStringToPtr(doc.Content),
+		StoragePath:       utils.NullStringToPtr(doc.StoragePath),
+		StorageBucket:     utils.NullStringToPtr(doc.StorageBucket),
+		FileStoreName:     utils.NullStringToPtr(doc.FileStoreName),
+		FileStoreFileName: utils.NullStringToPtr(doc.FileStoreFileName),
+		RagStatus:         doc.RagStatus,
+		UserID:            doc.UserID,
+		SubjectID:         utils.NullUUIDToPtr(doc.SubjectID),
+		CurriculumID:      utils.NullUUIDToPtr(doc.CurriculumID),
+		CreatedAt:         doc.CreatedAt,
+		UpdatedAt:         doc.UpdatedAt,
+		Curricular:        utils.NullStringToPtr(doc.Curricular),
+		Subjects:          doc.Subjects,
 	}
 }
 

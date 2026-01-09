@@ -8,13 +8,15 @@ import (
 )
 
 type Config struct {
-	Port              string
-	DBURL             string
-	GoogleProjectID   string
-	PubSubTopicID     string
-	GoogleAPIKey      string
-	JWTSecret         string
-	LearningStoreName string
+	Port            string
+	DBURL           string
+	GoogleProjectID string
+	PubSubTopicID   string
+	GoogleAPIKey    string
+	JWTSecret       string
+	FileStoreName   string
+	GCSBucketName   string
+	SignedURLTTL    string
 }
 
 func Load() *Config {
@@ -23,12 +25,14 @@ func Load() *Config {
 	}
 
 	return &Config{
-		Port:              os.Getenv("PORT"),
-		DBURL:             os.Getenv("DB_URL"),
-		GoogleProjectID:   os.Getenv("GOOGLE_PROJECT_ID"),
-		PubSubTopicID:     os.Getenv("PUBSUB_TOPIC_ID"),
-		GoogleAPIKey:      os.Getenv("GOOGLE_API_KEY"),
-		JWTSecret:         os.Getenv("JWT_SECRET"),
-		LearningStoreName: os.Getenv("LEARNING_STORE_NAME"),
+		Port:            os.Getenv("PORT"),
+		DBURL:           os.Getenv("DB_URL"),
+		GoogleProjectID: os.Getenv("GOOGLE_PROJECT_ID"),
+		PubSubTopicID:   os.Getenv("PUBSUB_TOPIC_ID"),
+		GoogleAPIKey:    os.Getenv("GOOGLE_API_KEY"),
+		JWTSecret:       os.Getenv("JWT_SECRET"),
+		FileStoreName:   os.Getenv("FILE_STORE_NAME"),
+		GCSBucketName:   os.Getenv("GCS_BUCKET_NAME"),
+		SignedURLTTL:    os.Getenv("GCS_SIGNED_URL_TTL"),
 	}
 }

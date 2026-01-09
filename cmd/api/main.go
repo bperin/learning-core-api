@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"learning-core-api/internal/config"
+	"learning-core-api/internal/gcp"
 	"learning-core-api/internal/infra"
 	"learning-core-api/internal/persistance/store"
 )
@@ -28,6 +29,7 @@ func main() {
 
 	// 2. Load Config
 	cfg := config.Load()
+	logConfig(cfg)
 
 	// 3. Connect to Database
 	db, err := infra.ConnectDB(cfg.DBURL)
@@ -48,6 +50,22 @@ func main() {
 
 	// 5. Start HTTP Server
 	queries := store.New(db)
+	if cfg.GCSBucketName != "" && cfg.FileStoreName != "" {
+		gcsService, err := gcp.NewGCSServiceFromConfig(ctx, cfg)
+		if err != nil {
+			log.Printf("Warning: could not initialize gcs service: %v", err)
+		} else {
+			defer gcsService.Close()
+			_, err := gcp.NewFileServiceFromConfig(ctx, cfg, gcsService)
+			if err != nil {
+				log.Printf("Warning: could not initialize file service for store %q: %v", cfg.FileStoreName, err)
+			} else {
+				log.Println("File service initialized")
+			}
+		}
+	} else {
+		log.Println("File service not initialized (missing bucket or store name)")
+	}
 	router := infra.NewRouter(infra.RouterDeps{
 		JWTSecret:    cfg.JWTSecret,
 		Queries:      queries,
@@ -78,4 +96,37 @@ func main() {
 	}
 
 	log.Println("Server exiting")
+}
+
+func logConfig(cfg *config.Config) {
+	if cfg == nil {
+		log.Println("Config: <nil>")
+		return
+	}
+	log.Printf(
+		"Config loaded: port=%s db_url=%s project_id=%s pubsub_topic=%s file_store_name=%s gcs_bucket=%s signed_url_ttl=%s google_api_key=%s jwt_secret=%s",
+		cfg.Port,
+		redact(cfg.DBURL),
+		cfg.GoogleProjectID,
+		cfg.PubSubTopicID,
+		cfg.FileStoreName,
+		cfg.GCSBucketName,
+		cfg.SignedURLTTL,
+		redact(cfg.GoogleAPIKey),
+		redact(cfg.JWTSecret),
+	)
+
+	if creds := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"); creds != "" {
+		log.Printf("GOOGLE_APPLICATION_CREDENTIALS=%s", creds)
+	}
+}
+
+func redact(value string) string {
+	if value == "" {
+		return "<empty>"
+	}
+	if len(value) <= 4 {
+		return "***"
+	}
+	return "***" + value[len(value)-4:]
 }

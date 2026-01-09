@@ -179,6 +179,12 @@ type Document struct {
 	Subjects []string `json:"subjects"`
 	// Curriculum unit associated with this document
 	CurriculumID uuid.NullUUID `json:"curriculum_id"`
+	// GCS bucket storing the source file
+	StorageBucket sql.NullString `json:"storage_bucket"`
+	// File search store name for retrieval
+	FileStoreName sql.NullString `json:"file_store_name"`
+	// File name returned by file search store
+	FileStoreFileName sql.NullString `json:"file_store_file_name"`
 }
 
 type Eval struct {

@@ -6,7 +6,7 @@ endif
 BINARY_NAME=learning-api
 MIGRATIONS_DIR=internal/persistance/migrations
 
-.PHONY: build run clean sqlc test swagger tidy migrate-up migrate-down migrate-status db-dump
+.PHONY: build run clean sqlc test swagger tidy migrate-up migrate-down migrate-status db-dump test-gcp-integration
 
 tidy:
 	@echo "Tidying go modules..."
@@ -45,6 +45,10 @@ test-coverage:
 test-verbose:
 	@echo "Running tests with verbose output..."
 	@go test -v ./...
+
+test-gcp-integration:
+	@echo "Running GCP file service integration test..."
+	@go test ./internal/gcp -run TestFileServiceUploadIntegration -v
 
 # Postgres targets (Real DB)
 migrate-up:
