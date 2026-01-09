@@ -13,18 +13,20 @@ import (
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
-  id, email, password, is_admin
+  id, email, password, is_admin, is_learner, is_teacher
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5, $6
 )
-RETURNING id, email, password, is_admin, created_at, updated_at
+RETURNING id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher
 `
 
 type CreateUserParams struct {
-	ID       uuid.UUID `json:"id"`
-	Email    string    `json:"email"`
-	Password string    `json:"password"`
-	IsAdmin  bool      `json:"is_admin"`
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	IsAdmin   bool      `json:"is_admin"`
+	IsLearner bool      `json:"is_learner"`
+	IsTeacher bool      `json:"is_teacher"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -33,6 +35,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Email,
 		arg.Password,
 		arg.IsAdmin,
+		arg.IsLearner,
+		arg.IsTeacher,
 	)
 	var i User
 	err := row.Scan(
@@ -42,6 +46,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsLearner,
+		&i.IsTeacher,
 	)
 	return i, err
 }
@@ -57,7 +63,7 @@ func (q *Queries) DeleteUser(ctx context.Context, id uuid.UUID) error {
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, email, password, is_admin, created_at, updated_at FROM users
+SELECT id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher FROM users
 WHERE id = $1 LIMIT 1
 `
 
@@ -71,12 +77,14 @@ func (q *Queries) GetUser(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsLearner,
+		&i.IsTeacher,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password, is_admin, created_at, updated_at FROM users
+SELECT id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher FROM users
 WHERE email = $1 LIMIT 1
 `
 
@@ -90,12 +98,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.IsAdmin,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsLearner,
+		&i.IsTeacher,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, email, password, is_admin, created_at, updated_at FROM users
+SELECT id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher FROM users
 ORDER BY created_at DESC
 `
 
@@ -115,6 +125,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.IsAdmin,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IsLearner,
+			&i.IsTeacher,
 		); err != nil {
 			return nil, err
 		}
