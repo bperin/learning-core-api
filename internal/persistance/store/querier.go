@@ -22,7 +22,6 @@ type Querier interface {
 	CreateEvalItemReview(ctx context.Context, arg CreateEvalItemReviewParams) (EvalItemReview, error)
 	CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (PromptTemplate, error)
 	CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (PromptTemplate, error)
-	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateSubject(ctx context.Context, arg CreateSubjectParams) (Subject, error)
 	CreateTestAttempt(ctx context.Context, arg CreateTestAttemptParams) (TestAttempt, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -35,12 +34,10 @@ type Querier interface {
 	DeleteEvalItem(ctx context.Context, id uuid.UUID) error
 	DeleteEvalItemReview(ctx context.Context, id uuid.UUID) error
 	DeletePromptTemplate(ctx context.Context, id uuid.UUID) error
-	DeleteSession(ctx context.Context, token string) error
 	DeleteSubject(ctx context.Context, id uuid.UUID) error
 	DeleteTestAttempt(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteUserAnswer(ctx context.Context, id uuid.UUID) error
-	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
 	GetActiveAttempts(ctx context.Context) ([]TestAttempt, error)
 	GetActivePromptTemplates(ctx context.Context) ([]PromptTemplate, error)
 	GetAnswerStatsForEvalItem(ctx context.Context, evalItemID uuid.UUID) (GetAnswerStatsForEvalItemRow, error)
@@ -95,7 +92,6 @@ type Querier interface {
 	GetReviewsByReviewer(ctx context.Context, reviewerID uuid.UUID) ([]EvalItemReview, error)
 	GetReviewsByVerdict(ctx context.Context, verdict ReviewVerdict) ([]EvalItemReview, error)
 	GetReviewsWithEvalItemDetails(ctx context.Context, arg GetReviewsWithEvalItemDetailsParams) ([]GetReviewsWithEvalItemDetailsRow, error)
-	GetSessionByToken(ctx context.Context, token string) (Session, error)
 	GetSubject(ctx context.Context, id uuid.UUID) (Subject, error)
 	GetTestAttempt(ctx context.Context, id uuid.UUID) (TestAttempt, error)
 	GetTestAttemptWithAnswers(ctx context.Context, id uuid.UUID) (GetTestAttemptWithAnswersRow, error)
