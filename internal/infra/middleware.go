@@ -16,6 +16,13 @@ const (
 	RolesKey  contextKey = "roles"
 )
 
+// Role constants
+const (
+	RoleAdmin   = "admin"
+	RoleTeacher = "teacher"
+	RoleLearner = "learner"
+)
+
 func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -56,7 +63,7 @@ func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			// Extract roles from claims (expected as []interface{} or string)
+			// Extract roles from claims
 			var roles []string
 			if rClaim, ok := claims["roles"]; ok {
 				switch v := rClaim.(type) {
