@@ -28,9 +28,23 @@ sqlc:
 	@echo "Generating code with sqlc..."
 	@go run github.com/sqlc-dev/sqlc/cmd/sqlc generate
 
+swagger:
+	@echo "Generating swagger docs..."
+	@go run github.com/swaggo/swag/cmd/swag init -g cmd/api/main.go -o ./docs
+	@echo "Converting to OpenAPI 3.0..."
+	@go run internal/tools/convert_swagger.go
+
 test:
 	@echo "Running tests..."
 	@go test ./...
+
+test-coverage:
+	@echo "Running tests with coverage..."
+	@go test -v -cover ./...
+
+test-verbose:
+	@echo "Running tests with verbose output..."
+	@go test -v ./...
 
 # Postgres targets (Real DB)
 migrate-up:

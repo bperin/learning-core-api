@@ -9,7 +9,6 @@ import (
 // User represents a user in the system
 type User struct {
 	ID          uuid.UUID `json:"id"`
-	TenantID    uuid.UUID `json:"tenant_id"`
 	Email       string    `json:"email"`
 	DisplayName *string   `json:"display_name,omitempty"`
 	IsActive    bool      `json:"is_active"`
@@ -32,24 +31,10 @@ const (
 	UserRoleLearner    UserRoleType = "LEARNER"
 )
 
-// Tenant represents a tenant in the system
-type Tenant struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 // CreateUserRequest represents the request to create a user
 type CreateUserRequest struct {
-	TenantID    uuid.UUID `json:"tenant_id"`
-	Email       string    `json:"email"`
-	DisplayName *string   `json:"display_name,omitempty"`
-}
-
-// CreateTenantRequest represents the request to create a tenant
-type CreateTenantRequest struct {
-	Name string `json:"name"`
+	Email       string  `json:"email"`
+	DisplayName *string `json:"display_name,omitempty"`
 }
 
 // UpdateUserRequest represents the request to update a user

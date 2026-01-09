@@ -1,26 +1,13 @@
 package infra
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"strings"
 
+	"learning-core-api/internal/http/authz"
+
 	"github.com/golang-jwt/jwt/v5"
-)
-
-type contextKey string
-
-const (
-	UserIDKey contextKey = "user_id"
-	RolesKey  contextKey = "roles"
-)
-
-// Role constants
-const (
-	RoleAdmin   = "admin"
-	RoleTeacher = "teacher"
-	RoleLearner = "learner"
 )
 
 func JWTMiddleware(secret string) func(http.Handler) http.Handler {
@@ -78,9 +65,35 @@ func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 				}
 			}
 
-			ctx := context.WithValue(r.Context(), UserIDKey, userID)
-			ctx = context.WithValue(ctx, RolesKey, roles)
+			ctx := authz.WithAuth(r.Context(), userID, roles, extractScopes(claims, roles))
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
+}
+
+func extractScopes(claims jwt.MapClaims, roles []string) []string {
+	var scopes []string
+	if sClaim, ok := claims["scopes"]; ok {
+		switch v := sClaim.(type) {
+		case []interface{}:
+			for _, s := range v {
+				if str, ok := s.(string); ok {
+					scopes = append(scopes, str)
+				}
+			}
+		case string:
+			scopes = append(scopes, strings.Split(v, " ")...)
+		}
+	}
+	if len(scopes) == 0 {
+		if sClaim, ok := claims["scope"]; ok {
+			if v, ok := sClaim.(string); ok {
+				scopes = append(scopes, strings.Split(v, " ")...)
+			}
+		}
+	}
+	if len(scopes) == 0 {
+		return authz.InferScopesFromRoles(roles)
+	}
+	return scopes
 }

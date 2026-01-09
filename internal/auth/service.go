@@ -25,28 +25,23 @@ func NewService(secret string, repo Repository) *Service {
 }
 
 func (s *Service) LoginWithEmail(ctx context.Context, email, password string) (*authdto.TokenResponse, *store.User, error) {
-	// Check if user exists
 	user, err := s.repo.GetUserByEmail(ctx, email)
 	if err != nil {
 		log.Printf("Login attempt for non-existent user: %s", email)
 		return nil, nil, errors.New("invalid credentials")
 	}
 
-	// Verify password
 	if user.Password != password {
 		log.Printf("Invalid password for user: %s", email)
 		return nil, nil, errors.New("invalid credentials")
 	}
 
-	// Determine roles string for the JWT
 	var roles []string
 	if user.IsAdmin {
 		roles = append(roles, "admin")
 	}
-	if user.IsTeacher {
-		roles = append(roles, "teacher")
-	}
-	if user.IsLearner {
+	// Default to learner for non-admin users (schema only has is_admin today).
+	if !user.IsAdmin {
 		roles = append(roles, "learner")
 	}
 
@@ -60,23 +55,25 @@ func (s *Service) LoginWithEmail(ctx context.Context, email, password string) (*
 		RefreshToken: tokens.RefreshToken,
 		TokenType:    "Bearer",
 		ExpiresIn:    3600,
-		Role:         tokens.Role, // Note: This might need to be joined or changed to Roles in DTO
+		Role:         tokens.Role,
 	}, user, nil
 }
 
 func (s *Service) GenerateTokenPair(ctx context.Context, userID uuid.UUID, roles []string) (*authdto.TokenPair, error) {
 	rolesJoined := ""
 	if len(roles) > 0 {
-		rolesJoined = roles[0] // For backward compatibility in Role field if needed
+		rolesJoined = roles[0]
 	}
+	scopes := scopesFromRoles(roles)
 
 	// Access Token
 	accessClaims := jwt.MapClaims{
-		"sub":   userID.String(),
-		"roles": roles,
-		"exp":   time.Now().Add(120 * time.Minute).Unix(),
-		"iat":   time.Now().Unix(),
-		"jti":   uuid.New().String(),
+		"sub":    userID.String(),
+		"roles":  roles,
+		"scopes": scopes,
+		"exp":    time.Now().Add(120 * time.Minute).Unix(),
+		"iat":    time.Now().Unix(),
+		"jti":    uuid.New().String(),
 	}
 	accessToken := jwt.NewWithClaims(jwt.SigningMethodHS256, accessClaims)
 	accessStr, err := accessToken.SignedString(s.secret)
@@ -86,11 +83,12 @@ func (s *Service) GenerateTokenPair(ctx context.Context, userID uuid.UUID, roles
 
 	// Refresh Token
 	refreshClaims := jwt.MapClaims{
-		"sub":   userID.String(),
-		"roles": roles,
-		"exp":   time.Now().Add(7 * 24 * time.Hour).Unix(),
-		"iat":   time.Now().Unix(),
-		"jti":   uuid.New().String(),
+		"sub":    userID.String(),
+		"roles":  roles,
+		"scopes": scopes,
+		"exp":    time.Now().Add(7 * 24 * time.Hour).Unix(),
+		"iat":    time.Now().Unix(),
+		"jti":    uuid.New().String(),
 	}
 	refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshClaims)
 	refreshStr, err := refreshToken.SignedString(s.secret)
@@ -105,14 +103,53 @@ func (s *Service) GenerateTokenPair(ctx context.Context, userID uuid.UUID, roles
 	}, nil
 }
 
-func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*authdto.TokenResponse, error) {
-	claims, err := s.ValidateToken(refreshToken)
-	if err != nil {
+func scopesFromRoles(roles []string) []string {
+	hasWrite := false
+	for _, role := range roles {
+		switch role {
+		case "admin", "teacher", "learner":
+			hasWrite = true
+		}
+	}
+	if hasWrite {
+		return []string{"read", "write"}
+	}
+	return []string{"read"}
+}
+
+func (s *Service) RefreshToken(ctx context.Context, refreshTokenStr string) (*authdto.TokenResponse, error) {
+	// Parse and validate the refresh token
+	token, err := jwt.Parse(refreshTokenStr, func(token *jwt.Token) (interface{}, error) {
+		return s.secret, nil
+	})
+
+	if err != nil || !token.Valid {
 		return nil, errors.New("invalid refresh token")
 	}
 
-	// For simplicity, we just pass the roles from the old token
-	tokens, err := s.GenerateTokenPair(ctx, claims.UserID, []string{claims.Role}) // This logic is simplified
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return nil, errors.New("invalid token claims")
+	}
+
+	userIDStr, _ := claims["sub"].(string)
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		return nil, errors.New("invalid user ID in token")
+	}
+
+	var roles []string
+	if rClaim, ok := claims["roles"]; ok {
+		if v, ok := rClaim.([]interface{}); ok {
+			for _, r := range v {
+				if s, ok := r.(string); ok {
+					roles = append(roles, s)
+				}
+			}
+		}
+	}
+
+	tokens, err := s.GenerateTokenPair(ctx, userID, roles)
 	if err != nil {
 		return nil, err
 	}
@@ -124,20 +161,4 @@ func (s *Service) RefreshToken(ctx context.Context, refreshToken string) (*authd
 		ExpiresIn:    3600,
 		Role:         tokens.Role,
 	}, nil
-}
-
-func (s *Service) ValidateToken(tokenStr string) (*authdto.Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &authdto.Claims{}, func(token *jwt.Token) (interface{}, error) {
-		return s.secret, nil
-	})
-
-	if err != nil {
-		return nil, err
-	}
-
-	if claims, ok := token.Claims.(*authdto.Claims); ok && token.Valid {
-		return claims, nil
-	}
-
-	return nil, errors.New("invalid token")
 }

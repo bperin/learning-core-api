@@ -14,6 +14,13 @@ import (
 	"learning-core-api/internal/persistance/store"
 )
 
+// @securityDefinitions.oauth2 OAuth2Auth
+// @type oauth2
+// @flow password
+// @authorizationUrl https://localhost:8080/oauth/authorize
+// @tokenUrl https://localhost:8080/oauth/token
+// @scope.read Grants read access
+// @scope.write Grants write access
 func main() {
 	// 1. Context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

@@ -1,9 +1,12 @@
 package auth
 
 import (
+	"net/http"
+
 	authdto "learning-core-api/internal/auth/dto"
 	"learning-core-api/internal/http/render"
-	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
 type Handler struct {
@@ -15,6 +18,16 @@ func NewHandler(authService *Service) *Handler {
 		authService: authService,
 	}
 }
+
+func (h *Handler) RegisterPublicRoutes(r chi.Router) {
+	r.Post("/oauth/token", h.Token)
+}
+
+func (h *Handler) RegisterAdminRoutes(r chi.Router) {}
+
+func (h *Handler) RegisterTeacherRoutes(r chi.Router) {}
+
+func (h *Handler) RegisterLearnerRoutes(r chi.Router) {}
 
 // Token godoc
 // @Summary OAuth token endpoint

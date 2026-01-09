@@ -1,0 +1,111 @@
+{
+    "components": {
+        "schemas": {
+            "authdto.TokenRequest": {
+                "properties": {
+                    "email": {
+                        "example": "user@example.com",
+                        "type": "string"
+                    },
+                    "grant_type": {
+                        "example": "password",
+                        "type": "string"
+                    },
+                    "password": {
+                        "example": "secret123",
+                        "type": "string"
+                    },
+                    "refresh_token": {
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            },
+            "authdto.TokenResponse": {
+                "properties": {
+                    "access_token": {
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "type": "string"
+                    },
+                    "expires_in": {
+                        "example": 3600,
+                        "type": "integer"
+                    },
+                    "refresh_token": {
+                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                        "type": "string"
+                    },
+                    "role": {
+                        "example": "user",
+                        "type": "string"
+                    },
+                    "token_type": {
+                        "example": "Bearer",
+                        "type": "string"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "info": {
+        "contact": {},
+        "title": "",
+        "version": ""
+    },
+    "openapi": "3.0.3",
+    "paths": {
+        "/oauth/token": {
+            "post": {
+                "description": "Issue or refresh OAuth2 tokens using supported grant types.\nSupported grant types:\n- password: exchange email + password for tokens\n- refresh_token: exchange refresh_token for new access token",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/authdto.TokenRequest"
+                            }
+                        }
+                    },
+                    "description": "OAuth Token Request",
+                    "required": true,
+                    "x-originalParamName": "request"
+                },
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/authdto.TokenResponse"
+                                }
+                            }
+                        },
+                        "description": "OAuth2 token response"
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "invalid request or unsupported grant_type"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "description": "invalid credentials"
+                    }
+                },
+                "summary": "OAuth token endpoint",
+                "tags": ["auth"]
+            }
+        }
+    }
+}

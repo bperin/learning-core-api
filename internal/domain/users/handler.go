@@ -1,6 +1,7 @@
 package users
 
 import (
+	"learning-core-api/internal/http/authz"
 	"learning-core-api/internal/http/render"
 	"net/http"
 
@@ -20,24 +21,36 @@ func NewHandler(service Service) *Handler {
 	}
 }
 
-// RegisterRoutes registers the user routes
+// RegisterRoutes registers the user routes (legacy entrypoint).
 func (h *Handler) RegisterRoutes(r chi.Router) {
-	// User routes
-	r.Get("/users/{id}", h.GetUserByID)
-	r.Post("/users", h.CreateUser)
-	r.Get("/users/tenant/{tenantID}", h.ListUsersByTenant)
-	r.Get("/users/tenant/{tenantID}/email/{email}", h.GetUserByEmail)
-	r.Put("/users/{id}", h.UpdateUser)
-	r.Delete("/users/{id}", h.DeleteUser)
-
-	// UserRole routes
-	r.Post("/users/{userID}/roles/{role}", h.CreateUserRole)
-	r.Get("/users/{userID}/roles", h.GetUserRoles)
-	r.Delete("/users/{userID}/roles/{role}", h.DeleteUserRole)
-
+	h.RegisterAdminRoutes(r)
 }
 
-// CreateUser handles POST /users/users
+func (h *Handler) RegisterPublicRoutes(r chi.Router) {}
+
+func (h *Handler) RegisterAdminRoutes(r chi.Router) {
+	r.With(authz.RequireScope("read")).Get("/users/{id}", h.GetUserByID)
+	r.With(authz.RequireScope("write")).Post("/users", h.CreateUser)
+	r.With(authz.RequireScope("read")).Get("/users/email/{email}", h.GetUserByEmail)
+	r.With(authz.RequireScope("write")).Delete("/users/{id}", h.DeleteUser)
+}
+
+func (h *Handler) RegisterTeacherRoutes(r chi.Router) {}
+
+func (h *Handler) RegisterLearnerRoutes(r chi.Router) {}
+
+// CreateUser godoc
+// @Summary Create a new user
+// @Description Create a new user with the provided details
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param request body users.CreateUserRequest true "Create User Request"
+// @Success 201 {object} users.User
+// @Failure 400 {string} string "invalid request"
+// @Failure 500 {string} string "internal server error"
+// @Security OAuth2Auth[write]
+// @Router /users [post]
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req CreateUserRequest
 	if err := render.DecodeJSON(r, &req); err != nil {
@@ -55,7 +68,19 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, http.StatusCreated, user)
 }
 
-// GetUserByID handles GET /users/users/{id}
+// GetUserByID godoc
+// @Summary Get user by ID
+// @Description Retrieve a specific user by their unique ID
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} users.User
+// @Failure 400 {string} string "invalid request"
+// @Failure 404 {string} string "not found"
+// @Failure 500 {string} string "internal server error"
+// @Security OAuth2Auth[read]
+// @Router /users/{id} [get]
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -74,15 +99,20 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, http.StatusOK, user)
 }
 
-// GetUserByEmail handles GET /users/users/tenant/{tenantID}/email/{email}
+// GetUserByEmail godoc
+// @Summary Get user by email
+// @Description Retrieve a specific user by their email address
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param email path string true "User Email"
+// @Success 200 {object} users.User
+// @Failure 400 {string} string "invalid request"
+// @Failure 404 {string} string "not found"
+// @Failure 500 {string} string "internal server error"
+// @Security OAuth2Auth[read]
+// @Router /users/email/{email} [get]
 func (h *Handler) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := chi.URLParam(r, "tenantID")
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		render.Error(w, http.StatusBadRequest, "Invalid tenant ID")
-		return
-	}
-
 	email := chi.URLParam(r, "email")
 	if email == "" {
 		render.Error(w, http.StatusBadRequest, "Email is required")
@@ -90,32 +120,13 @@ func (h *Handler) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	user, err := h.service.GetUserByEmail(ctx, tenantID, email)
+	user, err := h.service.GetUserByEmail(ctx, email)
 	if err != nil {
 		render.Error(w, http.StatusNotFound, err.Error())
 		return
 	}
 
 	render.JSON(w, http.StatusOK, user)
-}
-
-// ListUsersByTenant handles GET /users/users/tenant/{tenantID}
-func (h *Handler) ListUsersByTenant(w http.ResponseWriter, r *http.Request) {
-	tenantIDStr := chi.URLParam(r, "tenantID")
-	tenantID, err := uuid.Parse(tenantIDStr)
-	if err != nil {
-		render.Error(w, http.StatusBadRequest, "Invalid tenant ID")
-		return
-	}
-
-	ctx := r.Context()
-	users, err := h.service.ListUsersByTenant(ctx, tenantID)
-	if err != nil {
-		render.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	render.JSON(w, http.StatusOK, users)
 }
 
 // UpdateUser handles PUT /users/users/{id}
@@ -146,7 +157,18 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, http.StatusOK, map[string]string{"message": "User updated successfully"})
 }
 
-// DeleteUser handles DELETE /users/users/{id}
+// DeleteUser godoc
+// @Summary Delete user
+// @Description Remove a user from the system
+// @Tags users
+// @Accept json
+// @Produce json
+// @Param id path string true "User ID"
+// @Success 200 {object} map[string]string
+// @Failure 400 {string} string "invalid request"
+// @Failure 500 {string} string "internal server error"
+// @Security OAuth2Auth[write]
+// @Router /users/{id} [delete]
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := uuid.Parse(idStr)
@@ -163,67 +185,4 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, http.StatusOK, map[string]string{"message": "User deleted successfully"})
-}
-
-// CreateUserRole handles POST /users/users/{userID}/roles/{role}
-func (h *Handler) CreateUserRole(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "userID")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		render.Error(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	roleStr := chi.URLParam(r, "role")
-	role := UserRoleType(roleStr)
-
-	ctx := r.Context()
-	err = h.service.CreateUserRole(ctx, userID, role)
-	if err != nil {
-		render.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	render.JSON(w, http.StatusOK, map[string]string{"message": "User role created successfully"})
-}
-
-// GetUserRoles handles GET /users/users/{userID}/roles
-func (h *Handler) GetUserRoles(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "userID")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		render.Error(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	ctx := r.Context()
-	roles, err := h.service.GetUserRoles(ctx, userID)
-	if err != nil {
-		render.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	render.JSON(w, http.StatusOK, roles)
-}
-
-// DeleteUserRole handles DELETE /users/users/{userID}/roles/{role}
-func (h *Handler) DeleteUserRole(w http.ResponseWriter, r *http.Request) {
-	userIDStr := chi.URLParam(r, "userID")
-	userID, err := uuid.Parse(userIDStr)
-	if err != nil {
-		render.Error(w, http.StatusBadRequest, "Invalid user ID")
-		return
-	}
-
-	roleStr := chi.URLParam(r, "role")
-	role := UserRoleType(roleStr)
-
-	ctx := r.Context()
-	err = h.service.DeleteUserRole(ctx, userID, role)
-	if err != nil {
-		render.Error(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	render.JSON(w, http.StatusOK, map[string]string{"message": "User role deleted successfully"})
 }

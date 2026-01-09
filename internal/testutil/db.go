@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -15,7 +18,7 @@ import (
 func NewTestDB(t *testing.T) *sql.DB {
 	t.Helper()
 
-	connStr := "postgres://postgres:postgres@localhost:5432/learning_test?sslmode=disable"
+	connStr := getTestDBURL()
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("failed to connect to test database: %v", err)
@@ -41,7 +44,7 @@ func NewTestDB(t *testing.T) *sql.DB {
 }
 
 func StartPostgres(ctx context.Context) (*sql.DB, func()) {
-	connStr := "postgres://postgres:postgres@localhost:5432/learning_test?sslmode=disable"
+	connStr := getTestDBURL()
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
 		log.Fatalf("failed to connect to test database: %v", err)
@@ -58,6 +61,14 @@ func StartPostgres(ctx context.Context) (*sql.DB, func()) {
 	}
 
 	return db, cleanup
+}
+
+func getTestDBURL() string {
+	url := os.Getenv("TEST_DB_URL")
+	if url == "" {
+		log.Fatal("TEST_DB_URL is required for database tests")
+	}
+	return url
 }
 
 func DropAllTables(db *sql.DB) error {
@@ -123,9 +134,11 @@ func DropAllTypes(db *sql.DB) error {
 }
 
 func Migrate(db *sql.DB) error {
-	// A safer way is to use an absolute path or find project root
-	// For now, using a common relative path for repository tests
-	return goose.Up(db, "/Users/brian/code/learning/learning-core-api/internal/store/migrations")
+	migrationsDir, err := migrationsPath()
+	if err != nil {
+		return err
+	}
+	return goose.Up(db, migrationsDir)
 }
 
 func TruncateTables(t *testing.T, db *sql.DB, tables ...string) {
@@ -136,4 +149,14 @@ func TruncateTables(t *testing.T, db *sql.DB, tables ...string) {
 			t.Fatalf("failed to truncate table %s: %v", table, err)
 		}
 	}
+}
+
+func migrationsPath() (string, error) {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return "", fmt.Errorf("failed to determine migrations path")
+	}
+	// internal/testutil -> internal/persistance/migrations
+	dir := filepath.Join(filepath.Dir(file), "..", "persistance", "migrations")
+	return filepath.Abs(dir)
 }

@@ -1,19 +1,31 @@
 package infra
 
 import (
-	"fmt"
 	"net/http"
+
+	"learning-core-api/internal/auth"
+	"learning-core-api/internal/domain/attempts"
+	"learning-core-api/internal/domain/evals"
+	"learning-core-api/internal/domain/reviews"
+	"learning-core-api/internal/domain/users"
+	"learning-core-api/internal/http/authz"
+	"learning-core-api/internal/persistance/store"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-
-	"learning-core-api/internal/persistance/store"
 )
 
 type RouterDeps struct {
 	JWTSecret    string
 	Queries      *store.Queries
 	GoogleAPIKey string
+}
+
+type RoleRouteRegistrar interface {
+	RegisterPublicRoutes(r chi.Router)
+	RegisterAdminRoutes(r chi.Router)
+	RegisterTeacherRoutes(r chi.Router)
+	RegisterLearnerRoutes(r chi.Router)
 }
 
 func NewRouter(deps RouterDeps) http.Handler {
@@ -27,20 +39,38 @@ func NewRouter(deps RouterDeps) http.Handler {
 		w.Write([]byte("OK"))
 	})
 
-	// Private routes
-	r.Group(func(r chi.Router) {
-		r.Use(JWTMiddleware(deps.JWTSecret))
+	authRepo := auth.NewRepository(deps.Queries)
+	authService := auth.NewService(deps.JWTSecret, authRepo)
+	authHandler := auth.NewHandler(authService)
 
-		r.Get("/me", func(w http.ResponseWriter, r *http.Request) {
-			userID := r.Context().Value(UserIDKey)
-			w.Write([]byte(fmt.Sprintf("User ID: %v", userID)))
-		})
+	usersRepo := users.NewRepository(deps.Queries)
+	usersService := users.NewService(usersRepo)
+	usersHandler := users.NewHandler(usersService)
 
-		if deps.Queries == nil {
-			return
-		}
+	evalsHandler := evals.NewHandler()
+	reviewsHandler := reviews.NewHandler()
+	attemptsHandler := attempts.NewHandler()
 
-	})
+	registerRoleRoutes(r, deps.JWTSecret, authHandler)
+	registerRoleRoutes(r, deps.JWTSecret, usersHandler)
+	registerRoleRoutes(r, deps.JWTSecret, evalsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, reviewsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, attemptsHandler)
 
 	return r
+}
+
+func registerRoleRoutes(r chi.Router, secret string, registrar RoleRouteRegistrar) {
+	registrar.RegisterPublicRoutes(r)
+	registerProtectedRoleRoutes(r, secret, authz.RoleAdmin, registrar.RegisterAdminRoutes)
+	registerProtectedRoleRoutes(r, secret, authz.RoleTeacher, registrar.RegisterTeacherRoutes)
+	registerProtectedRoleRoutes(r, secret, authz.RoleLearner, registrar.RegisterLearnerRoutes)
+}
+
+func registerProtectedRoleRoutes(r chi.Router, secret, role string, register func(chi.Router)) {
+	r.Group(func(r chi.Router) {
+		r.Use(JWTMiddleware(secret))
+		r.Use(authz.RequireRole(role))
+		register(r)
+	})
 }
