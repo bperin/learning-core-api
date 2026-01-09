@@ -12,6 +12,18 @@ import (
 	"github.com/google/uuid"
 )
 
+const countSubjectsByUser = `-- name: CountSubjectsByUser :one
+SELECT COUNT(*) FROM subjects
+WHERE user_id = $1
+`
+
+func (q *Queries) CountSubjectsByUser(ctx context.Context, userID uuid.UUID) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countSubjectsByUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createSubject = `-- name: CreateSubject :one
 INSERT INTO subjects (
   id, name, description, user_id
@@ -76,6 +88,66 @@ func (q *Queries) GetSubject(ctx context.Context, id uuid.UUID) (Subject, error)
 	return i, err
 }
 
+const getSubjectByUserAndName = `-- name: GetSubjectByUserAndName :one
+SELECT id, name, description, user_id, created_at, updated_at FROM subjects
+WHERE user_id = $1 AND name = $2
+LIMIT 1
+`
+
+type GetSubjectByUserAndNameParams struct {
+	UserID uuid.UUID `json:"user_id"`
+	Name   string    `json:"name"`
+}
+
+func (q *Queries) GetSubjectByUserAndName(ctx context.Context, arg GetSubjectByUserAndNameParams) (Subject, error) {
+	row := q.db.QueryRowContext(ctx, getSubjectByUserAndName, arg.UserID, arg.Name)
+	var i Subject
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Description,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const listAllSubjects = `-- name: ListAllSubjects :many
+SELECT id, name, description, user_id, created_at, updated_at FROM subjects
+ORDER BY name
+`
+
+func (q *Queries) ListAllSubjects(ctx context.Context) ([]Subject, error) {
+	rows, err := q.db.QueryContext(ctx, listAllSubjects)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Subject
+	for rows.Next() {
+		var i Subject
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSubjectsByUser = `-- name: ListSubjectsByUser :many
 SELECT id, name, description, user_id, created_at, updated_at FROM subjects
 WHERE user_id = $1
@@ -84,6 +156,49 @@ ORDER BY created_at DESC
 
 func (q *Queries) ListSubjectsByUser(ctx context.Context, userID uuid.UUID) ([]Subject, error) {
 	rows, err := q.db.QueryContext(ctx, listSubjectsByUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Subject
+	for rows.Next() {
+		var i Subject
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Description,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchSubjectsByName = `-- name: SearchSubjectsByName :many
+SELECT id, name, description, user_id, created_at, updated_at FROM subjects
+WHERE name ILIKE '%' || $1 || '%'
+ORDER BY name
+LIMIT $2 OFFSET $3
+`
+
+type SearchSubjectsByNameParams struct {
+	Column1 sql.NullString `json:"column_1"`
+	Limit   int32          `json:"limit"`
+	Offset  int32          `json:"offset"`
+}
+
+func (q *Queries) SearchSubjectsByName(ctx context.Context, arg SearchSubjectsByNameParams) ([]Subject, error) {
+	rows, err := q.db.QueryContext(ctx, searchSubjectsByName, arg.Column1, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

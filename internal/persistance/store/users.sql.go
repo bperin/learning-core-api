@@ -7,9 +7,36 @@ package store
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
+
+const countUsers = `-- name: CountUsers :one
+SELECT COUNT(*) FROM users
+`
+
+func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUsersByRole = `-- name: CountUsersByRole :one
+SELECT COUNT(*) FROM users
+WHERE 
+  (CASE WHEN $1::text = 'admin' THEN is_admin ELSE false END) OR
+  (CASE WHEN $1::text = 'teacher' THEN is_teacher ELSE false END) OR
+  (CASE WHEN $1::text = 'learner' THEN is_learner ELSE false END)
+`
+
+func (q *Queries) CountUsersByRole(ctx context.Context, dollar_1 string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUsersByRole, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (
@@ -107,10 +134,16 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 const listUsers = `-- name: ListUsers :many
 SELECT id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher FROM users
 ORDER BY created_at DESC
+LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, listUsers)
+type ListUsersParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUsers, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -139,4 +172,201 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const listUsersByRole = `-- name: ListUsersByRole :many
+SELECT id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher FROM users
+WHERE 
+  (CASE WHEN $1::text = 'admin' THEN is_admin ELSE false END) OR
+  (CASE WHEN $1::text = 'teacher' THEN is_teacher ELSE false END) OR
+  (CASE WHEN $1::text = 'learner' THEN is_learner ELSE false END)
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListUsersByRole(ctx context.Context, dollar_1 string) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUsersByRole, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Password,
+			&i.IsAdmin,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IsLearner,
+			&i.IsTeacher,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const searchUsersByEmail = `-- name: SearchUsersByEmail :many
+SELECT id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher FROM users
+WHERE email ILIKE '%' || $1 || '%'
+ORDER BY email
+LIMIT $2 OFFSET $3
+`
+
+type SearchUsersByEmailParams struct {
+	Column1 sql.NullString `json:"column_1"`
+	Limit   int32          `json:"limit"`
+	Offset  int32          `json:"offset"`
+}
+
+func (q *Queries) SearchUsersByEmail(ctx context.Context, arg SearchUsersByEmailParams) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, searchUsersByEmail, arg.Column1, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Email,
+			&i.Password,
+			&i.IsAdmin,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.IsLearner,
+			&i.IsTeacher,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateUser = `-- name: UpdateUser :one
+UPDATE users SET
+  email = COALESCE($2, email),
+  password = COALESCE($3, password),
+  is_admin = COALESCE($4, is_admin),
+  is_learner = COALESCE($5, is_learner),
+  is_teacher = COALESCE($6, is_teacher),
+  updated_at = now()
+WHERE id = $1
+RETURNING id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher
+`
+
+type UpdateUserParams struct {
+	ID        uuid.UUID `json:"id"`
+	Email     string    `json:"email"`
+	Password  string    `json:"password"`
+	IsAdmin   bool      `json:"is_admin"`
+	IsLearner bool      `json:"is_learner"`
+	IsTeacher bool      `json:"is_teacher"`
+}
+
+func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUser,
+		arg.ID,
+		arg.Email,
+		arg.Password,
+		arg.IsAdmin,
+		arg.IsLearner,
+		arg.IsTeacher,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.IsAdmin,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsLearner,
+		&i.IsTeacher,
+	)
+	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :one
+UPDATE users SET
+  password = $2,
+  updated_at = now()
+WHERE id = $1
+RETURNING id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher
+`
+
+type UpdateUserPasswordParams struct {
+	ID       uuid.UUID `json:"id"`
+	Password string    `json:"password"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserPassword, arg.ID, arg.Password)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.IsAdmin,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsLearner,
+		&i.IsTeacher,
+	)
+	return i, err
+}
+
+const updateUserRoles = `-- name: UpdateUserRoles :one
+UPDATE users SET
+  is_admin = $2,
+  is_learner = $3,
+  is_teacher = $4,
+  updated_at = now()
+WHERE id = $1
+RETURNING id, email, password, is_admin, created_at, updated_at, is_learner, is_teacher
+`
+
+type UpdateUserRolesParams struct {
+	ID        uuid.UUID `json:"id"`
+	IsAdmin   bool      `json:"is_admin"`
+	IsLearner bool      `json:"is_learner"`
+	IsTeacher bool      `json:"is_teacher"`
+}
+
+func (q *Queries) UpdateUserRoles(ctx context.Context, arg UpdateUserRolesParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, updateUserRoles,
+		arg.ID,
+		arg.IsAdmin,
+		arg.IsLearner,
+		arg.IsTeacher,
+	)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Password,
+		&i.IsAdmin,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.IsLearner,
+		&i.IsTeacher,
+	)
+	return i, err
 }
