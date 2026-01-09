@@ -206,17 +206,6 @@ type PromptTemplate struct {
 	UpdatedAt   time.Time             `json:"updated_at"`
 }
 
-// User authentication sessions
-type Session struct {
-	ID     uuid.UUID `json:"id"`
-	UserID uuid.UUID `json:"user_id"`
-	// Unique session token for authentication
-	Token string `json:"token"`
-	// When the session expires
-	ExpiresAt time.Time `json:"expires_at"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 type Subject struct {
 	ID          uuid.UUID      `json:"id"`
 	Name        string         `json:"name"`

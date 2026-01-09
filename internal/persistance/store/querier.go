@@ -15,6 +15,9 @@ type Querier interface {
 	ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (PromptTemplate, error)
 	ArchiveEval(ctx context.Context, id uuid.UUID) (Eval, error)
 	CompleteTestAttempt(ctx context.Context, arg CompleteTestAttemptParams) (TestAttempt, error)
+	CountSubjectsByUser(ctx context.Context, userID uuid.UUID) (int64, error)
+	CountUsers(ctx context.Context) (int64, error)
+	CountUsersByRole(ctx context.Context, dollar_1 string) (int64, error)
 	CreateArtifact(ctx context.Context, arg CreateArtifactParams) (Artifact, error)
 	CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error)
 	CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, error)
@@ -22,7 +25,6 @@ type Querier interface {
 	CreateEvalItemReview(ctx context.Context, arg CreateEvalItemReviewParams) (EvalItemReview, error)
 	CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (PromptTemplate, error)
 	CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (PromptTemplate, error)
-	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateSubject(ctx context.Context, arg CreateSubjectParams) (Subject, error)
 	CreateTestAttempt(ctx context.Context, arg CreateTestAttemptParams) (TestAttempt, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -35,12 +37,10 @@ type Querier interface {
 	DeleteEvalItem(ctx context.Context, id uuid.UUID) error
 	DeleteEvalItemReview(ctx context.Context, id uuid.UUID) error
 	DeletePromptTemplate(ctx context.Context, id uuid.UUID) error
-	DeleteSession(ctx context.Context, token string) error
 	DeleteSubject(ctx context.Context, id uuid.UUID) error
 	DeleteTestAttempt(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	DeleteUserAnswer(ctx context.Context, id uuid.UUID) error
-	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
 	GetActiveAttempts(ctx context.Context) ([]TestAttempt, error)
 	GetActivePromptTemplates(ctx context.Context) ([]PromptTemplate, error)
 	GetAnswerStatsForEvalItem(ctx context.Context, evalItemID uuid.UUID) (GetAnswerStatsForEvalItemRow, error)
@@ -95,8 +95,8 @@ type Querier interface {
 	GetReviewsByReviewer(ctx context.Context, reviewerID uuid.UUID) ([]EvalItemReview, error)
 	GetReviewsByVerdict(ctx context.Context, verdict ReviewVerdict) ([]EvalItemReview, error)
 	GetReviewsWithEvalItemDetails(ctx context.Context, arg GetReviewsWithEvalItemDetailsParams) ([]GetReviewsWithEvalItemDetailsRow, error)
-	GetSessionByToken(ctx context.Context, token string) (Session, error)
 	GetSubject(ctx context.Context, id uuid.UUID) (Subject, error)
+	GetSubjectByUserAndName(ctx context.Context, arg GetSubjectByUserAndNameParams) (Subject, error)
 	GetTestAttempt(ctx context.Context, id uuid.UUID) (TestAttempt, error)
 	GetTestAttemptWithAnswers(ctx context.Context, id uuid.UUID) (GetTestAttemptWithAnswersRow, error)
 	GetTestAttemptsByEval(ctx context.Context, evalID uuid.UUID) ([]TestAttempt, error)
@@ -110,6 +110,7 @@ type Querier interface {
 	GetUserAttemptsByEval(ctx context.Context, arg GetUserAttemptsByEvalParams) ([]TestAttempt, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserTestStats(ctx context.Context, userID uuid.UUID) (GetUserTestStatsRow, error)
+	ListAllSubjects(ctx context.Context) ([]Subject, error)
 	ListArtifacts(ctx context.Context, arg ListArtifactsParams) ([]Artifact, error)
 	ListDocuments(ctx context.Context, arg ListDocumentsParams) ([]Document, error)
 	ListEvalItemReviews(ctx context.Context, arg ListEvalItemReviewsParams) ([]EvalItemReview, error)
@@ -119,12 +120,15 @@ type Querier interface {
 	ListSubjectsByUser(ctx context.Context, userID uuid.UUID) ([]Subject, error)
 	ListTestAttempts(ctx context.Context, arg ListTestAttemptsParams) ([]TestAttempt, error)
 	ListUserAnswers(ctx context.Context, arg ListUserAnswersParams) ([]UserAnswer, error)
-	ListUsers(ctx context.Context) ([]User, error)
+	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
+	ListUsersByRole(ctx context.Context, dollar_1 string) ([]User, error)
 	PublishEval(ctx context.Context, id uuid.UUID) (Eval, error)
 	SearchDocumentsByTitle(ctx context.Context, arg SearchDocumentsByTitleParams) ([]Document, error)
 	SearchEvalItemsByPrompt(ctx context.Context, arg SearchEvalItemsByPromptParams) ([]EvalItem, error)
 	SearchEvalsByTitle(ctx context.Context, arg SearchEvalsByTitleParams) ([]Eval, error)
 	SearchPromptTemplatesByTitle(ctx context.Context, arg SearchPromptTemplatesByTitleParams) ([]PromptTemplate, error)
+	SearchSubjectsByName(ctx context.Context, arg SearchSubjectsByNameParams) ([]Subject, error)
+	SearchUsersByEmail(ctx context.Context, arg SearchUsersByEmailParams) ([]User, error)
 	UpdateArtifact(ctx context.Context, arg UpdateArtifactParams) (Artifact, error)
 	UpdateArtifactStatus(ctx context.Context, arg UpdateArtifactStatusParams) (Artifact, error)
 	UpdateDocument(ctx context.Context, arg UpdateDocumentParams) (Document, error)
@@ -136,7 +140,10 @@ type Querier interface {
 	UpdateSubject(ctx context.Context, arg UpdateSubjectParams) (Subject, error)
 	UpdateTestAttemptScore(ctx context.Context, arg UpdateTestAttemptScoreParams) (TestAttempt, error)
 	UpdateTestAttemptTime(ctx context.Context, arg UpdateTestAttemptTimeParams) (TestAttempt, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateUserAnswer(ctx context.Context, arg UpdateUserAnswerParams) (UserAnswer, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) (User, error)
+	UpdateUserRoles(ctx context.Context, arg UpdateUserRolesParams) (User, error)
 }
 
 var _ Querier = (*Queries)(nil)
