@@ -13,10 +13,10 @@ import (
 )
 
 func TestBasicSQLCOperations(t *testing.T) {
-	db := testutil.NewTestDB(t)
-	defer db.Close()
+	tx, cleanup := testutil.NewTestTx(t)
+	defer cleanup()
 
-	queries := store.New(db)
+	queries := store.New(tx)
 	ctx := context.Background()
 
 	// Test basic user operations

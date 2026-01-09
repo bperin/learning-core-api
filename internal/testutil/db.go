@@ -9,10 +9,16 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
+)
+
+var (
+	migrateOnce sync.Once
+	migrateErr  error
 )
 
 func NewTestDB(t *testing.T) *sql.DB {
@@ -28,17 +34,7 @@ func NewTestDB(t *testing.T) *sql.DB {
 		log.Fatalf("failed to ping test database: %v", err)
 	}
 
-	// Reset database
-	if err := DropAllTables(db); err != nil {
-		log.Fatalf("failed to drop tables: %v", err)
-	}
-	if err := DropAllTypes(db); err != nil {
-		log.Fatalf("failed to drop types: %v", err)
-	}
-
-	if err := Migrate(db); err != nil {
-		log.Fatalf("failed to run migrations: %v", err)
-	}
+	ensureMigrated(t, db)
 
 	return db
 }
@@ -49,6 +45,8 @@ func StartPostgres(ctx context.Context) (*sql.DB, func()) {
 	if err != nil {
 		log.Fatalf("failed to connect to test database: %v", err)
 	}
+
+	ensureMigrated(nil, db)
 
 	cleanup := func() {
 		if err := DropAllTables(db); err != nil {
@@ -61,6 +59,26 @@ func StartPostgres(ctx context.Context) (*sql.DB, func()) {
 	}
 
 	return db, cleanup
+}
+
+func NewTestTx(t *testing.T) (*sql.Tx, func()) {
+	t.Helper()
+
+	db := NewTestDB(t)
+	tx, err := db.Begin()
+	if err != nil {
+		db.Close()
+		t.Fatalf("failed to begin transaction: %v", err)
+	}
+
+	cleanup := func() {
+		if err := tx.Rollback(); err != nil && err != sql.ErrTxDone {
+			t.Fatalf("failed to rollback transaction: %v", err)
+		}
+		db.Close()
+	}
+
+	return tx, cleanup
 }
 
 func getTestDBURL() string {
@@ -159,4 +177,55 @@ func migrationsPath() (string, error) {
 	// internal/testutil -> internal/persistance/migrations
 	dir := filepath.Join(filepath.Dir(file), "..", "persistance", "migrations")
 	return filepath.Abs(dir)
+}
+
+func ensureMigrated(t *testing.T, db *sql.DB) {
+	migrateOnce.Do(func() {
+		migrateErr = withMigrationLock(db, func() error {
+			reset := os.Getenv("RESET_TEST_DB") == "1"
+			versionTableExists, err := gooseVersionTableExists(db)
+			if err != nil {
+				return err
+			}
+			if reset || !versionTableExists {
+				if err := DropAllTables(db); err != nil {
+					return fmt.Errorf("failed to drop tables: %w", err)
+				}
+				if err := DropAllTypes(db); err != nil {
+					return fmt.Errorf("failed to drop types: %w", err)
+				}
+			}
+			if err := Migrate(db); err != nil {
+				return fmt.Errorf("failed to run migrations: %w", err)
+			}
+			return nil
+		})
+	})
+
+	if migrateErr != nil {
+		if t != nil {
+			t.Fatalf("failed to migrate test database: %v", migrateErr)
+		} else {
+			log.Fatalf("failed to migrate test database: %v", migrateErr)
+		}
+	}
+}
+
+func withMigrationLock(db *sql.DB, fn func() error) error {
+	if _, err := db.Exec(`SELECT pg_advisory_lock(982314987)`); err != nil {
+		return fmt.Errorf("failed to acquire migration lock: %w", err)
+	}
+	defer func() {
+		_, _ = db.Exec(`SELECT pg_advisory_unlock(982314987)`)
+	}()
+	return fn()
+}
+
+func gooseVersionTableExists(db *sql.DB) (bool, error) {
+	var exists bool
+	err := db.QueryRow(`SELECT to_regclass('public.goose_db_version') IS NOT NULL`).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("failed to check goose version table: %w", err)
+	}
+	return exists, nil
 }

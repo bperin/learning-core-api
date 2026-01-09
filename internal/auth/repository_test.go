@@ -15,13 +15,9 @@ import (
 func setupRepo(t *testing.T) (*store.Queries, Repository, func()) {
 	t.Helper()
 
-	db := testutil.NewTestDB(t)
-	queries := store.New(db)
+	tx, cleanup := testutil.NewTestTx(t)
+	queries := store.New(tx)
 	repo := NewRepository(queries)
-
-	cleanup := func() {
-		db.Close()
-	}
 
 	return queries, repo, cleanup
 }

@@ -14,12 +14,11 @@ import (
 	"learning-core-api/internal/testutil"
 )
 
-func setupTestRepo(t *testing.T) (eval_items.Repository, func()) {
-	db := testutil.NewTestDB(t)
-	queries := store.New(db)
+func setupTestRepo(t *testing.T) (eval_items.Repository, *store.Queries, func()) {
+	tx, cleanup := testutil.NewTestTx(t)
+	queries := store.New(tx)
 	repo := eval_items.NewRepository(queries)
-	cleanup := func() { db.Close() }
-	return repo, cleanup
+	return repo, queries, cleanup
 }
 
 func createTestUser(t *testing.T, queries *store.Queries) uuid.UUID {
@@ -47,14 +46,9 @@ func createTestEval(t *testing.T, queries *store.Queries, userID uuid.UUID) uuid
 }
 
 func TestEvalItemRepository_Create(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -62,13 +56,13 @@ func TestEvalItemRepository_Create(t *testing.T) {
 
 	t.Run("successful creation", func(t *testing.T) {
 		req := &eval_items.CreateEvalItemRequest{
-			EvalID:     evalID,
-			Prompt:     "What is 2 + 2?",
-			Options:    []string{"3", "4", "5", "6"},
-			CorrectIdx: 1,
-			Hint:       stringPtr("Think about basic addition"),
+			EvalID:      evalID,
+			Prompt:      "What is 2 + 2?",
+			Options:     []string{"3", "4", "5", "6"},
+			CorrectIdx:  1,
+			Hint:        stringPtr("Think about basic addition"),
 			Explanation: stringPtr("2 + 2 equals 4"),
-			Metadata:   map[string]interface{}{"difficulty": "easy"},
+			Metadata:    map[string]interface{}{"difficulty": "easy"},
 		}
 
 		item, err := repo.Create(ctx, req)
@@ -127,14 +121,9 @@ func TestEvalItemRepository_Create(t *testing.T) {
 }
 
 func TestEvalItemRepository_GetByID(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -169,14 +158,9 @@ func TestEvalItemRepository_GetByID(t *testing.T) {
 }
 
 func TestEvalItemRepository_Update(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -221,14 +205,9 @@ func TestEvalItemRepository_Update(t *testing.T) {
 }
 
 func TestEvalItemRepository_Delete(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -257,14 +236,9 @@ func TestEvalItemRepository_Delete(t *testing.T) {
 }
 
 func TestEvalItemRepository_GetByEvalID(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -287,9 +261,14 @@ func TestEvalItemRepository_GetByEvalID(t *testing.T) {
 		require.NoError(t, err)
 		assert.Len(t, items, 3)
 
-		for i, item := range items {
+		prompts := make(map[string]struct{}, len(items))
+		for _, item := range items {
 			assert.Equal(t, evalID, item.EvalID)
-			assert.Contains(t, item.Prompt, fmt.Sprintf("Question %d", i+1))
+			prompts[item.Prompt] = struct{}{}
+		}
+		for i := 0; i < 3; i++ {
+			_, ok := prompts[fmt.Sprintf("Question %d?", i+1)]
+			assert.True(t, ok)
 		}
 	})
 
@@ -302,14 +281,9 @@ func TestEvalItemRepository_GetByEvalID(t *testing.T) {
 }
 
 func TestEvalItemRepository_List(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -356,14 +330,9 @@ func TestEvalItemRepository_List(t *testing.T) {
 }
 
 func TestEvalItemRepository_Count(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 
@@ -393,14 +362,9 @@ func TestEvalItemRepository_Count(t *testing.T) {
 }
 
 func TestEvalItemRepository_CountByEvalID(t *testing.T) {
-	repo, cleanup := setupTestRepo(t)
+	repo, queries, cleanup := setupTestRepo(t)
 	defer cleanup()
 
-	// Setup test data
-	db := testutil.NewTestDB(t)
-	defer db.Close()
-	queries := store.New(db)
-	
 	userID := createTestUser(t, queries)
 	evalID := createTestEval(t, queries, userID)
 

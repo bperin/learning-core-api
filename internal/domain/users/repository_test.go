@@ -16,12 +16,8 @@ import (
 func setupTestDB(t *testing.T) (*store.Queries, func()) {
 	t.Helper()
 
-	db := testutil.NewTestDB(t)
-	queries := store.New(db)
-
-	cleanup := func() {
-		db.Close()
-	}
+	tx, cleanup := testutil.NewTestTx(t)
+	queries := store.New(tx)
 
 	return queries, cleanup
 }
