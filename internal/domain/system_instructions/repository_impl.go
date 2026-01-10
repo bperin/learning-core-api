@@ -35,14 +35,7 @@ func (r *RepositoryImpl) Create(ctx context.Context, req CreateSystemInstruction
 		return nil, fmt.Errorf("failed to create system instruction: %w", err)
 	}
 
-	if isActive {
-		if err := r.Activate(ctx, storeInstruction.ID); err != nil {
-			return nil, err
-		}
-		return r.GetByID(ctx, storeInstruction.ID)
-	}
-
-	return toDomainSystemInstruction(&storeInstruction), nil
+	return toDomainSystemInstructionRow(&storeInstruction), nil
 }
 
 // GetByID retrieves a system instruction by ID.
@@ -84,13 +77,21 @@ func (r *RepositoryImpl) Activate(ctx context.Context, id uuid.UUID) error {
 	if err := r.queries.ActivateSystemInstruction(ctx, id); err != nil {
 		return fmt.Errorf("failed to activate system instruction: %w", err)
 	}
-	if err := r.queries.DeactivateOtherSystemInstructions(ctx, id); err != nil {
-		return fmt.Errorf("failed to deactivate other system instructions: %w", err)
-	}
 	return nil
 }
 
 func toDomainSystemInstruction(storeInstruction *store.SystemInstruction) *SystemInstruction {
+	return &SystemInstruction{
+		ID:        storeInstruction.ID,
+		Version:   storeInstruction.Version,
+		Text:      storeInstruction.Text,
+		IsActive:  storeInstruction.IsActive,
+		CreatedBy: storeInstruction.CreatedBy,
+		CreatedAt: storeInstruction.CreatedAt,
+	}
+}
+
+func toDomainSystemInstructionRow(storeInstruction *store.CreateSystemInstructionRow) *SystemInstruction {
 	return &SystemInstruction{
 		ID:        storeInstruction.ID,
 		Version:   storeInstruction.Version,

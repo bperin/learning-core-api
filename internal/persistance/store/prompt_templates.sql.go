@@ -8,22 +8,49 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
 )
 
 const activatePromptTemplate = `-- name: ActivatePromptTemplate :one
-UPDATE prompt_templates SET
-  is_active = true,
-  updated_at = now()
-WHERE id = $1
-RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
+WITH target AS (
+  SELECT key FROM prompt_templates WHERE prompt_templates.id = $1
+),
+deactivated AS (
+  UPDATE prompt_templates SET
+    is_active = false,
+    updated_at = now()
+  WHERE key = (SELECT key FROM target) AND id != $1
+),
+activated AS (
+  UPDATE prompt_templates SET
+    is_active = true,
+    updated_at = now()
+  WHERE id = $1
+  RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
+)
+SELECT id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at FROM activated
 `
 
-func (q *Queries) ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (PromptTemplate, error) {
+type ActivatePromptTemplateRow struct {
+	ID          uuid.UUID             `json:"id"`
+	Key         string                `json:"key"`
+	Version     int32                 `json:"version"`
+	IsActive    bool                  `json:"is_active"`
+	Title       string                `json:"title"`
+	Description sql.NullString        `json:"description"`
+	Template    string                `json:"template"`
+	Metadata    pqtype.NullRawMessage `json:"metadata"`
+	CreatedBy   sql.NullString        `json:"created_by"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
+}
+
+func (q *Queries) ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (ActivatePromptTemplateRow, error) {
 	row := q.db.QueryRowContext(ctx, activatePromptTemplate, id)
-	var i PromptTemplate
+	var i ActivatePromptTemplateRow
 	err := row.Scan(
 		&i.ID,
 		&i.Key,
@@ -41,13 +68,25 @@ func (q *Queries) ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (Pro
 }
 
 const createNewVersion = `-- name: CreateNewVersion :one
-INSERT INTO prompt_templates (
-  key, version, is_active, title, description, template, metadata, created_by
-) VALUES (
-  $1, 
-  (SELECT COALESCE(MAX(version), 0) + 1 FROM prompt_templates WHERE key = $1),
-  $2, $3, $4, $5, $6, $7
-) RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
+WITH inserted AS (
+  INSERT INTO prompt_templates (
+    key, version, is_active, title, description, template, metadata, created_by
+  ) VALUES (
+    $1, 
+    (SELECT COALESCE(MAX(version), 0) + 1 FROM prompt_templates WHERE key = $1),
+    $2, $3, $4, $5, $6, $7
+  )
+  RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
+),
+deactivated AS (
+  UPDATE prompt_templates SET
+    is_active = false,
+    updated_at = now()
+  WHERE key = (SELECT key FROM inserted)
+    AND id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at FROM inserted
 `
 
 type CreateNewVersionParams struct {
@@ -60,7 +99,21 @@ type CreateNewVersionParams struct {
 	CreatedBy   sql.NullString        `json:"created_by"`
 }
 
-func (q *Queries) CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (PromptTemplate, error) {
+type CreateNewVersionRow struct {
+	ID          uuid.UUID             `json:"id"`
+	Key         string                `json:"key"`
+	Version     int32                 `json:"version"`
+	IsActive    bool                  `json:"is_active"`
+	Title       string                `json:"title"`
+	Description sql.NullString        `json:"description"`
+	Template    string                `json:"template"`
+	Metadata    pqtype.NullRawMessage `json:"metadata"`
+	CreatedBy   sql.NullString        `json:"created_by"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
+}
+
+func (q *Queries) CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (CreateNewVersionRow, error) {
 	row := q.db.QueryRowContext(ctx, createNewVersion,
 		arg.Key,
 		arg.IsActive,
@@ -70,7 +123,7 @@ func (q *Queries) CreateNewVersion(ctx context.Context, arg CreateNewVersionPara
 		arg.Metadata,
 		arg.CreatedBy,
 	)
-	var i PromptTemplate
+	var i CreateNewVersionRow
 	err := row.Scan(
 		&i.ID,
 		&i.Key,
@@ -88,11 +141,23 @@ func (q *Queries) CreateNewVersion(ctx context.Context, arg CreateNewVersionPara
 }
 
 const createPromptTemplate = `-- name: CreatePromptTemplate :one
-INSERT INTO prompt_templates (
-  key, version, is_active, title, description, template, metadata, created_by
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
-) RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
+WITH inserted AS (
+  INSERT INTO prompt_templates (
+    key, version, is_active, title, description, template, metadata, created_by
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8
+  )
+  RETURNING id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at
+),
+deactivated AS (
+  UPDATE prompt_templates SET
+    is_active = false,
+    updated_at = now()
+  WHERE key = (SELECT key FROM inserted)
+    AND id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT id, key, version, is_active, title, description, template, metadata, created_by, created_at, updated_at FROM inserted
 `
 
 type CreatePromptTemplateParams struct {
@@ -106,7 +171,21 @@ type CreatePromptTemplateParams struct {
 	CreatedBy   sql.NullString        `json:"created_by"`
 }
 
-func (q *Queries) CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (PromptTemplate, error) {
+type CreatePromptTemplateRow struct {
+	ID          uuid.UUID             `json:"id"`
+	Key         string                `json:"key"`
+	Version     int32                 `json:"version"`
+	IsActive    bool                  `json:"is_active"`
+	Title       string                `json:"title"`
+	Description sql.NullString        `json:"description"`
+	Template    string                `json:"template"`
+	Metadata    pqtype.NullRawMessage `json:"metadata"`
+	CreatedBy   sql.NullString        `json:"created_by"`
+	CreatedAt   time.Time             `json:"created_at"`
+	UpdatedAt   time.Time             `json:"updated_at"`
+}
+
+func (q *Queries) CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (CreatePromptTemplateRow, error) {
 	row := q.db.QueryRowContext(ctx, createPromptTemplate,
 		arg.Key,
 		arg.Version,
@@ -117,7 +196,7 @@ func (q *Queries) CreatePromptTemplate(ctx context.Context, arg CreatePromptTemp
 		arg.Metadata,
 		arg.CreatedBy,
 	)
-	var i PromptTemplate
+	var i CreatePromptTemplateRow
 	err := row.Scan(
 		&i.ID,
 		&i.Key,

@@ -2,10 +2,13 @@ package prompt_templates
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 
 	"learning-core-api/internal/persistance/store"
 	"learning-core-api/internal/utils"
@@ -37,7 +40,7 @@ func (r *RepositoryImpl) Create(ctx context.Context, req CreatePromptTemplateReq
 		return nil, fmt.Errorf("failed to create prompt template: %w", err)
 	}
 
-	return toDomainPromptTemplate(&storeTemplate), nil
+	return toDomainPromptTemplateCreate(&storeTemplate), nil
 }
 
 // CreateVersion creates a new prompt template version.
@@ -55,7 +58,7 @@ func (r *RepositoryImpl) CreateVersion(ctx context.Context, req CreatePromptTemp
 		return nil, fmt.Errorf("failed to create prompt template version: %w", err)
 	}
 
-	return toDomainPromptTemplate(&storeTemplate), nil
+	return toDomainPromptTemplateVersion(&storeTemplate), nil
 }
 
 // GetByID retrieves a prompt template by ID.
@@ -98,7 +101,7 @@ func (r *RepositoryImpl) Activate(ctx context.Context, id uuid.UUID) (*PromptTem
 		return nil, fmt.Errorf("failed to activate prompt template: %w", err)
 	}
 
-	return toDomainPromptTemplate(&storeTemplate), nil
+	return toDomainPromptTemplateActivate(&storeTemplate), nil
 }
 
 // Deactivate marks a prompt template as inactive.
@@ -140,5 +143,86 @@ func toDomainPromptTemplate(storeTemplate *store.PromptTemplate) *PromptTemplate
 		CreatedBy:   utils.NullStringToPtr(storeTemplate.CreatedBy),
 		CreatedAt:   storeTemplate.CreatedAt,
 		UpdatedAt:   storeTemplate.UpdatedAt,
+	}
+}
+
+func toDomainPromptTemplateCreate(storeTemplate *store.CreatePromptTemplateRow) *PromptTemplate {
+	return toDomainPromptTemplateFields(
+		storeTemplate.ID,
+		storeTemplate.Key,
+		storeTemplate.Version,
+		storeTemplate.IsActive,
+		storeTemplate.Title,
+		storeTemplate.Description,
+		storeTemplate.Template,
+		storeTemplate.Metadata,
+		storeTemplate.CreatedBy,
+		storeTemplate.CreatedAt,
+		storeTemplate.UpdatedAt,
+	)
+}
+
+func toDomainPromptTemplateVersion(storeTemplate *store.CreateNewVersionRow) *PromptTemplate {
+	return toDomainPromptTemplateFields(
+		storeTemplate.ID,
+		storeTemplate.Key,
+		storeTemplate.Version,
+		storeTemplate.IsActive,
+		storeTemplate.Title,
+		storeTemplate.Description,
+		storeTemplate.Template,
+		storeTemplate.Metadata,
+		storeTemplate.CreatedBy,
+		storeTemplate.CreatedAt,
+		storeTemplate.UpdatedAt,
+	)
+}
+
+func toDomainPromptTemplateActivate(storeTemplate *store.ActivatePromptTemplateRow) *PromptTemplate {
+	return toDomainPromptTemplateFields(
+		storeTemplate.ID,
+		storeTemplate.Key,
+		storeTemplate.Version,
+		storeTemplate.IsActive,
+		storeTemplate.Title,
+		storeTemplate.Description,
+		storeTemplate.Template,
+		storeTemplate.Metadata,
+		storeTemplate.CreatedBy,
+		storeTemplate.CreatedAt,
+		storeTemplate.UpdatedAt,
+	)
+}
+
+func toDomainPromptTemplateFields(
+	id uuid.UUID,
+	key string,
+	version int32,
+	isActive bool,
+	title string,
+	description sql.NullString,
+	templateText string,
+	metadataRaw pqtype.NullRawMessage,
+	createdBy sql.NullString,
+	createdAt time.Time,
+	updatedAt time.Time,
+) *PromptTemplate {
+	var metadata json.RawMessage
+	if metadataRaw.Valid {
+		metadata = metadataRaw.RawMessage
+	}
+
+	return &PromptTemplate{
+		ID:          id,
+		Key:         key,
+		Version:     version,
+		IsActive:    isActive,
+		Title:       title,
+		Description: utils.NullStringToPtr(description),
+		Template:    templateText,
+		Metadata:    metadata,
+		CreatedBy:   utils.NullStringToPtr(createdBy),
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 }

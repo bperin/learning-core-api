@@ -14,8 +14,8 @@ import (
 type Querier interface {
 	ActivateChunkingConfig(ctx context.Context, id uuid.UUID) error
 	ActivateModelConfig(ctx context.Context, id uuid.UUID) error
-	ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (PromptTemplate, error)
-	ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTemplate, error)
+	ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (ActivatePromptTemplateRow, error)
+	ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (ActivateSchemaTemplateRow, error)
 	ActivateSystemInstruction(ctx context.Context, id uuid.UUID) error
 	ArchiveEval(ctx context.Context, id uuid.UUID) (Eval, error)
 	CompleteTestAttempt(ctx context.Context, arg CompleteTestAttemptParams) (TestAttempt, error)
@@ -23,29 +23,26 @@ type Querier interface {
 	CountUsers(ctx context.Context) (int64, error)
 	CountUsersByRole(ctx context.Context, dollar_1 string) (int64, error)
 	CreateArtifact(ctx context.Context, arg CreateArtifactParams) (Artifact, error)
-	CreateChunkingConfig(ctx context.Context, arg CreateChunkingConfigParams) (ChunkingConfig, error)
+	CreateChunkingConfig(ctx context.Context, arg CreateChunkingConfigParams) (CreateChunkingConfigRow, error)
 	CreateCurriculum(ctx context.Context, arg CreateCurriculumParams) (Curricula, error)
 	CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error)
 	CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, error)
 	CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) (EvalItem, error)
 	CreateEvalItemReview(ctx context.Context, arg CreateEvalItemReviewParams) (EvalItemReview, error)
-	CreateModelConfig(ctx context.Context, arg CreateModelConfigParams) (ModelConfig, error)
-	CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (PromptTemplate, error)
-	CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (PromptTemplate, error)
-	CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemplateParams) (SchemaTemplate, error)
-	CreateSchemaTemplateVersion(ctx context.Context, arg CreateSchemaTemplateVersionParams) (SchemaTemplate, error)
+	CreateModelConfig(ctx context.Context, arg CreateModelConfigParams) (CreateModelConfigRow, error)
+	CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (CreateNewVersionRow, error)
+	CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (CreatePromptTemplateRow, error)
+	CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemplateParams) (CreateSchemaTemplateRow, error)
 	CreateSubject(ctx context.Context, arg CreateSubjectParams) (Subject, error)
-	CreateSystemInstruction(ctx context.Context, arg CreateSystemInstructionParams) (SystemInstruction, error)
+	CreateSystemInstruction(ctx context.Context, arg CreateSystemInstructionParams) (CreateSystemInstructionRow, error)
 	CreateTestAttempt(ctx context.Context, arg CreateTestAttemptParams) (TestAttempt, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserAnswer(ctx context.Context, arg CreateUserAnswerParams) (UserAnswer, error)
 	DeactivateOtherChunkingConfigs(ctx context.Context, id uuid.UUID) error
 	DeactivateOtherModelConfigs(ctx context.Context, id uuid.UUID) error
-	DeactivateOtherSchemaTemplateVersions(ctx context.Context, arg DeactivateOtherSchemaTemplateVersionsParams) error
 	DeactivateOtherSystemInstructions(ctx context.Context, id uuid.UUID) error
 	DeactivateOtherVersions(ctx context.Context, arg DeactivateOtherVersionsParams) error
 	DeactivatePromptTemplate(ctx context.Context, id uuid.UUID) (PromptTemplate, error)
-	DeactivateSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTemplate, error)
 	DeleteCurriculum(ctx context.Context, id uuid.UUID) error
 	DeleteDocument(ctx context.Context, id uuid.UUID) error
 	DeleteSubject(ctx context.Context, id uuid.UUID) error
@@ -112,7 +109,6 @@ type Querier interface {
 	GetReviewsByVerdict(ctx context.Context, verdict ReviewVerdict) ([]EvalItemReview, error)
 	GetReviewsWithEvalItemDetails(ctx context.Context, arg GetReviewsWithEvalItemDetailsParams) ([]GetReviewsWithEvalItemDetailsRow, error)
 	GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTemplate, error)
-	GetSchemaTemplateByTypeAndVersion(ctx context.Context, arg GetSchemaTemplateByTypeAndVersionParams) (SchemaTemplate, error)
 	GetSubject(ctx context.Context, id uuid.UUID) (Subject, error)
 	GetSubjectByUserAndName(ctx context.Context, arg GetSubjectByUserAndNameParams) (Subject, error)
 	GetSystemInstruction(ctx context.Context, id uuid.UUID) (SystemInstruction, error)
@@ -142,8 +138,6 @@ type Querier interface {
 	ListModelConfigs(ctx context.Context) ([]ModelConfig, error)
 	ListPromptTemplates(ctx context.Context, arg ListPromptTemplatesParams) ([]PromptTemplate, error)
 	ListRootCurriculaBySubject(ctx context.Context, subjectID uuid.UUID) ([]Curricula, error)
-	ListSchemaTemplatesByCurriculum(ctx context.Context, curriculumID uuid.NullUUID) ([]SchemaTemplate, error)
-	ListSchemaTemplatesBySubject(ctx context.Context, subjectID uuid.NullUUID) ([]SchemaTemplate, error)
 	ListSchemaTemplatesByType(ctx context.Context, schemaType string) ([]SchemaTemplate, error)
 	ListSubjectsByUser(ctx context.Context, userID uuid.UUID) ([]Subject, error)
 	ListSystemInstructions(ctx context.Context) ([]SystemInstruction, error)

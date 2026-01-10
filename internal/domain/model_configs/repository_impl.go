@@ -41,14 +41,7 @@ func (r *RepositoryImpl) Create(ctx context.Context, req CreateModelConfigReques
 		return nil, fmt.Errorf("failed to create model config: %w", err)
 	}
 
-	if isActive {
-		if err := r.Activate(ctx, storeConfig.ID); err != nil {
-			return nil, err
-		}
-		return r.GetByID(ctx, storeConfig.ID)
-	}
-
-	return toDomainModelConfig(&storeConfig), nil
+	return toDomainModelConfigRow(&storeConfig), nil
 }
 
 // GetByID retrieves a model config by ID.
@@ -90,13 +83,26 @@ func (r *RepositoryImpl) Activate(ctx context.Context, id uuid.UUID) error {
 	if err := r.queries.ActivateModelConfig(ctx, id); err != nil {
 		return fmt.Errorf("failed to activate model config: %w", err)
 	}
-	if err := r.queries.DeactivateOtherModelConfigs(ctx, id); err != nil {
-		return fmt.Errorf("failed to deactivate other model configs: %w", err)
-	}
 	return nil
 }
 
 func toDomainModelConfig(storeConfig *store.ModelConfig) *ModelConfig {
+	return &ModelConfig{
+		ID:          storeConfig.ID,
+		Version:     storeConfig.Version,
+		ModelName:   storeConfig.ModelName,
+		Temperature: utils.NullFloat64ToPtr(storeConfig.Temperature),
+		MaxTokens:   utils.NullInt32ToPtr(storeConfig.MaxTokens),
+		TopP:        utils.NullFloat64ToPtr(storeConfig.TopP),
+		TopK:        utils.NullInt32ToPtr(storeConfig.TopK),
+		MimeType:    utils.NullStringToPtr(storeConfig.MimeType),
+		IsActive:    storeConfig.IsActive,
+		CreatedBy:   storeConfig.CreatedBy,
+		CreatedAt:   storeConfig.CreatedAt,
+	}
+}
+
+func toDomainModelConfigRow(storeConfig *store.CreateModelConfigRow) *ModelConfig {
 	return &ModelConfig{
 		ID:          storeConfig.ID,
 		Version:     storeConfig.Version,

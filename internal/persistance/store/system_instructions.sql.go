@@ -7,12 +7,16 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const activateSystemInstruction = `-- name: ActivateSystemInstruction :exec
-UPDATE system_instructions SET is_active = true WHERE id = $1
+WITH activated AS (
+  UPDATE system_instructions SET is_active = true WHERE system_instructions.id = $1
+)
+UPDATE system_instructions SET is_active = false WHERE system_instructions.id != $1
 `
 
 func (q *Queries) ActivateSystemInstruction(ctx context.Context, id uuid.UUID) error {
@@ -21,12 +25,22 @@ func (q *Queries) ActivateSystemInstruction(ctx context.Context, id uuid.UUID) e
 }
 
 const createSystemInstruction = `-- name: CreateSystemInstruction :one
-INSERT INTO system_instructions (
-  version, text, is_active, created_by
-) VALUES (
-  (SELECT COALESCE(MAX(version), 0) + 1 FROM system_instructions),
-  $1, $2, $3
-) RETURNING id, version, text, is_active, created_by, created_at
+WITH inserted AS (
+  INSERT INTO system_instructions (
+    version, text, is_active, created_by
+  ) VALUES (
+    (SELECT COALESCE(MAX(version), 0) + 1 FROM system_instructions),
+    $1, $2, $3
+  )
+  RETURNING id, version, text, is_active, created_by, created_at
+),
+deactivated AS (
+  UPDATE system_instructions SET
+    is_active = false
+  WHERE system_instructions.id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT id, version, text, is_active, created_by, created_at FROM inserted
 `
 
 type CreateSystemInstructionParams struct {
@@ -35,9 +49,18 @@ type CreateSystemInstructionParams struct {
 	CreatedBy uuid.UUID `json:"created_by"`
 }
 
-func (q *Queries) CreateSystemInstruction(ctx context.Context, arg CreateSystemInstructionParams) (SystemInstruction, error) {
+type CreateSystemInstructionRow struct {
+	ID        uuid.UUID `json:"id"`
+	Version   int32     `json:"version"`
+	Text      string    `json:"text"`
+	IsActive  bool      `json:"is_active"`
+	CreatedBy uuid.UUID `json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func (q *Queries) CreateSystemInstruction(ctx context.Context, arg CreateSystemInstructionParams) (CreateSystemInstructionRow, error) {
 	row := q.db.QueryRowContext(ctx, createSystemInstruction, arg.Text, arg.IsActive, arg.CreatedBy)
-	var i SystemInstruction
+	var i CreateSystemInstructionRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,

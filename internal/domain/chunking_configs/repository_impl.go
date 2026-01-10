@@ -36,14 +36,7 @@ func (r *RepositoryImpl) Create(ctx context.Context, req CreateChunkingConfigReq
 		return nil, fmt.Errorf("failed to create chunking config: %w", err)
 	}
 
-	if isActive {
-		if err := r.Activate(ctx, storeConfig.ID); err != nil {
-			return nil, err
-		}
-		return r.GetByID(ctx, storeConfig.ID)
-	}
-
-	return toDomainChunkingConfig(&storeConfig), nil
+	return toDomainChunkingConfigRow(&storeConfig), nil
 }
 
 // GetByID retrieves a chunking config by ID.
@@ -85,13 +78,22 @@ func (r *RepositoryImpl) Activate(ctx context.Context, id uuid.UUID) error {
 	if err := r.queries.ActivateChunkingConfig(ctx, id); err != nil {
 		return fmt.Errorf("failed to activate chunking config: %w", err)
 	}
-	if err := r.queries.DeactivateOtherChunkingConfigs(ctx, id); err != nil {
-		return fmt.Errorf("failed to deactivate other chunking configs: %w", err)
-	}
 	return nil
 }
 
 func toDomainChunkingConfig(storeConfig *store.ChunkingConfig) *ChunkingConfig {
+	return &ChunkingConfig{
+		ID:           storeConfig.ID,
+		Version:      storeConfig.Version,
+		ChunkSize:    storeConfig.ChunkSize,
+		ChunkOverlap: storeConfig.ChunkOverlap,
+		IsActive:     storeConfig.IsActive,
+		CreatedBy:    storeConfig.CreatedBy,
+		CreatedAt:    storeConfig.CreatedAt,
+	}
+}
+
+func toDomainChunkingConfigRow(storeConfig *store.CreateChunkingConfigRow) *ChunkingConfig {
 	return &ChunkingConfig{
 		ID:           storeConfig.ID,
 		Version:      storeConfig.Version,

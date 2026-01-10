@@ -17,18 +17,42 @@ SELECT * FROM prompt_templates WHERE is_active = true ORDER BY key ASC;
 SELECT * FROM prompt_templates ORDER BY key ASC, version DESC LIMIT $1 OFFSET $2;
 
 -- name: CreatePromptTemplate :one
-INSERT INTO prompt_templates (
-  key, version, is_active, title, description, template, metadata, created_by
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
-) RETURNING *;
+WITH inserted AS (
+  INSERT INTO prompt_templates (
+    key, version, is_active, title, description, template, metadata, created_by
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8
+  )
+  RETURNING *
+),
+deactivated AS (
+  UPDATE prompt_templates SET
+    is_active = false,
+    updated_at = now()
+  WHERE key = (SELECT key FROM inserted)
+    AND id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT * FROM inserted;
 
 -- name: ActivatePromptTemplate :one
-UPDATE prompt_templates SET
-  is_active = true,
-  updated_at = now()
-WHERE id = $1
-RETURNING *;
+WITH target AS (
+  SELECT key FROM prompt_templates WHERE prompt_templates.id = $1
+),
+deactivated AS (
+  UPDATE prompt_templates SET
+    is_active = false,
+    updated_at = now()
+  WHERE key = (SELECT key FROM target) AND id != $1
+),
+activated AS (
+  UPDATE prompt_templates SET
+    is_active = true,
+    updated_at = now()
+  WHERE id = $1
+  RETURNING *
+)
+SELECT * FROM activated;
 
 -- name: DeactivatePromptTemplate :one
 UPDATE prompt_templates SET
@@ -49,13 +73,25 @@ FROM prompt_templates
 WHERE key = $1;
 
 -- name: CreateNewVersion :one
-INSERT INTO prompt_templates (
-  key, version, is_active, title, description, template, metadata, created_by
-) VALUES (
-  $1, 
-  (SELECT COALESCE(MAX(version), 0) + 1 FROM prompt_templates WHERE key = $1),
-  $2, $3, $4, $5, $6, $7
-) RETURNING *;
+WITH inserted AS (
+  INSERT INTO prompt_templates (
+    key, version, is_active, title, description, template, metadata, created_by
+  ) VALUES (
+    $1, 
+    (SELECT COALESCE(MAX(version), 0) + 1 FROM prompt_templates WHERE key = $1),
+    $2, $3, $4, $5, $6, $7
+  )
+  RETURNING *
+),
+deactivated AS (
+  UPDATE prompt_templates SET
+    is_active = false,
+    updated_at = now()
+  WHERE key = (SELECT key FROM inserted)
+    AND id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT * FROM inserted;
 
 -- name: SearchPromptTemplatesByTitle :many
 SELECT * FROM prompt_templates 

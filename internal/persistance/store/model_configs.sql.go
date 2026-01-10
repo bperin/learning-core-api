@@ -8,12 +8,16 @@ package store
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const activateModelConfig = `-- name: ActivateModelConfig :exec
-UPDATE model_configs SET is_active = true WHERE id = $1
+WITH activated AS (
+  UPDATE model_configs SET is_active = true WHERE model_configs.id = $1
+)
+UPDATE model_configs SET is_active = false WHERE model_configs.id != $1
 `
 
 func (q *Queries) ActivateModelConfig(ctx context.Context, id uuid.UUID) error {
@@ -22,12 +26,22 @@ func (q *Queries) ActivateModelConfig(ctx context.Context, id uuid.UUID) error {
 }
 
 const createModelConfig = `-- name: CreateModelConfig :one
-INSERT INTO model_configs (
-  version, model_name, temperature, max_tokens, top_p, top_k, mime_type, is_active, created_by
-) VALUES (
-  (SELECT COALESCE(MAX(version), 0) + 1 FROM model_configs),
-  $1, $2, $3, $4, $5, $6, $7, $8
-) RETURNING id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type
+WITH inserted AS (
+  INSERT INTO model_configs (
+    version, model_name, temperature, max_tokens, top_p, top_k, mime_type, is_active, created_by
+  ) VALUES (
+    (SELECT COALESCE(MAX(version), 0) + 1 FROM model_configs),
+    $1, $2, $3, $4, $5, $6, $7, $8
+  )
+  RETURNING id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type
+),
+deactivated AS (
+  UPDATE model_configs SET
+    is_active = false
+  WHERE model_configs.id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type FROM inserted
 `
 
 type CreateModelConfigParams struct {
@@ -41,7 +55,21 @@ type CreateModelConfigParams struct {
 	CreatedBy   uuid.UUID       `json:"created_by"`
 }
 
-func (q *Queries) CreateModelConfig(ctx context.Context, arg CreateModelConfigParams) (ModelConfig, error) {
+type CreateModelConfigRow struct {
+	ID          uuid.UUID       `json:"id"`
+	Version     int32           `json:"version"`
+	ModelName   string          `json:"model_name"`
+	Temperature sql.NullFloat64 `json:"temperature"`
+	MaxTokens   sql.NullInt32   `json:"max_tokens"`
+	TopP        sql.NullFloat64 `json:"top_p"`
+	TopK        sql.NullInt32   `json:"top_k"`
+	IsActive    bool            `json:"is_active"`
+	CreatedBy   uuid.UUID       `json:"created_by"`
+	CreatedAt   time.Time       `json:"created_at"`
+	MimeType    sql.NullString  `json:"mime_type"`
+}
+
+func (q *Queries) CreateModelConfig(ctx context.Context, arg CreateModelConfigParams) (CreateModelConfigRow, error) {
 	row := q.db.QueryRowContext(ctx, createModelConfig,
 		arg.ModelName,
 		arg.Temperature,
@@ -52,7 +80,7 @@ func (q *Queries) CreateModelConfig(ctx context.Context, arg CreateModelConfigPa
 		arg.IsActive,
 		arg.CreatedBy,
 	)
-	var i ModelConfig
+	var i CreateModelConfigRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,

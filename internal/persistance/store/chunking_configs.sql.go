@@ -7,12 +7,16 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
 
 const activateChunkingConfig = `-- name: ActivateChunkingConfig :exec
-UPDATE chunking_configs SET is_active = true WHERE id = $1
+WITH activated AS (
+  UPDATE chunking_configs SET is_active = true WHERE chunking_configs.id = $1
+)
+UPDATE chunking_configs SET is_active = false WHERE chunking_configs.id != $1
 `
 
 func (q *Queries) ActivateChunkingConfig(ctx context.Context, id uuid.UUID) error {
@@ -21,12 +25,22 @@ func (q *Queries) ActivateChunkingConfig(ctx context.Context, id uuid.UUID) erro
 }
 
 const createChunkingConfig = `-- name: CreateChunkingConfig :one
-INSERT INTO chunking_configs (
-  version, chunk_size, chunk_overlap, is_active, created_by
-) VALUES (
-  (SELECT COALESCE(MAX(version), 0) + 1 FROM chunking_configs),
-  $1, $2, $3, $4
-) RETURNING id, version, chunk_size, chunk_overlap, is_active, created_by, created_at
+WITH inserted AS (
+  INSERT INTO chunking_configs (
+    version, chunk_size, chunk_overlap, is_active, created_by
+  ) VALUES (
+    (SELECT COALESCE(MAX(version), 0) + 1 FROM chunking_configs),
+    $1, $2, $3, $4
+  )
+  RETURNING id, version, chunk_size, chunk_overlap, is_active, created_by, created_at
+),
+deactivated AS (
+  UPDATE chunking_configs SET
+    is_active = false
+  WHERE chunking_configs.id != (SELECT id FROM inserted)
+    AND (SELECT is_active FROM inserted) = true
+)
+SELECT id, version, chunk_size, chunk_overlap, is_active, created_by, created_at FROM inserted
 `
 
 type CreateChunkingConfigParams struct {
@@ -36,14 +50,24 @@ type CreateChunkingConfigParams struct {
 	CreatedBy    uuid.UUID `json:"created_by"`
 }
 
-func (q *Queries) CreateChunkingConfig(ctx context.Context, arg CreateChunkingConfigParams) (ChunkingConfig, error) {
+type CreateChunkingConfigRow struct {
+	ID           uuid.UUID `json:"id"`
+	Version      int32     `json:"version"`
+	ChunkSize    int32     `json:"chunk_size"`
+	ChunkOverlap int32     `json:"chunk_overlap"`
+	IsActive     bool      `json:"is_active"`
+	CreatedBy    uuid.UUID `json:"created_by"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+func (q *Queries) CreateChunkingConfig(ctx context.Context, arg CreateChunkingConfigParams) (CreateChunkingConfigRow, error) {
 	row := q.db.QueryRowContext(ctx, createChunkingConfig,
 		arg.ChunkSize,
 		arg.ChunkOverlap,
 		arg.IsActive,
 		arg.CreatedBy,
 	)
-	var i ChunkingConfig
+	var i CreateChunkingConfigRow
 	err := row.Scan(
 		&i.ID,
 		&i.Version,

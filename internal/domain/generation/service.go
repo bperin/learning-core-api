@@ -215,10 +215,9 @@ func (s *Service) resolveOutputConfig(ctx context.Context, out OutputConfig) (js
 	var schemaTmpl *schema_templates.SchemaTemplate
 	var err error
 	if out.SchemaVersion > 0 {
-		schemaTmpl, err = s.schemaTemplates.GetByTypeAndVersion(ctx, out.SchemaKey, out.SchemaVersion)
-	} else {
-		schemaTmpl, err = s.schemaTemplates.GetActiveByType(ctx, out.SchemaKey)
+		return nil, uuid.Nil, fmt.Errorf("schema_version is not supported; use the active schema")
 	}
+	schemaTmpl, err = s.schemaTemplates.GetActiveByType(ctx, out.SchemaKey)
 
 	if err != nil {
 		return nil, uuid.Nil, fmt.Errorf("failed to fetch schema template %q: %w", out.SchemaKey, err)
