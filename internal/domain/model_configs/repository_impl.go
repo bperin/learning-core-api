@@ -22,19 +22,14 @@ func NewRepository(queries *store.Queries) Repository {
 
 // Create creates a model config with an explicit version.
 func (r *RepositoryImpl) Create(ctx context.Context, req CreateModelConfigRequest) (*ModelConfig, error) {
-	isActive := false
-	if req.IsActive != nil {
-		isActive = *req.IsActive
-	}
-
 	storeConfig, err := r.queries.CreateModelConfig(ctx, store.CreateModelConfigParams{
 		ModelName:   req.ModelName,
-		Temperature: utils.SqlNullFloat64(req.Temperature),
-		MaxTokens:   utils.SqlNullInt32(req.MaxTokens),
-		TopP:        utils.SqlNullFloat64(req.TopP),
-		TopK:        utils.SqlNullInt32(req.TopK),
-		MimeType:    utils.SqlNullString(req.MimeType),
-		IsActive:    isActive,
+		Temperature: utils.SqlNullFloat64(&req.Temperature),
+		MaxTokens:   utils.SqlNullInt32(&req.MaxTokens),
+		TopP:        utils.SqlNullFloat64(&req.TopP),
+		TopK:        utils.SqlNullInt32(&req.TopK),
+		MimeType:    utils.SqlNullString(&req.MimeType),
+		IsActive:    req.IsActive,
 		CreatedBy:   req.CreatedBy,
 	})
 	if err != nil {
@@ -91,11 +86,11 @@ func toDomainModelConfig(storeConfig *store.ModelConfig) *ModelConfig {
 		ID:          storeConfig.ID,
 		Version:     storeConfig.Version,
 		ModelName:   storeConfig.ModelName,
-		Temperature: utils.NullFloat64ToPtr(storeConfig.Temperature),
-		MaxTokens:   utils.NullInt32ToPtr(storeConfig.MaxTokens),
-		TopP:        utils.NullFloat64ToPtr(storeConfig.TopP),
-		TopK:        utils.NullInt32ToPtr(storeConfig.TopK),
-		MimeType:    utils.NullStringToPtr(storeConfig.MimeType),
+		Temperature: utils.NullFloat64ToFloat64(storeConfig.Temperature),
+		MaxTokens:   utils.NullInt32ToInt32(storeConfig.MaxTokens),
+		TopP:        utils.NullFloat64ToFloat64(storeConfig.TopP),
+		TopK:        utils.NullInt32ToInt32(storeConfig.TopK),
+		MimeType:    utils.NullStringToString(storeConfig.MimeType),
 		IsActive:    storeConfig.IsActive,
 		CreatedBy:   storeConfig.CreatedBy,
 		CreatedAt:   storeConfig.CreatedAt,
@@ -107,11 +102,11 @@ func toDomainModelConfigRow(storeConfig *store.CreateModelConfigRow) *ModelConfi
 		ID:          storeConfig.ID,
 		Version:     storeConfig.Version,
 		ModelName:   storeConfig.ModelName,
-		Temperature: utils.NullFloat64ToPtr(storeConfig.Temperature),
-		MaxTokens:   utils.NullInt32ToPtr(storeConfig.MaxTokens),
-		TopP:        utils.NullFloat64ToPtr(storeConfig.TopP),
-		TopK:        utils.NullInt32ToPtr(storeConfig.TopK),
-		MimeType:    utils.NullStringToPtr(storeConfig.MimeType),
+		Temperature: utils.NullFloat64ToFloat64(storeConfig.Temperature),
+		MaxTokens:   utils.NullInt32ToInt32(storeConfig.MaxTokens),
+		TopP:        utils.NullFloat64ToFloat64(storeConfig.TopP),
+		TopK:        utils.NullInt32ToInt32(storeConfig.TopK),
+		MimeType:    utils.NullStringToString(storeConfig.MimeType),
 		IsActive:    storeConfig.IsActive,
 		CreatedBy:   storeConfig.CreatedBy,
 		CreatedAt:   storeConfig.CreatedAt,

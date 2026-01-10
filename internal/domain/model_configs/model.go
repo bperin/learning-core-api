@@ -11,11 +11,11 @@ type ModelConfig struct {
 	ID          uuid.UUID `json:"id"`
 	Version     int32     `json:"version"`
 	ModelName   string    `json:"model_name"`
-	Temperature *float64  `json:"temperature,omitempty"`
-	MaxTokens   *int32    `json:"max_tokens,omitempty"`
-	TopP        *float64  `json:"top_p,omitempty"`
-	TopK        *int32    `json:"top_k,omitempty"`
-	MimeType    *string   `json:"mime_type,omitempty"`
+	Temperature float64   `json:"temperature"`
+	MaxTokens   int32     `json:"max_tokens"`
+	TopP        float64   `json:"top_p"`
+	TopK        int32     `json:"top_k"`
+	MimeType    string    `json:"mime_type"`
 	IsActive    bool      `json:"is_active"`
 	CreatedBy   uuid.UUID `json:"created_by"`
 	CreatedAt   time.Time `json:"created_at"`
@@ -24,11 +24,11 @@ type ModelConfig struct {
 // CreateModelConfigRequest represents the data needed to create a model config.
 type CreateModelConfigRequest struct {
 	ModelName   string    `json:"model_name"`
-	Temperature *float64  `json:"temperature,omitempty"`
-	MaxTokens   *int32    `json:"max_tokens,omitempty"`
-	TopP        *float64  `json:"top_p,omitempty"`
-	TopK        *int32    `json:"top_k,omitempty"`
-	MimeType    *string   `json:"mime_type,omitempty"`
-	IsActive    *bool     `json:"is_active,omitempty"`
+	Temperature float64   `json:"temperature"`
+	MaxTokens   int32     `json:"max_tokens"`
+	TopP        float64   `json:"top_p"`
+	TopK        int32     `json:"top_k"`
+	MimeType    string    `json:"mime_type"`
+	IsActive    bool      `json:"is_active"`
 	CreatedBy   uuid.UUID `json:"created_by"`
 }

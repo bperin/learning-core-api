@@ -43,19 +43,28 @@ func TestModelConfigRepository_CreateActivate(t *testing.T) {
 	ctx := context.Background()
 	userID := createTestUser(t, db)
 
-	active := true
 	first, err := repo.Create(ctx, CreateModelConfigRequest{
-		ModelName: "gemini-1.5-pro",
-		IsActive:  &active,
-		CreatedBy: userID,
+		ModelName:   "gemini-1.5-pro",
+		Temperature: 0.7,
+		MaxTokens:   512,
+		TopP:        0.9,
+		TopK:        40,
+		MimeType:    "application/json",
+		IsActive:    true,
+		CreatedBy:   userID,
 	})
 	require.NoError(t, err)
 	assert.True(t, first.IsActive)
 
 	second, err := repo.Create(ctx, CreateModelConfigRequest{
-		ModelName: "gemini-1.5-flash",
-		IsActive:  &active,
-		CreatedBy: userID,
+		ModelName:   "gemini-1.5-flash",
+		Temperature: 0.3,
+		MaxTokens:   256,
+		TopP:        0.8,
+		TopK:        20,
+		MimeType:    "application/json",
+		IsActive:    true,
+		CreatedBy:   userID,
 	})
 	require.NoError(t, err)
 	assert.True(t, second.IsActive)

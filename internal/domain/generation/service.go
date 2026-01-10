@@ -130,21 +130,16 @@ func (s *Service) resolveModelConfig(ctx context.Context, id uuid.UUID) (*ModelC
 		Name: dbConfig.ModelName,
 	}
 
-	if dbConfig.Temperature != nil {
-		baseConfig.Temperature = ptr(float32(*dbConfig.Temperature))
-	}
-	if dbConfig.MaxTokens != nil {
-		baseConfig.MaxTokens = dbConfig.MaxTokens
-	}
-	if dbConfig.TopP != nil {
-		baseConfig.TopP = ptr(float32(*dbConfig.TopP))
-	}
-	if dbConfig.TopK != nil {
-		baseConfig.TopK = dbConfig.TopK
-	}
-	if dbConfig.MimeType != nil {
-		baseConfig.MimeType = *dbConfig.MimeType
-	}
+	temperature := float32(dbConfig.Temperature)
+	maxTokens := dbConfig.MaxTokens
+	topP := float32(dbConfig.TopP)
+	topK := dbConfig.TopK
+
+	baseConfig.Temperature = &temperature
+	baseConfig.MaxTokens = &maxTokens
+	baseConfig.TopP = &topP
+	baseConfig.TopK = &topK
+	baseConfig.MimeType = dbConfig.MimeType
 
 	if baseConfig.Name == "" {
 		return nil, fmt.Errorf("resolved model config is incomplete: missing name")
