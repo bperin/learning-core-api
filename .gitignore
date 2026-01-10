@@ -24,7 +24,9 @@ go.work.sum
 # env file
 .env
 
+*.tar.gz
 tmp/learning-api
 tmp/main
 test_docs/test.pdf
 tmp/main
+go1.21.0.linux-amd64.tar.gz
