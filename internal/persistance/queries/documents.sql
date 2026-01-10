@@ -4,9 +4,6 @@ SELECT * FROM documents WHERE id = $1 LIMIT 1;
 -- name: GetDocumentsByUser :many
 SELECT * FROM documents WHERE user_id = $1 ORDER BY created_at DESC;
 
--- name: GetDocumentsBySubject :many
-SELECT * FROM documents WHERE subject_id = $1 ORDER BY created_at DESC;
-
 -- name: GetDocumentsByRagStatus :many
 SELECT * FROM documents WHERE rag_status = $1 ORDER BY created_at DESC;
 
@@ -17,9 +14,9 @@ SELECT * FROM documents ORDER BY created_at DESC LIMIT $1 OFFSET $2;
 INSERT INTO documents (
   filename, title, mime_type, content, storage_path, storage_bucket,
   file_store_name, file_store_file_name, rag_status,
-  user_id, subject_id, curriculum_id, curricular, subjects
+  user_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
 ) RETURNING *;
 
 -- name: UpdateDocument :one
@@ -31,10 +28,6 @@ UPDATE documents SET
   file_store_name = COALESCE($6, file_store_name),
   file_store_file_name = COALESCE($7, file_store_file_name),
   rag_status = COALESCE($8, rag_status),
-  subject_id = COALESCE($9, subject_id),
-  curriculum_id = COALESCE($10, curriculum_id),
-  curricular = COALESCE($11, curricular),
-  subjects = COALESCE($12, subjects),
   updated_at = now()
 WHERE id = $1
 RETURNING *;
@@ -54,13 +47,3 @@ SELECT * FROM documents
 WHERE title ILIKE '%' || @title || '%' 
 ORDER BY created_at DESC 
 LIMIT @page_limit OFFSET @page_offset;
-
--- name: GetDocumentsBySubjects :many
-SELECT * FROM documents 
-WHERE subjects && $1::text[]
-ORDER BY created_at DESC;
-
--- name: GetDocumentsByCurriculum :many
-SELECT * FROM documents
-WHERE curriculum_id = $1
-ORDER BY created_at DESC;

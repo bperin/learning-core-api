@@ -20,10 +20,7 @@ func (g *SyntheticIntentGenerator) GenerateIntents(
 ) ([]Intent, *Artifact, error) {
 
 	inputVars := map[string]any{
-		"subject":    doc.SubjectName,
-		"curriculum": doc.Curriculum,
-		"title":      doc.HumanTitle,
-		"tags":       doc.TopicTags,
+		"title": doc.HumanTitle,
 	}
 
 	rawJSON, err := g.engine.Generate(ctx, prompt, schema, inputVars)

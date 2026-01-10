@@ -17,14 +17,8 @@ type Repository interface {
 	// GetByUser retrieves all documents for a specific user
 	GetByUser(ctx context.Context, userID uuid.UUID) ([]*Document, error)
 
-	// GetBySubject retrieves all documents in a specific subject
-	GetBySubject(ctx context.Context, subjectID uuid.UUID) ([]*Document, error)
-
 	// GetByRagStatus retrieves documents by RAG processing status
 	GetByRagStatus(ctx context.Context, status string) ([]*Document, error)
-
-	// GetBySubjects retrieves documents that match any of the provided subjects
-	GetBySubjects(ctx context.Context, subjects []string) ([]*Document, error)
 
 	// List retrieves documents with pagination
 	List(ctx context.Context, limit, offset int) ([]*Document, error)

@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sqlc-dev/pqtype"
 )
 
 const archiveEval = `-- name: ArchiveEval :one
@@ -20,7 +19,7 @@ UPDATE evals SET
   archived_at = now(),
   updated_at = now()
 WHERE id = $1 AND status IN ('draft', 'published')
-RETURNING id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at
+RETURNING id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at
 `
 
 func (q *Queries) ArchiveEval(ctx context.Context, id uuid.UUID) (Eval, error) {
@@ -33,8 +32,6 @@ func (q *Queries) ArchiveEval(ctx context.Context, id uuid.UUID) (Eval, error) {
 		&i.Status,
 		&i.Difficulty,
 		&i.Instructions,
-		&i.Rubric,
-		&i.SubjectID,
 		&i.UserID,
 		&i.PublishedAt,
 		&i.ArchivedAt,
@@ -46,22 +43,19 @@ func (q *Queries) ArchiveEval(ctx context.Context, id uuid.UUID) (Eval, error) {
 
 const createEval = `-- name: CreateEval :one
 INSERT INTO evals (
-  title, description, status, difficulty, instructions, rubric,
-  subject_id, user_id
+  title, description, status, difficulty, instructions, user_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
-) RETURNING id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at
+  $1, $2, $3, $4, $5, $6
+) RETURNING id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at
 `
 
 type CreateEvalParams struct {
-	Title        string                `json:"title"`
-	Description  sql.NullString        `json:"description"`
-	Status       string                `json:"status"`
-	Difficulty   sql.NullString        `json:"difficulty"`
-	Instructions sql.NullString        `json:"instructions"`
-	Rubric       pqtype.NullRawMessage `json:"rubric"`
-	SubjectID    uuid.NullUUID         `json:"subject_id"`
-	UserID       uuid.UUID             `json:"user_id"`
+	Title        string         `json:"title"`
+	Description  sql.NullString `json:"description"`
+	Status       string         `json:"status"`
+	Difficulty   sql.NullString `json:"difficulty"`
+	Instructions sql.NullString `json:"instructions"`
+	UserID       uuid.UUID      `json:"user_id"`
 }
 
 func (q *Queries) CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, error) {
@@ -71,8 +65,6 @@ func (q *Queries) CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, e
 		arg.Status,
 		arg.Difficulty,
 		arg.Instructions,
-		arg.Rubric,
-		arg.SubjectID,
 		arg.UserID,
 	)
 	var i Eval
@@ -83,8 +75,6 @@ func (q *Queries) CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, e
 		&i.Status,
 		&i.Difficulty,
 		&i.Instructions,
-		&i.Rubric,
-		&i.SubjectID,
 		&i.UserID,
 		&i.PublishedAt,
 		&i.ArchivedAt,
@@ -95,7 +85,7 @@ func (q *Queries) CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, e
 }
 
 const getDraftEvals = `-- name: GetDraftEvals :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = 'draft' ORDER BY created_at DESC
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = 'draft' ORDER BY created_at DESC
 `
 
 func (q *Queries) GetDraftEvals(ctx context.Context) ([]Eval, error) {
@@ -114,8 +104,6 @@ func (q *Queries) GetDraftEvals(ctx context.Context) ([]Eval, error) {
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,
@@ -136,7 +124,7 @@ func (q *Queries) GetDraftEvals(ctx context.Context) ([]Eval, error) {
 }
 
 const getEval = `-- name: GetEval :one
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE id = $1 LIMIT 1
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetEval(ctx context.Context, id uuid.UUID) (Eval, error) {
@@ -149,8 +137,6 @@ func (q *Queries) GetEval(ctx context.Context, id uuid.UUID) (Eval, error) {
 		&i.Status,
 		&i.Difficulty,
 		&i.Instructions,
-		&i.Rubric,
-		&i.SubjectID,
 		&i.UserID,
 		&i.PublishedAt,
 		&i.ArchivedAt,
@@ -161,7 +147,7 @@ func (q *Queries) GetEval(ctx context.Context, id uuid.UUID) (Eval, error) {
 }
 
 const getEvalWithItemCount = `-- name: GetEvalWithItemCount :one
-SELECT e.id, e.title, e.description, e.status, e.difficulty, e.instructions, e.rubric, e.subject_id, e.user_id, e.published_at, e.archived_at, e.created_at, e.updated_at, COUNT(ei.id) as item_count
+SELECT e.id, e.title, e.description, e.status, e.difficulty, e.instructions, e.user_id, e.published_at, e.archived_at, e.created_at, e.updated_at, COUNT(ei.id) as item_count
 FROM evals e
 LEFT JOIN eval_items ei ON e.id = ei.eval_id
 WHERE e.id = $1
@@ -169,20 +155,18 @@ GROUP BY e.id
 `
 
 type GetEvalWithItemCountRow struct {
-	ID           uuid.UUID             `json:"id"`
-	Title        string                `json:"title"`
-	Description  sql.NullString        `json:"description"`
-	Status       string                `json:"status"`
-	Difficulty   sql.NullString        `json:"difficulty"`
-	Instructions sql.NullString        `json:"instructions"`
-	Rubric       pqtype.NullRawMessage `json:"rubric"`
-	SubjectID    uuid.NullUUID         `json:"subject_id"`
-	UserID       uuid.UUID             `json:"user_id"`
-	PublishedAt  sql.NullTime          `json:"published_at"`
-	ArchivedAt   sql.NullTime          `json:"archived_at"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
-	ItemCount    int64                 `json:"item_count"`
+	ID           uuid.UUID      `json:"id"`
+	Title        string         `json:"title"`
+	Description  sql.NullString `json:"description"`
+	Status       string         `json:"status"`
+	Difficulty   sql.NullString `json:"difficulty"`
+	Instructions sql.NullString `json:"instructions"`
+	UserID       uuid.UUID      `json:"user_id"`
+	PublishedAt  sql.NullTime   `json:"published_at"`
+	ArchivedAt   sql.NullTime   `json:"archived_at"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	ItemCount    int64          `json:"item_count"`
 }
 
 func (q *Queries) GetEvalWithItemCount(ctx context.Context, id uuid.UUID) (GetEvalWithItemCountRow, error) {
@@ -195,8 +179,6 @@ func (q *Queries) GetEvalWithItemCount(ctx context.Context, id uuid.UUID) (GetEv
 		&i.Status,
 		&i.Difficulty,
 		&i.Instructions,
-		&i.Rubric,
-		&i.SubjectID,
 		&i.UserID,
 		&i.PublishedAt,
 		&i.ArchivedAt,
@@ -208,7 +190,7 @@ func (q *Queries) GetEvalWithItemCount(ctx context.Context, id uuid.UUID) (GetEv
 }
 
 const getEvalsByStatus = `-- name: GetEvalsByStatus :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = $1 ORDER BY created_at DESC
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetEvalsByStatus(ctx context.Context, status string) ([]Eval, error) {
@@ -227,49 +209,6 @@ func (q *Queries) GetEvalsByStatus(ctx context.Context, status string) ([]Eval, 
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
-			&i.UserID,
-			&i.PublishedAt,
-			&i.ArchivedAt,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getEvalsBySubject = `-- name: GetEvalsBySubject :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE subject_id = $1 ORDER BY created_at DESC
-`
-
-func (q *Queries) GetEvalsBySubject(ctx context.Context, subjectID uuid.NullUUID) ([]Eval, error) {
-	rows, err := q.db.QueryContext(ctx, getEvalsBySubject, subjectID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Eval
-	for rows.Next() {
-		var i Eval
-		if err := rows.Scan(
-			&i.ID,
-			&i.Title,
-			&i.Description,
-			&i.Status,
-			&i.Difficulty,
-			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,
@@ -290,7 +229,7 @@ func (q *Queries) GetEvalsBySubject(ctx context.Context, subjectID uuid.NullUUID
 }
 
 const getEvalsByUser = `-- name: GetEvalsByUser :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetEvalsByUser(ctx context.Context, userID uuid.UUID) ([]Eval, error) {
@@ -309,8 +248,6 @@ func (q *Queries) GetEvalsByUser(ctx context.Context, userID uuid.UUID) ([]Eval,
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,
@@ -331,7 +268,7 @@ func (q *Queries) GetEvalsByUser(ctx context.Context, userID uuid.UUID) ([]Eval,
 }
 
 const getEvalsWithItemCounts = `-- name: GetEvalsWithItemCounts :many
-SELECT e.id, e.title, e.description, e.status, e.difficulty, e.instructions, e.rubric, e.subject_id, e.user_id, e.published_at, e.archived_at, e.created_at, e.updated_at, COUNT(ei.id) as item_count
+SELECT e.id, e.title, e.description, e.status, e.difficulty, e.instructions, e.user_id, e.published_at, e.archived_at, e.created_at, e.updated_at, COUNT(ei.id) as item_count
 FROM evals e
 LEFT JOIN eval_items ei ON e.id = ei.eval_id
 WHERE e.user_id = $1
@@ -340,20 +277,18 @@ ORDER BY e.created_at DESC
 `
 
 type GetEvalsWithItemCountsRow struct {
-	ID           uuid.UUID             `json:"id"`
-	Title        string                `json:"title"`
-	Description  sql.NullString        `json:"description"`
-	Status       string                `json:"status"`
-	Difficulty   sql.NullString        `json:"difficulty"`
-	Instructions sql.NullString        `json:"instructions"`
-	Rubric       pqtype.NullRawMessage `json:"rubric"`
-	SubjectID    uuid.NullUUID         `json:"subject_id"`
-	UserID       uuid.UUID             `json:"user_id"`
-	PublishedAt  sql.NullTime          `json:"published_at"`
-	ArchivedAt   sql.NullTime          `json:"archived_at"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
-	ItemCount    int64                 `json:"item_count"`
+	ID           uuid.UUID      `json:"id"`
+	Title        string         `json:"title"`
+	Description  sql.NullString `json:"description"`
+	Status       string         `json:"status"`
+	Difficulty   sql.NullString `json:"difficulty"`
+	Instructions sql.NullString `json:"instructions"`
+	UserID       uuid.UUID      `json:"user_id"`
+	PublishedAt  sql.NullTime   `json:"published_at"`
+	ArchivedAt   sql.NullTime   `json:"archived_at"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	ItemCount    int64          `json:"item_count"`
 }
 
 func (q *Queries) GetEvalsWithItemCounts(ctx context.Context, userID uuid.UUID) ([]GetEvalsWithItemCountsRow, error) {
@@ -372,8 +307,6 @@ func (q *Queries) GetEvalsWithItemCounts(ctx context.Context, userID uuid.UUID) 
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,
@@ -395,7 +328,7 @@ func (q *Queries) GetEvalsWithItemCounts(ctx context.Context, userID uuid.UUID) 
 }
 
 const getPublishedEvals = `-- name: GetPublishedEvals :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = 'published' ORDER BY published_at DESC
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals WHERE status = 'published' ORDER BY published_at DESC
 `
 
 func (q *Queries) GetPublishedEvals(ctx context.Context) ([]Eval, error) {
@@ -414,8 +347,6 @@ func (q *Queries) GetPublishedEvals(ctx context.Context) ([]Eval, error) {
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,
@@ -436,7 +367,7 @@ func (q *Queries) GetPublishedEvals(ctx context.Context) ([]Eval, error) {
 }
 
 const listEvals = `-- name: ListEvals :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
 type ListEvalsParams struct {
@@ -460,8 +391,6 @@ func (q *Queries) ListEvals(ctx context.Context, arg ListEvalsParams) ([]Eval, e
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,
@@ -487,7 +416,7 @@ UPDATE evals SET
   published_at = now(),
   updated_at = now()
 WHERE id = $1 AND status = 'draft'
-RETURNING id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at
+RETURNING id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at
 `
 
 func (q *Queries) PublishEval(ctx context.Context, id uuid.UUID) (Eval, error) {
@@ -500,8 +429,6 @@ func (q *Queries) PublishEval(ctx context.Context, id uuid.UUID) (Eval, error) {
 		&i.Status,
 		&i.Difficulty,
 		&i.Instructions,
-		&i.Rubric,
-		&i.SubjectID,
 		&i.UserID,
 		&i.PublishedAt,
 		&i.ArchivedAt,
@@ -512,7 +439,7 @@ func (q *Queries) PublishEval(ctx context.Context, id uuid.UUID) (Eval, error) {
 }
 
 const searchEvalsByTitle = `-- name: SearchEvalsByTitle :many
-SELECT id, title, description, status, difficulty, instructions, rubric, subject_id, user_id, published_at, archived_at, created_at, updated_at FROM evals 
+SELECT id, title, description, status, difficulty, instructions, user_id, published_at, archived_at, created_at, updated_at FROM evals 
 WHERE title ILIKE '%' || $1 || '%' 
 ORDER BY created_at DESC 
 LIMIT $2 OFFSET $3
@@ -540,8 +467,6 @@ func (q *Queries) SearchEvalsByTitle(ctx context.Context, arg SearchEvalsByTitle
 			&i.Status,
 			&i.Difficulty,
 			&i.Instructions,
-			&i.Rubric,
-			&i.SubjectID,
 			&i.UserID,
 			&i.PublishedAt,
 			&i.ArchivedAt,

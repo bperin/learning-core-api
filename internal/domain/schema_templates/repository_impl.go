@@ -28,13 +28,11 @@ func (r *RepositoryImpl) Create(ctx context.Context, req CreateSchemaTemplateReq
 	}
 
 	storeTemplate, err := r.queries.CreateSchemaTemplate(ctx, store.CreateSchemaTemplateParams{
-		SchemaType:   req.SchemaType,
-		SchemaJson:   req.SchemaJSON,
-		SubjectID:    utils.PtrToNullUUID(req.SubjectID),
-		CurriculumID: utils.PtrToNullUUID(req.CurriculumID),
-		IsActive:     isActive,
-		CreatedBy:    req.CreatedBy,
-		LockedAt:     utils.SqlNullTime(req.LockedAt),
+		SchemaType: req.SchemaType,
+		SchemaJson: req.SchemaJSON,
+		IsActive:   isActive,
+		CreatedBy:  req.CreatedBy,
+		LockedAt:   utils.SqlNullTime(req.LockedAt),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create schema template: %w", err)
@@ -103,45 +101,39 @@ func toDomainSchemaTemplates(storeTemplates []store.SchemaTemplate) []*SchemaTem
 
 func toDomainSchemaTemplate(storeTemplate *store.SchemaTemplate) *SchemaTemplate {
 	return &SchemaTemplate{
-		ID:           storeTemplate.ID,
-		SchemaType:   storeTemplate.SchemaType,
-		Version:      storeTemplate.Version,
-		SchemaJSON:   storeTemplate.SchemaJson,
-		SubjectID:    utils.NullUUIDToPtr(storeTemplate.SubjectID),
-		CurriculumID: utils.NullUUIDToPtr(storeTemplate.CurriculumID),
-		IsActive:     storeTemplate.IsActive,
-		CreatedBy:    storeTemplate.CreatedBy,
-		CreatedAt:    storeTemplate.CreatedAt,
-		LockedAt:     utils.NullTimeToPtr(storeTemplate.LockedAt),
+		ID:         storeTemplate.ID,
+		SchemaType: storeTemplate.SchemaType,
+		Version:    storeTemplate.Version,
+		SchemaJSON: storeTemplate.SchemaJson,
+		IsActive:   storeTemplate.IsActive,
+		CreatedBy:  storeTemplate.CreatedBy,
+		CreatedAt:  storeTemplate.CreatedAt,
+		LockedAt:   utils.NullTimeToPtr(storeTemplate.LockedAt),
 	}
 }
 
 func toDomainSchemaTemplateRow(storeTemplate *store.ActivateSchemaTemplateRow) *SchemaTemplate {
 	return &SchemaTemplate{
-		ID:           storeTemplate.ID,
-		SchemaType:   storeTemplate.SchemaType,
-		Version:      storeTemplate.Version,
-		SchemaJSON:   storeTemplate.SchemaJson,
-		SubjectID:    utils.NullUUIDToPtr(storeTemplate.SubjectID),
-		CurriculumID: utils.NullUUIDToPtr(storeTemplate.CurriculumID),
-		IsActive:     storeTemplate.IsActive,
-		CreatedBy:    storeTemplate.CreatedBy,
-		CreatedAt:    storeTemplate.CreatedAt,
-		LockedAt:     utils.NullTimeToPtr(storeTemplate.LockedAt),
+		ID:         storeTemplate.ID,
+		SchemaType: storeTemplate.SchemaType,
+		Version:    storeTemplate.Version,
+		SchemaJSON: storeTemplate.SchemaJson,
+		IsActive:   storeTemplate.IsActive,
+		CreatedBy:  storeTemplate.CreatedBy,
+		CreatedAt:  storeTemplate.CreatedAt,
+		LockedAt:   utils.NullTimeToPtr(storeTemplate.LockedAt),
 	}
 }
 
 func toDomainSchemaTemplateCreate(storeTemplate *store.CreateSchemaTemplateRow) *SchemaTemplate {
 	return &SchemaTemplate{
-		ID:           storeTemplate.ID,
-		SchemaType:   storeTemplate.SchemaType,
-		Version:      storeTemplate.Version,
-		SchemaJSON:   storeTemplate.SchemaJson,
-		SubjectID:    utils.NullUUIDToPtr(storeTemplate.SubjectID),
-		CurriculumID: utils.NullUUIDToPtr(storeTemplate.CurriculumID),
-		IsActive:     storeTemplate.IsActive,
-		CreatedBy:    storeTemplate.CreatedBy,
-		CreatedAt:    storeTemplate.CreatedAt,
-		LockedAt:     utils.NullTimeToPtr(storeTemplate.LockedAt),
+		ID:         storeTemplate.ID,
+		SchemaType: storeTemplate.SchemaType,
+		Version:    storeTemplate.Version,
+		SchemaJSON: storeTemplate.SchemaJson,
+		IsActive:   storeTemplate.IsActive,
+		CreatedBy:  storeTemplate.CreatedBy,
+		CreatedAt:  storeTemplate.CreatedAt,
+		LockedAt:   utils.NullTimeToPtr(storeTemplate.LockedAt),
 	}
 }

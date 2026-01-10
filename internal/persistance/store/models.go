@@ -149,28 +149,6 @@ type ChunkingConfig struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
-type Curricula struct {
-	ID uuid.UUID `json:"id"`
-	// Subject this curriculum belongs to
-	SubjectID uuid.UUID `json:"subject_id"`
-	// Parent curriculum node; NULL is root
-	ParentID uuid.NullUUID `json:"parent_id"`
-	// Human-readable curriculum label
-	Label string `json:"label"`
-	// Optional standardized curriculum code
-	Code sql.NullString `json:"code"`
-	// Optional curriculum description
-	Description sql.NullString `json:"description"`
-	// Sort order within parent curriculum
-	OrderIndex int32 `json:"order_index"`
-	// Grade or level alignment
-	GradeLevel sql.NullString `json:"grade_level"`
-	// Whether curriculum unit is active
-	IsActive  bool      `json:"is_active"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type Document struct {
 	ID          uuid.UUID      `json:"id"`
 	Filename    string         `json:"filename"`
@@ -180,15 +158,8 @@ type Document struct {
 	StoragePath sql.NullString `json:"storage_path"`
 	RagStatus   string         `json:"rag_status"`
 	UserID      uuid.UUID      `json:"user_id"`
-	SubjectID   uuid.NullUUID  `json:"subject_id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
-	// Curricular classification or framework (e.g., Common Core, IB)
-	Curricular sql.NullString `json:"curricular"`
-	// List of academic subjects associated with this document
-	Subjects []string `json:"subjects"`
-	// Curriculum unit associated with this document
-	CurriculumID uuid.NullUUID `json:"curriculum_id"`
 	// GCS bucket storing the source file
 	StorageBucket sql.NullString `json:"storage_bucket"`
 	// File search store name for retrieval
@@ -197,20 +168,28 @@ type Document struct {
 	FileStoreFileName sql.NullString `json:"file_store_file_name"`
 }
 
+type DocumentTaxonomyLink struct {
+	DocumentID     uuid.UUID       `json:"document_id"`
+	TaxonomyNodeID uuid.UUID       `json:"taxonomy_node_id"`
+	Confidence     sql.NullFloat64 `json:"confidence"`
+	State          string          `json:"state"`
+	CreatedAt      time.Time       `json:"created_at"`
+	ApprovedBy     uuid.NullUUID   `json:"approved_by"`
+	ApprovedAt     sql.NullTime    `json:"approved_at"`
+}
+
 type Eval struct {
-	ID           uuid.UUID             `json:"id"`
-	Title        string                `json:"title"`
-	Description  sql.NullString        `json:"description"`
-	Status       string                `json:"status"`
-	Difficulty   sql.NullString        `json:"difficulty"`
-	Instructions sql.NullString        `json:"instructions"`
-	Rubric       pqtype.NullRawMessage `json:"rubric"`
-	SubjectID    uuid.NullUUID         `json:"subject_id"`
-	UserID       uuid.UUID             `json:"user_id"`
-	PublishedAt  sql.NullTime          `json:"published_at"`
-	ArchivedAt   sql.NullTime          `json:"archived_at"`
-	CreatedAt    time.Time             `json:"created_at"`
-	UpdatedAt    time.Time             `json:"updated_at"`
+	ID           uuid.UUID      `json:"id"`
+	Title        string         `json:"title"`
+	Description  sql.NullString `json:"description"`
+	Status       string         `json:"status"`
+	Difficulty   sql.NullString `json:"difficulty"`
+	Instructions sql.NullString `json:"instructions"`
+	UserID       uuid.UUID      `json:"user_id"`
+	PublishedAt  sql.NullTime   `json:"published_at"`
+	ArchivedAt   sql.NullTime   `json:"archived_at"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
 }
 
 type EvalItem struct {
@@ -274,23 +253,12 @@ type SchemaTemplate struct {
 	SchemaType string `json:"schema_type"`
 	Version    int32  `json:"version"`
 	// JSON schema defining expected AI output
-	SchemaJson   json.RawMessage `json:"schema_json"`
-	SubjectID    uuid.NullUUID   `json:"subject_id"`
-	CurriculumID uuid.NullUUID   `json:"curriculum_id"`
-	IsActive     bool            `json:"is_active"`
-	CreatedBy    uuid.UUID       `json:"created_by"`
-	CreatedAt    time.Time       `json:"created_at"`
+	SchemaJson json.RawMessage `json:"schema_json"`
+	IsActive   bool            `json:"is_active"`
+	CreatedBy  uuid.UUID       `json:"created_by"`
+	CreatedAt  time.Time       `json:"created_at"`
 	// Timestamp when version becomes immutable
 	LockedAt sql.NullTime `json:"locked_at"`
-}
-
-type Subject struct {
-	ID          uuid.UUID      `json:"id"`
-	Name        string         `json:"name"`
-	Description sql.NullString `json:"description"`
-	UserID      uuid.UUID      `json:"user_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
 }
 
 type SystemInstruction struct {
@@ -300,6 +268,25 @@ type SystemInstruction struct {
 	IsActive  bool      `json:"is_active"`
 	CreatedBy uuid.UUID `json:"created_by"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+type TaxonomyNode struct {
+	ID               uuid.UUID       `json:"id"`
+	Name             string          `json:"name"`
+	Description      sql.NullString  `json:"description"`
+	ParentID         uuid.NullUUID   `json:"parent_id"`
+	Path             string          `json:"path"`
+	Depth            int32           `json:"depth"`
+	State            string          `json:"state"`
+	Confidence       sql.NullFloat64 `json:"confidence"`
+	SourceDocumentID uuid.NullUUID   `json:"source_document_id"`
+	Version          int32           `json:"version"`
+	IsActive         bool            `json:"is_active"`
+	CreatedBy        uuid.NullUUID   `json:"created_by"`
+	ApprovedBy       uuid.NullUUID   `json:"approved_by"`
+	ApprovedAt       sql.NullTime    `json:"approved_at"`
+	CreatedAt        time.Time       `json:"created_at"`
+	UpdatedAt        time.Time       `json:"updated_at"`
 }
 
 type TestAttempt struct {

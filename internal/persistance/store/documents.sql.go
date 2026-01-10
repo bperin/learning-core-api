@@ -10,17 +10,16 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 const createDocument = `-- name: CreateDocument :one
 INSERT INTO documents (
   filename, title, mime_type, content, storage_path, storage_bucket,
   file_store_name, file_store_file_name, rag_status,
-  user_id, subject_id, curriculum_id, curricular, subjects
+  user_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14
-) RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+) RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name
 `
 
 type CreateDocumentParams struct {
@@ -34,10 +33,6 @@ type CreateDocumentParams struct {
 	FileStoreFileName sql.NullString `json:"file_store_file_name"`
 	RagStatus         string         `json:"rag_status"`
 	UserID            uuid.UUID      `json:"user_id"`
-	SubjectID         uuid.NullUUID  `json:"subject_id"`
-	CurriculumID      uuid.NullUUID  `json:"curriculum_id"`
-	Curricular        sql.NullString `json:"curricular"`
-	Subjects          []string       `json:"subjects"`
 }
 
 func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error) {
@@ -52,10 +47,6 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 		arg.FileStoreFileName,
 		arg.RagStatus,
 		arg.UserID,
-		arg.SubjectID,
-		arg.CurriculumID,
-		arg.Curricular,
-		pq.Array(arg.Subjects),
 	)
 	var i Document
 	err := row.Scan(
@@ -67,12 +58,8 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 		&i.StoragePath,
 		&i.RagStatus,
 		&i.UserID,
-		&i.SubjectID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Curricular,
-		pq.Array(&i.Subjects),
-		&i.CurriculumID,
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
@@ -90,7 +77,7 @@ func (q *Queries) DeleteDocument(ctx context.Context, id uuid.UUID) error {
 }
 
 const getDocument = `-- name: GetDocument :one
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE id = $1 LIMIT 1
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, error) {
@@ -105,12 +92,8 @@ func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, erro
 		&i.StoragePath,
 		&i.RagStatus,
 		&i.UserID,
-		&i.SubjectID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Curricular,
-		pq.Array(&i.Subjects),
-		&i.CurriculumID,
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
@@ -118,55 +101,8 @@ func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, erro
 	return i, err
 }
 
-const getDocumentsByCurriculum = `-- name: GetDocumentsByCurriculum :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents
-WHERE curriculum_id = $1
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetDocumentsByCurriculum(ctx context.Context, curriculumID uuid.NullUUID) ([]Document, error) {
-	rows, err := q.db.QueryContext(ctx, getDocumentsByCurriculum, curriculumID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Document
-	for rows.Next() {
-		var i Document
-		if err := rows.Scan(
-			&i.ID,
-			&i.Filename,
-			&i.Title,
-			&i.MimeType,
-			&i.Content,
-			&i.StoragePath,
-			&i.RagStatus,
-			&i.UserID,
-			&i.SubjectID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
-			&i.StorageBucket,
-			&i.FileStoreName,
-			&i.FileStoreFileName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getDocumentsByRagStatus = `-- name: GetDocumentsByRagStatus :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE rag_status = $1 ORDER BY created_at DESC
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE rag_status = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetDocumentsByRagStatus(ctx context.Context, ragStatus string) ([]Document, error) {
@@ -187,104 +123,8 @@ func (q *Queries) GetDocumentsByRagStatus(ctx context.Context, ragStatus string)
 			&i.StoragePath,
 			&i.RagStatus,
 			&i.UserID,
-			&i.SubjectID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
-			&i.StorageBucket,
-			&i.FileStoreName,
-			&i.FileStoreFileName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDocumentsBySubject = `-- name: GetDocumentsBySubject :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE subject_id = $1 ORDER BY created_at DESC
-`
-
-func (q *Queries) GetDocumentsBySubject(ctx context.Context, subjectID uuid.NullUUID) ([]Document, error) {
-	rows, err := q.db.QueryContext(ctx, getDocumentsBySubject, subjectID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Document
-	for rows.Next() {
-		var i Document
-		if err := rows.Scan(
-			&i.ID,
-			&i.Filename,
-			&i.Title,
-			&i.MimeType,
-			&i.Content,
-			&i.StoragePath,
-			&i.RagStatus,
-			&i.UserID,
-			&i.SubjectID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
-			&i.StorageBucket,
-			&i.FileStoreName,
-			&i.FileStoreFileName,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const getDocumentsBySubjects = `-- name: GetDocumentsBySubjects :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents 
-WHERE subjects && $1::text[]
-ORDER BY created_at DESC
-`
-
-func (q *Queries) GetDocumentsBySubjects(ctx context.Context, dollar_1 []string) ([]Document, error) {
-	rows, err := q.db.QueryContext(ctx, getDocumentsBySubjects, pq.Array(dollar_1))
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Document
-	for rows.Next() {
-		var i Document
-		if err := rows.Scan(
-			&i.ID,
-			&i.Filename,
-			&i.Title,
-			&i.MimeType,
-			&i.Content,
-			&i.StoragePath,
-			&i.RagStatus,
-			&i.UserID,
-			&i.SubjectID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
@@ -303,7 +143,7 @@ func (q *Queries) GetDocumentsBySubjects(ctx context.Context, dollar_1 []string)
 }
 
 const getDocumentsByUser = `-- name: GetDocumentsByUser :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]Document, error) {
@@ -324,12 +164,8 @@ func (q *Queries) GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]D
 			&i.StoragePath,
 			&i.RagStatus,
 			&i.UserID,
-			&i.SubjectID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
@@ -348,7 +184,7 @@ func (q *Queries) GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]D
 }
 
 const listDocuments = `-- name: ListDocuments :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
 type ListDocumentsParams struct {
@@ -374,12 +210,8 @@ func (q *Queries) ListDocuments(ctx context.Context, arg ListDocumentsParams) ([
 			&i.StoragePath,
 			&i.RagStatus,
 			&i.UserID,
-			&i.SubjectID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
@@ -398,7 +230,7 @@ func (q *Queries) ListDocuments(ctx context.Context, arg ListDocumentsParams) ([
 }
 
 const searchDocumentsByTitle = `-- name: SearchDocumentsByTitle :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name FROM documents 
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents 
 WHERE title ILIKE '%' || $1 || '%' 
 ORDER BY created_at DESC 
 LIMIT $3 OFFSET $2
@@ -428,12 +260,8 @@ func (q *Queries) SearchDocumentsByTitle(ctx context.Context, arg SearchDocument
 			&i.StoragePath,
 			&i.RagStatus,
 			&i.UserID,
-			&i.SubjectID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.Curricular,
-			pq.Array(&i.Subjects),
-			&i.CurriculumID,
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
@@ -460,13 +288,9 @@ UPDATE documents SET
   file_store_name = COALESCE($6, file_store_name),
   file_store_file_name = COALESCE($7, file_store_file_name),
   rag_status = COALESCE($8, rag_status),
-  subject_id = COALESCE($9, subject_id),
-  curriculum_id = COALESCE($10, curriculum_id),
-  curricular = COALESCE($11, curricular),
-  subjects = COALESCE($12, subjects),
   updated_at = now()
 WHERE id = $1
-RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name
+RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name
 `
 
 type UpdateDocumentParams struct {
@@ -478,10 +302,6 @@ type UpdateDocumentParams struct {
 	FileStoreName     sql.NullString `json:"file_store_name"`
 	FileStoreFileName sql.NullString `json:"file_store_file_name"`
 	RagStatus         string         `json:"rag_status"`
-	SubjectID         uuid.NullUUID  `json:"subject_id"`
-	CurriculumID      uuid.NullUUID  `json:"curriculum_id"`
-	Curricular        sql.NullString `json:"curricular"`
-	Subjects          []string       `json:"subjects"`
 }
 
 func (q *Queries) UpdateDocument(ctx context.Context, arg UpdateDocumentParams) (Document, error) {
@@ -494,10 +314,6 @@ func (q *Queries) UpdateDocument(ctx context.Context, arg UpdateDocumentParams) 
 		arg.FileStoreName,
 		arg.FileStoreFileName,
 		arg.RagStatus,
-		arg.SubjectID,
-		arg.CurriculumID,
-		arg.Curricular,
-		pq.Array(arg.Subjects),
 	)
 	var i Document
 	err := row.Scan(
@@ -509,12 +325,8 @@ func (q *Queries) UpdateDocument(ctx context.Context, arg UpdateDocumentParams) 
 		&i.StoragePath,
 		&i.RagStatus,
 		&i.UserID,
-		&i.SubjectID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Curricular,
-		pq.Array(&i.Subjects),
-		&i.CurriculumID,
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
@@ -527,7 +339,7 @@ UPDATE documents SET
   rag_status = $2,
   updated_at = now()
 WHERE id = $1
-RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, subject_id, created_at, updated_at, curricular, subjects, curriculum_id, storage_bucket, file_store_name, file_store_file_name
+RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name
 `
 
 type UpdateDocumentRagStatusParams struct {
@@ -547,12 +359,8 @@ func (q *Queries) UpdateDocumentRagStatus(ctx context.Context, arg UpdateDocumen
 		&i.StoragePath,
 		&i.RagStatus,
 		&i.UserID,
-		&i.SubjectID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.Curricular,
-		pq.Array(&i.Subjects),
-		&i.CurriculumID,
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,

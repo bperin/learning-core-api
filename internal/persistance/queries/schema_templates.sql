@@ -17,12 +17,12 @@ ORDER BY schema_type ASC, version DESC;
 -- name: CreateSchemaTemplate :one
 WITH inserted AS (
   INSERT INTO schema_templates (
-    schema_type, version, schema_json, subject_id, curriculum_id,
+    schema_type, version, schema_json,
     is_active, created_by, locked_at
   ) VALUES (
     $1,
     (SELECT COALESCE(MAX(version), 0) + 1 FROM schema_templates WHERE schema_type = $1),
-    $2, $3, $4, $5, $6, $7
+    $2, $3, $4, $5
   )
   RETURNING *
 ),

@@ -4,9 +4,6 @@ SELECT * FROM evals WHERE id = $1 LIMIT 1;
 -- name: GetEvalsByUser :many
 SELECT * FROM evals WHERE user_id = $1 ORDER BY created_at DESC;
 
--- name: GetEvalsBySubject :many
-SELECT * FROM evals WHERE subject_id = $1 ORDER BY created_at DESC;
-
 -- name: GetEvalsByStatus :many
 SELECT * FROM evals WHERE status = $1 ORDER BY created_at DESC;
 
@@ -21,10 +18,9 @@ SELECT * FROM evals ORDER BY created_at DESC LIMIT $1 OFFSET $2;
 
 -- name: CreateEval :one
 INSERT INTO evals (
-  title, description, status, difficulty, instructions, rubric,
-  subject_id, user_id
+  title, description, status, difficulty, instructions, user_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4, $5, $6
 ) RETURNING *;
 
 -- name: PublishEval :one

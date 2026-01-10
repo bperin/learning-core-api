@@ -1,7 +1,6 @@
 package evals
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -33,8 +32,6 @@ type Eval struct {
 	Status       EvalStatus       `json:"status"`
 	Difficulty   *DifficultyLevel `json:"difficulty,omitempty"`
 	Instructions *string          `json:"instructions,omitempty"`
-	Rubric       json.RawMessage  `json:"rubric,omitempty"`
-	SubjectID    *uuid.UUID       `json:"subject_id,omitempty"`
 	UserID       uuid.UUID        `json:"user_id"`
 	PublishedAt  *time.Time       `json:"published_at,omitempty"`
 	ArchivedAt   *time.Time       `json:"archived_at,omitempty"`
@@ -54,8 +51,6 @@ type CreateEvalRequest struct {
 	Description  *string          `json:"description,omitempty" validate:"omitempty,max=1000"`
 	Difficulty   *DifficultyLevel `json:"difficulty,omitempty"`
 	Instructions *string          `json:"instructions,omitempty" validate:"omitempty,max=5000"`
-	Rubric       json.RawMessage  `json:"rubric,omitempty"`
-	SubjectID    *uuid.UUID       `json:"subject_id,omitempty"`
 	UserID       uuid.UUID        `json:"user_id" validate:"required"`
 }
 
@@ -65,18 +60,15 @@ type UpdateEvalRequest struct {
 	Description  *string          `json:"description,omitempty" validate:"omitempty,max=1000"`
 	Difficulty   *DifficultyLevel `json:"difficulty,omitempty"`
 	Instructions *string          `json:"instructions,omitempty" validate:"omitempty,max=5000"`
-	Rubric       json.RawMessage  `json:"rubric,omitempty"`
-	SubjectID    *uuid.UUID       `json:"subject_id,omitempty"`
 }
 
 // EvalFilter represents filters for listing evaluations
 type EvalFilter struct {
-	UserID    *uuid.UUID   `json:"user_id,omitempty"`
-	SubjectID *uuid.UUID   `json:"subject_id,omitempty"`
-	Status    *EvalStatus  `json:"status,omitempty"`
-	Search    *string      `json:"search,omitempty"`
-	Limit     int          `json:"limit"`
-	Offset    int          `json:"offset"`
+	UserID *uuid.UUID  `json:"user_id,omitempty"`
+	Status *EvalStatus `json:"status,omitempty"`
+	Search *string     `json:"search,omitempty"`
+	Limit  int         `json:"limit"`
+	Offset int         `json:"offset"`
 }
 
 // IsValidStatus checks if the status is valid

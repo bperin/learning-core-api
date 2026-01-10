@@ -9,11 +9,7 @@ import (
 
 type DocumentReference struct {
 	ID          uuid.UUID
-	SubjectID   *uuid.UUID
-	SubjectName string
-	Curriculum  string
 	HumanTitle  string
-	TopicTags   []string
 	ReviewerID  *uuid.UUID
 	RequestedBy uuid.UUID
 	RequestedAt time.Time

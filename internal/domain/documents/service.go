@@ -18,9 +18,6 @@ type Service interface {
 	// GetUserDocuments retrieves all documents for a user
 	GetUserDocuments(ctx context.Context, userID uuid.UUID) ([]*Document, error)
 
-	// GetSubjectDocuments retrieves documents for a subject with authorization
-	GetSubjectDocuments(ctx context.Context, subjectID uuid.UUID, userID uuid.UUID) ([]*Document, error)
-
 	// SearchDocuments searches documents with authorization
 	SearchDocuments(ctx context.Context, query string, userID uuid.UUID, limit, offset int) ([]*Document, error)
 
@@ -96,24 +93,6 @@ func (s *serviceImpl) GetDocument(ctx context.Context, id uuid.UUID, userID uuid
 // GetUserDocuments retrieves all documents for a user
 func (s *serviceImpl) GetUserDocuments(ctx context.Context, userID uuid.UUID) ([]*Document, error) {
 	return s.repo.GetByUser(ctx, userID)
-}
-
-// GetSubjectDocuments retrieves documents for a subject with authorization
-func (s *serviceImpl) GetSubjectDocuments(ctx context.Context, subjectID uuid.UUID, userID uuid.UUID) ([]*Document, error) {
-	docs, err := s.repo.GetBySubject(ctx, subjectID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Filter documents to only include those owned by the user
-	var userDocs []*Document
-	for _, doc := range docs {
-		if doc.UserID == userID {
-			userDocs = append(userDocs, doc)
-		}
-	}
-
-	return userDocs, nil
 }
 
 // SearchDocuments searches documents with authorization
@@ -215,9 +194,9 @@ func (s *serviceImpl) validateFileType(mimeType *string) error {
 	}
 
 	allowedTypes := map[string]bool{
-		"application/pdf":                                           true,
-		"text/plain":                                                true,
-		"text/markdown":                                             true,
+		"application/pdf": true,
+		"text/plain":      true,
+		"text/markdown":   true,
 		"application/vnd.openxmlformats-officedocument.wordprocessingml.document": true, // .docx
 		"application/msword": true, // .doc
 		"text/html":          true,

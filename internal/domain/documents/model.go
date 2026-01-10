@@ -8,66 +8,50 @@ import (
 
 // Document represents a learning document in the domain
 type Document struct {
-	ID                uuid.UUID  `json:"id"`
-	Filename          string     `json:"filename"`
-	Title             *string    `json:"title,omitempty"`
-	MimeType          *string    `json:"mime_type,omitempty"`
-	Content           *string    `json:"content,omitempty"`
-	StoragePath       *string    `json:"storage_path,omitempty"`
-	StorageBucket     *string    `json:"storage_bucket,omitempty"`
-	FileStoreName     *string    `json:"file_store_name,omitempty"`
-	FileStoreFileName *string    `json:"file_store_file_name,omitempty"`
-	RagStatus         string     `json:"rag_status"`
-	UserID            uuid.UUID  `json:"user_id"`
-	SubjectID         *uuid.UUID `json:"subject_id,omitempty"`
-	CurriculumID      *uuid.UUID `json:"curriculum_id,omitempty"`
-	CreatedAt         time.Time  `json:"created_at"`
-	UpdatedAt         time.Time  `json:"updated_at"`
-	// Curricular classification or framework (e.g., Common Core, IB)
-	Curricular *string `json:"curricular,omitempty"`
-	// List of academic subjects associated with this document
-	Subjects []string `json:"subjects"`
+	ID                uuid.UUID `json:"id"`
+	Filename          string    `json:"filename"`
+	Title             *string   `json:"title,omitempty"`
+	MimeType          *string   `json:"mime_type,omitempty"`
+	Content           *string   `json:"content,omitempty"`
+	StoragePath       *string   `json:"storage_path,omitempty"`
+	StorageBucket     *string   `json:"storage_bucket,omitempty"`
+	FileStoreName     *string   `json:"file_store_name,omitempty"`
+	FileStoreFileName *string   `json:"file_store_file_name,omitempty"`
+	RagStatus         string    `json:"rag_status"`
+	UserID            uuid.UUID `json:"user_id"`
+	CreatedAt         time.Time `json:"created_at"`
+	UpdatedAt         time.Time `json:"updated_at"`
 }
 
 // CreateDocumentRequest represents the data needed to create a new document
 type CreateDocumentRequest struct {
-	Filename          string     `json:"filename" validate:"required"`
-	Title             *string    `json:"title,omitempty"`
-	MimeType          *string    `json:"mime_type,omitempty"`
-	Content           *string    `json:"content,omitempty"`
-	StoragePath       *string    `json:"storage_path,omitempty"`
-	StorageBucket     *string    `json:"storage_bucket,omitempty"`
-	FileStoreName     *string    `json:"file_store_name,omitempty"`
-	FileStoreFileName *string    `json:"file_store_file_name,omitempty"`
-	RagStatus         string     `json:"rag_status" validate:"required"`
-	UserID            uuid.UUID  `json:"user_id" validate:"required"`
-	SubjectID         *uuid.UUID `json:"subject_id,omitempty"`
-	CurriculumID      *uuid.UUID `json:"curriculum_id,omitempty"`
-	Curricular        *string    `json:"curricular,omitempty"`
-	Subjects          []string   `json:"subjects"`
+	Filename          string    `json:"filename" validate:"required"`
+	Title             *string   `json:"title,omitempty"`
+	MimeType          *string   `json:"mime_type,omitempty"`
+	Content           *string   `json:"content,omitempty"`
+	StoragePath       *string   `json:"storage_path,omitempty"`
+	StorageBucket     *string   `json:"storage_bucket,omitempty"`
+	FileStoreName     *string   `json:"file_store_name,omitempty"`
+	FileStoreFileName *string   `json:"file_store_file_name,omitempty"`
+	RagStatus         string    `json:"rag_status" validate:"required"`
+	UserID            uuid.UUID `json:"user_id" validate:"required"`
 }
 
 // UpdateDocumentRequest represents the data that can be updated for a document
 type UpdateDocumentRequest struct {
-	Title             *string    `json:"title,omitempty"`
-	Content           *string    `json:"content,omitempty"`
-	StoragePath       *string    `json:"storage_path,omitempty"`
-	StorageBucket     *string    `json:"storage_bucket,omitempty"`
-	FileStoreName     *string    `json:"file_store_name,omitempty"`
-	FileStoreFileName *string    `json:"file_store_file_name,omitempty"`
-	RagStatus         *string    `json:"rag_status,omitempty"`
-	SubjectID         *uuid.UUID `json:"subject_id,omitempty"`
-	CurriculumID      *uuid.UUID `json:"curriculum_id,omitempty"`
-	Curricular        *string    `json:"curricular,omitempty"`
-	Subjects          []string   `json:"subjects,omitempty"`
+	Title             *string `json:"title,omitempty"`
+	Content           *string `json:"content,omitempty"`
+	StoragePath       *string `json:"storage_path,omitempty"`
+	StorageBucket     *string `json:"storage_bucket,omitempty"`
+	FileStoreName     *string `json:"file_store_name,omitempty"`
+	FileStoreFileName *string `json:"file_store_file_name,omitempty"`
+	RagStatus         *string `json:"rag_status,omitempty"`
 }
 
 // DocumentFilter represents filtering options for document queries
 type DocumentFilter struct {
 	UserID    *uuid.UUID `json:"user_id,omitempty"`
-	SubjectID *uuid.UUID `json:"subject_id,omitempty"`
 	RagStatus *string    `json:"rag_status,omitempty"`
-	Subjects  []string   `json:"subjects,omitempty"`
 	Title     *string    `json:"title,omitempty"` // For search
 	Limit     int        `json:"limit"`
 	Offset    int        `json:"offset"`
@@ -95,9 +79,6 @@ func IsValidRagStatus(status string) bool {
 func (d *Document) SetDefaults() {
 	if d.RagStatus == "" {
 		d.RagStatus = RagStatusPending
-	}
-	if d.Subjects == nil {
-		d.Subjects = []string{}
 	}
 }
 

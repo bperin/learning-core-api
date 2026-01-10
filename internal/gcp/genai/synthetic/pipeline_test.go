@@ -21,10 +21,7 @@ func TestSyntheticPipeline(t *testing.T) {
 	userID := uuid.New()
 	doc := DocumentReference{
 		ID:          docID,
-		SubjectName: "Math",
-		Curriculum:  "AP Calc",
 		HumanTitle:  "Derivatives",
-		TopicTags:   []string{"derivatives", "limits"},
 		ReviewerID:  &userID,
 		RequestedBy: userID,
 		RequestedAt: time.Now().UTC(),
@@ -113,10 +110,7 @@ func TestSyntheticPipeline(t *testing.T) {
 
 	ctx := context.Background()
 	intentInputs := map[string]any{
-		"subject":    doc.SubjectName,
-		"curriculum": doc.Curriculum,
-		"title":      doc.HumanTitle,
-		"tags":       doc.TopicTags,
+		"title": doc.HumanTitle,
 	}
 	logJSON(t, "intent inputs", intentInputs)
 	intents, intentArtifact, err := intentGen.GenerateIntents(ctx, doc, intentPrompt, intentSchema)
@@ -134,11 +128,8 @@ func TestSyntheticPipeline(t *testing.T) {
 	logJSON(t, "intents", intents)
 
 	planInputs := map[string]any{
-		"subject":    doc.SubjectName,
-		"curriculum": doc.Curriculum,
-		"title":      doc.HumanTitle,
-		"tags":       doc.TopicTags,
-		"intents":    intents,
+		"title":   doc.HumanTitle,
+		"intents": intents,
 	}
 	logJSON(t, "plan inputs", planInputs)
 	plan, planArtifact, err := planGen.GeneratePlan(ctx, doc, intents, planPrompt, planSchema)
@@ -154,11 +145,8 @@ func TestSyntheticPipeline(t *testing.T) {
 	logJSON(t, "plan", plan)
 
 	evalInputs := map[string]any{
-		"subject":    doc.SubjectName,
-		"curriculum": doc.Curriculum,
-		"title":      doc.HumanTitle,
-		"tags":       doc.TopicTags,
-		"plan":       plan,
+		"title": doc.HumanTitle,
+		"plan":  plan,
 	}
 	logJSON(t, "eval inputs", evalInputs)
 	eval, evalItems, evalArtifact, err := evalGen.GenerateEval(ctx, doc, plan, evalPrompt, evalSchema)

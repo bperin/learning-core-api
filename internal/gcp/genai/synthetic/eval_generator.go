@@ -26,11 +26,8 @@ func (g *SyntheticEvalGenerator) GenerateEval(
 	schema SchemaTemplate,
 ) (*evals.Eval, []*eval_items.EvalItem, *Artifact, error) {
 	inputVars := map[string]any{
-		"subject":    doc.SubjectName,
-		"curriculum": doc.Curriculum,
-		"title":      doc.HumanTitle,
-		"tags":       doc.TopicTags,
-		"plan":       plan,
+		"title": doc.HumanTitle,
+		"plan":  plan,
 	}
 
 	rawJSON, err := g.engine.Generate(ctx, prompt, schema, inputVars)
@@ -53,7 +50,6 @@ func (g *SyntheticEvalGenerator) GenerateEval(
 		Title:       payload.Title,
 		Status:      status,
 		UserID:      userID,
-		SubjectID:   doc.SubjectID,
 		CreatedAt:   createdAt,
 		UpdatedAt:   createdAt,
 		Description: optionalEvalDescription(payload.Description),

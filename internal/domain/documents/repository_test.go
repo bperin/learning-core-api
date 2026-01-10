@@ -43,7 +43,6 @@ func TestDocumentRepository_Create(t *testing.T) {
 		Content:   utils.StringPtr("Test content"),
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{"math", "science"},
 	}
 
 	doc, err := repo.Create(ctx, req)
@@ -55,7 +54,6 @@ func TestDocumentRepository_Create(t *testing.T) {
 	assert.Equal(t, req.Content, doc.Content)
 	assert.Equal(t, req.RagStatus, doc.RagStatus)
 	assert.Equal(t, req.UserID, doc.UserID)
-	assert.Equal(t, req.Subjects, doc.Subjects)
 	assert.False(t, doc.CreatedAt.IsZero())
 	assert.False(t, doc.UpdatedAt.IsZero())
 
@@ -86,7 +84,6 @@ func TestDocumentRepository_GetByID(t *testing.T) {
 		Title:     utils.StringPtr("Test Document"),
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{"math"},
 	}
 
 	created, err := repo.Create(ctx, req)
@@ -130,7 +127,6 @@ func TestDocumentRepository_Update(t *testing.T) {
 		Title:     utils.StringPtr("Original Title"),
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{"math"},
 	}
 
 	created, err := repo.Create(ctx, req)
@@ -140,7 +136,6 @@ func TestDocumentRepository_Update(t *testing.T) {
 	updateReq := UpdateDocumentRequest{
 		Title:     utils.StringPtr("Updated Title"),
 		RagStatus: utils.StringPtr(RagStatusReady),
-		Subjects:  []string{"math", "science"},
 	}
 
 	updated, err := repo.Update(ctx, created.ID, updateReq)
@@ -148,7 +143,6 @@ func TestDocumentRepository_Update(t *testing.T) {
 	assert.Equal(t, created.ID, updated.ID)
 	assert.Equal(t, "Updated Title", *updated.Title)
 	assert.Equal(t, RagStatusReady, updated.RagStatus)
-	assert.Equal(t, []string{"math", "science"}, updated.Subjects)
 	assert.True(t, updated.UpdatedAt.After(created.UpdatedAt) || updated.UpdatedAt.Equal(created.UpdatedAt))
 
 	// Clean up
@@ -177,7 +171,6 @@ func TestDocumentRepository_UpdateRagStatus(t *testing.T) {
 		Filename:  "test.pdf",
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{},
 	}
 
 	created, err := repo.Create(ctx, req)
@@ -223,21 +216,18 @@ func TestDocumentRepository_GetByUser(t *testing.T) {
 		Filename:  "user1_doc1.pdf",
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{},
 	}
 
 	req2 := CreateDocumentRequest{
 		Filename:  "user1_doc2.pdf",
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{},
 	}
 
 	req3 := CreateDocumentRequest{
 		Filename:  "user2_doc1.pdf",
 		RagStatus: RagStatusPending,
 		UserID:    otherUserID,
-		Subjects:  []string{},
 	}
 
 	doc1, err := repo.Create(ctx, req1)
@@ -298,7 +288,6 @@ func TestDocumentRepository_Search(t *testing.T) {
 		Title:     utils.StringPtr("Mathematics Fundamentals"),
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{},
 	}
 
 	req2 := CreateDocumentRequest{
@@ -306,7 +295,6 @@ func TestDocumentRepository_Search(t *testing.T) {
 		Title:     utils.StringPtr("Introduction to Science"),
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{},
 	}
 
 	req3 := CreateDocumentRequest{
@@ -314,7 +302,6 @@ func TestDocumentRepository_Search(t *testing.T) {
 		Title:     utils.StringPtr("Advanced Mathematics"),
 		RagStatus: RagStatusPending,
 		UserID:    userID,
-		Subjects:  []string{},
 	}
 
 	doc1, err := repo.Create(ctx, req1)

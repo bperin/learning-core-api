@@ -43,22 +43,6 @@ func TestBasicSQLCOperations(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, int64(1), count)
 
-	// Test basic subject operations
-	subjectID := uuid.New()
-	subject, err := queries.CreateSubject(ctx, store.CreateSubjectParams{
-		ID:     subjectID,
-		Name:   "Mathematics",
-		UserID: userID,
-	})
-	require.NoError(t, err)
-	assert.Equal(t, subjectID, subject.ID)
-	assert.Equal(t, "Mathematics", subject.Name)
-
-	// Test get subject
-	fetchedSubject, err := queries.GetSubject(ctx, subjectID)
-	require.NoError(t, err)
-	assert.Equal(t, subject.ID, fetchedSubject.ID)
-
 	// Test basic eval operations
 	eval, err := queries.CreateEval(ctx, store.CreateEvalParams{
 		Title:  "Test Eval",

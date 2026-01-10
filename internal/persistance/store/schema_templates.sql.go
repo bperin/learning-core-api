@@ -28,22 +28,20 @@ activated AS (
   UPDATE schema_templates SET
     is_active = true
   WHERE id = $1
-  RETURNING id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at
+  RETURNING id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at
 )
-SELECT id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at FROM activated
+SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM activated
 `
 
 type ActivateSchemaTemplateRow struct {
-	ID           uuid.UUID       `json:"id"`
-	SchemaType   string          `json:"schema_type"`
-	Version      int32           `json:"version"`
-	SchemaJson   json.RawMessage `json:"schema_json"`
-	SubjectID    uuid.NullUUID   `json:"subject_id"`
-	CurriculumID uuid.NullUUID   `json:"curriculum_id"`
-	IsActive     bool            `json:"is_active"`
-	CreatedBy    uuid.UUID       `json:"created_by"`
-	CreatedAt    time.Time       `json:"created_at"`
-	LockedAt     sql.NullTime    `json:"locked_at"`
+	ID         uuid.UUID       `json:"id"`
+	SchemaType string          `json:"schema_type"`
+	Version    int32           `json:"version"`
+	SchemaJson json.RawMessage `json:"schema_json"`
+	IsActive   bool            `json:"is_active"`
+	CreatedBy  uuid.UUID       `json:"created_by"`
+	CreatedAt  time.Time       `json:"created_at"`
+	LockedAt   sql.NullTime    `json:"locked_at"`
 }
 
 func (q *Queries) ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (ActivateSchemaTemplateRow, error) {
@@ -54,8 +52,6 @@ func (q *Queries) ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (Act
 		&i.SchemaType,
 		&i.Version,
 		&i.SchemaJson,
-		&i.SubjectID,
-		&i.CurriculumID,
 		&i.IsActive,
 		&i.CreatedBy,
 		&i.CreatedAt,
@@ -67,14 +63,14 @@ func (q *Queries) ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (Act
 const createSchemaTemplate = `-- name: CreateSchemaTemplate :one
 WITH inserted AS (
   INSERT INTO schema_templates (
-    schema_type, version, schema_json, subject_id, curriculum_id,
+    schema_type, version, schema_json,
     is_active, created_by, locked_at
   ) VALUES (
     $1,
     (SELECT COALESCE(MAX(version), 0) + 1 FROM schema_templates WHERE schema_type = $1),
-    $2, $3, $4, $5, $6, $7
+    $2, $3, $4, $5
   )
-  RETURNING id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at
+  RETURNING id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at
 ),
 deactivated AS (
   UPDATE schema_templates SET
@@ -84,38 +80,32 @@ deactivated AS (
     AND id != (SELECT id FROM inserted)
     AND (SELECT is_active FROM inserted) = true
 )
-SELECT id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at FROM inserted
+SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM inserted
 `
 
 type CreateSchemaTemplateParams struct {
-	SchemaType   string          `json:"schema_type"`
-	SchemaJson   json.RawMessage `json:"schema_json"`
-	SubjectID    uuid.NullUUID   `json:"subject_id"`
-	CurriculumID uuid.NullUUID   `json:"curriculum_id"`
-	IsActive     bool            `json:"is_active"`
-	CreatedBy    uuid.UUID       `json:"created_by"`
-	LockedAt     sql.NullTime    `json:"locked_at"`
+	SchemaType string          `json:"schema_type"`
+	SchemaJson json.RawMessage `json:"schema_json"`
+	IsActive   bool            `json:"is_active"`
+	CreatedBy  uuid.UUID       `json:"created_by"`
+	LockedAt   sql.NullTime    `json:"locked_at"`
 }
 
 type CreateSchemaTemplateRow struct {
-	ID           uuid.UUID       `json:"id"`
-	SchemaType   string          `json:"schema_type"`
-	Version      int32           `json:"version"`
-	SchemaJson   json.RawMessage `json:"schema_json"`
-	SubjectID    uuid.NullUUID   `json:"subject_id"`
-	CurriculumID uuid.NullUUID   `json:"curriculum_id"`
-	IsActive     bool            `json:"is_active"`
-	CreatedBy    uuid.UUID       `json:"created_by"`
-	CreatedAt    time.Time       `json:"created_at"`
-	LockedAt     sql.NullTime    `json:"locked_at"`
+	ID         uuid.UUID       `json:"id"`
+	SchemaType string          `json:"schema_type"`
+	Version    int32           `json:"version"`
+	SchemaJson json.RawMessage `json:"schema_json"`
+	IsActive   bool            `json:"is_active"`
+	CreatedBy  uuid.UUID       `json:"created_by"`
+	CreatedAt  time.Time       `json:"created_at"`
+	LockedAt   sql.NullTime    `json:"locked_at"`
 }
 
 func (q *Queries) CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemplateParams) (CreateSchemaTemplateRow, error) {
 	row := q.db.QueryRowContext(ctx, createSchemaTemplate,
 		arg.SchemaType,
 		arg.SchemaJson,
-		arg.SubjectID,
-		arg.CurriculumID,
 		arg.IsActive,
 		arg.CreatedBy,
 		arg.LockedAt,
@@ -126,8 +116,6 @@ func (q *Queries) CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemp
 		&i.SchemaType,
 		&i.Version,
 		&i.SchemaJson,
-		&i.SubjectID,
-		&i.CurriculumID,
 		&i.IsActive,
 		&i.CreatedBy,
 		&i.CreatedAt,
@@ -137,7 +125,7 @@ func (q *Queries) CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemp
 }
 
 const getActiveSchemaTemplateByType = `-- name: GetActiveSchemaTemplateByType :one
-SELECT id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at FROM schema_templates WHERE schema_type = $1 AND is_active = true LIMIT 1
+SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates WHERE schema_type = $1 AND is_active = true LIMIT 1
 `
 
 func (q *Queries) GetActiveSchemaTemplateByType(ctx context.Context, schemaType string) (SchemaTemplate, error) {
@@ -148,8 +136,6 @@ func (q *Queries) GetActiveSchemaTemplateByType(ctx context.Context, schemaType 
 		&i.SchemaType,
 		&i.Version,
 		&i.SchemaJson,
-		&i.SubjectID,
-		&i.CurriculumID,
 		&i.IsActive,
 		&i.CreatedBy,
 		&i.CreatedAt,
@@ -159,7 +145,7 @@ func (q *Queries) GetActiveSchemaTemplateByType(ctx context.Context, schemaType 
 }
 
 const getSchemaTemplate = `-- name: GetSchemaTemplate :one
-SELECT id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at FROM schema_templates WHERE id = $1 LIMIT 1
+SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTemplate, error) {
@@ -170,8 +156,6 @@ func (q *Queries) GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTe
 		&i.SchemaType,
 		&i.Version,
 		&i.SchemaJson,
-		&i.SubjectID,
-		&i.CurriculumID,
 		&i.IsActive,
 		&i.CreatedBy,
 		&i.CreatedAt,
@@ -181,7 +165,7 @@ func (q *Queries) GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTe
 }
 
 const listActiveSchemaTemplates = `-- name: ListActiveSchemaTemplates :many
-SELECT id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at FROM schema_templates
+SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates
 WHERE is_active = true
 ORDER BY schema_type ASC, version DESC
 `
@@ -200,8 +184,6 @@ func (q *Queries) ListActiveSchemaTemplates(ctx context.Context) ([]SchemaTempla
 			&i.SchemaType,
 			&i.Version,
 			&i.SchemaJson,
-			&i.SubjectID,
-			&i.CurriculumID,
 			&i.IsActive,
 			&i.CreatedBy,
 			&i.CreatedAt,
@@ -221,7 +203,7 @@ func (q *Queries) ListActiveSchemaTemplates(ctx context.Context) ([]SchemaTempla
 }
 
 const listSchemaTemplatesByType = `-- name: ListSchemaTemplatesByType :many
-SELECT id, schema_type, version, schema_json, subject_id, curriculum_id, is_active, created_by, created_at, locked_at FROM schema_templates
+SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates
 WHERE schema_type = $1
 ORDER BY version DESC
 `
@@ -240,8 +222,6 @@ func (q *Queries) ListSchemaTemplatesByType(ctx context.Context, schemaType stri
 			&i.SchemaType,
 			&i.Version,
 			&i.SchemaJson,
-			&i.SubjectID,
-			&i.CurriculumID,
 			&i.IsActive,
 			&i.CreatedBy,
 			&i.CreatedAt,

@@ -18,11 +18,8 @@ func (g *SyntheticPlanGenerator) GeneratePlan(
 	schema SchemaTemplate,
 ) (Plan, *Artifact, error) {
 	inputVars := map[string]any{
-		"subject":    doc.SubjectName,
-		"curriculum": doc.Curriculum,
-		"title":      doc.HumanTitle,
-		"tags":       doc.TopicTags,
-		"intents":    intents,
+		"title":   doc.HumanTitle,
+		"intents": intents,
 	}
 
 	rawJSON, err := g.engine.Generate(ctx, prompt, schema, inputVars)

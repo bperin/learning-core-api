@@ -32,9 +32,6 @@ func (r *repositoryImpl) Create(ctx context.Context, req CreateDocumentRequest) 
 	if req.RagStatus == "" {
 		req.RagStatus = RagStatusPending
 	}
-	if req.Subjects == nil {
-		req.Subjects = []string{}
-	}
 
 	params := store.CreateDocumentParams{
 		Filename:          req.Filename,
@@ -47,10 +44,6 @@ func (r *repositoryImpl) Create(ctx context.Context, req CreateDocumentRequest) 
 		FileStoreFileName: utils.SqlNullString(req.FileStoreFileName),
 		RagStatus:         req.RagStatus,
 		UserID:            req.UserID,
-		SubjectID:         utils.SqlNullUUID(req.SubjectID),
-		CurriculumID:      utils.SqlNullUUID(req.CurriculumID),
-		Curricular:        utils.SqlNullString(req.Curricular),
-		Subjects:          req.Subjects,
 	}
 
 	doc, err := r.queries.CreateDocument(ctx, params)
@@ -84,29 +77,9 @@ func (r *repositoryImpl) GetByUser(ctx context.Context, userID uuid.UUID) ([]*Do
 	return r.toDomainSlice(docs), nil
 }
 
-// GetBySubject retrieves all documents in a specific subject
-func (r *repositoryImpl) GetBySubject(ctx context.Context, subjectID uuid.UUID) ([]*Document, error) {
-	docs, err := r.queries.GetDocumentsBySubject(ctx, uuid.NullUUID{UUID: subjectID, Valid: true})
-	if err != nil {
-		return nil, err
-	}
-
-	return r.toDomainSlice(docs), nil
-}
-
 // GetByRagStatus retrieves documents by RAG processing status
 func (r *repositoryImpl) GetByRagStatus(ctx context.Context, status string) ([]*Document, error) {
 	docs, err := r.queries.GetDocumentsByRagStatus(ctx, status)
-	if err != nil {
-		return nil, err
-	}
-
-	return r.toDomainSlice(docs), nil
-}
-
-// GetBySubjects retrieves documents that match any of the provided subjects
-func (r *repositoryImpl) GetBySubjects(ctx context.Context, subjects []string) ([]*Document, error) {
-	docs, err := r.queries.GetDocumentsBySubjects(ctx, subjects)
 	if err != nil {
 		return nil, err
 	}
@@ -156,10 +129,6 @@ func (r *repositoryImpl) Update(ctx context.Context, id uuid.UUID, req UpdateDoc
 		FileStoreName:     utils.SqlNullString(req.FileStoreName),
 		FileStoreFileName: utils.SqlNullString(req.FileStoreFileName),
 		RagStatus:         utils.NullStringToString(utils.SqlNullString(req.RagStatus)),
-		SubjectID:         utils.SqlNullUUID(req.SubjectID),
-		CurriculumID:      utils.SqlNullUUID(req.CurriculumID),
-		Curricular:        utils.SqlNullString(req.Curricular),
-		Subjects:          req.Subjects,
 	}
 
 	doc, err := r.queries.UpdateDocument(ctx, params)
@@ -213,16 +182,8 @@ func (r *repositoryImpl) Filter(ctx context.Context, filter DocumentFilter) ([]*
 		return r.GetByUser(ctx, *filter.UserID)
 	}
 
-	if filter.SubjectID != nil {
-		return r.GetBySubject(ctx, *filter.SubjectID)
-	}
-
 	if filter.RagStatus != nil {
 		return r.GetByRagStatus(ctx, *filter.RagStatus)
-	}
-
-	if len(filter.Subjects) > 0 {
-		return r.GetBySubjects(ctx, filter.Subjects)
 	}
 
 	if filter.Title != nil {
@@ -248,12 +209,8 @@ func (r *repositoryImpl) toDomain(doc store.Document) *Document {
 		FileStoreFileName: utils.NullStringToPtr(doc.FileStoreFileName),
 		RagStatus:         doc.RagStatus,
 		UserID:            doc.UserID,
-		SubjectID:         utils.NullUUIDToPtr(doc.SubjectID),
-		CurriculumID:      utils.NullUUIDToPtr(doc.CurriculumID),
 		CreatedAt:         doc.CreatedAt,
 		UpdatedAt:         doc.UpdatedAt,
-		Curricular:        utils.NullStringToPtr(doc.Curricular),
-		Subjects:          doc.Subjects,
 	}
 }
 
