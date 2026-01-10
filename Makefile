@@ -24,6 +24,10 @@ clean:
 	@echo "Cleaning..."
 	@rm -rf tmp/
 
+clear-gcp:
+	@echo "Clearing GCP resources (Bucket and Gemini Stores)..."
+	@go run cmd/clear-gcp/main.go
+
 sqlc:
 	@echo "Generating code with sqlc..."
 	@go run github.com/sqlc-dev/sqlc/cmd/sqlc generate
@@ -48,7 +52,7 @@ test-verbose:
 
 test-gcp-integration:
 	@echo "Running GCP file service integration test..."
-	@go test ./internal/gcp -run TestFileServiceUploadIntegration -v
+	@go test ./internal/gcp -run TestGCSSignedUploadURLIntegration -v
 
 # Postgres targets (Real DB)
 migrate-up:

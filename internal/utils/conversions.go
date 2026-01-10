@@ -2,9 +2,11 @@ package utils
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/sqlc-dev/pqtype"
 )
 
 // InterfaceSliceToStringSlice converts a slice of interface{} to a slice of string
@@ -93,6 +95,14 @@ func NullFloat64ToFloat32Ptr(n sql.NullFloat64) *float32 {
 	return nil
 }
 
+// NullInt32ToInt32Ptr converts a sql.NullInt32 to a *int32
+func NullInt32ToInt32Ptr(n sql.NullInt32) *int32 {
+	if n.Valid {
+		return &n.Int32
+	}
+	return nil
+}
+
 // NullTimeToPtr converts a sql.NullTime to a *time.Time
 func NullTimeToPtr(n sql.NullTime) *time.Time {
 	if n.Valid {
@@ -109,4 +119,20 @@ func StringSliceToInterfaceSlice(slice []string) []interface{} {
 		result[i] = v
 	}
 	return result
+}
+
+// ToNullString converts a string to a sql.NullString
+func ToNullString(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{Valid: false}
+	}
+	return sql.NullString{String: s, Valid: true}
+}
+
+// ToNullRawMessage converts json.RawMessage to pqtype.NullRawMessage
+func ToNullRawMessage(m json.RawMessage) pqtype.NullRawMessage {
+	if len(m) == 0 {
+		return pqtype.NullRawMessage{Valid: false}
+	}
+	return pqtype.NullRawMessage{RawMessage: m, Valid: true}
 }

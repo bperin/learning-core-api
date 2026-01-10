@@ -57,8 +57,20 @@ type Artifact struct {
 }
 
 type Intent struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
+	Domain               string               `json:"domain"`
+	Subject              string               `json:"subject"`
+	IntendedAudience     string               `json:"intended_audience"`
+	AssumedPrerequisites []string             `json:"assumed_prerequisites"`
+	LearningObjectives   []string             `json:"learning_objectives"`
+	KeyConcepts          []string             `json:"key_concepts"`
+	DifficultyLevel      string               `json:"difficulty_level"` // "introductory" | "intermediate" | "advanced"
+	RecommendedArtifacts RecommendedArtifacts `json:"recommended_artifacts"`
+}
+
+type RecommendedArtifacts struct {
+	Flashcards              int `json:"flashcards"`
+	MultipleChoiceQuestions int `json:"multiple_choice_questions"`
+	ShortAnswerQuestions    int `json:"short_answer_questions"`
 }
 
 type Plan struct {

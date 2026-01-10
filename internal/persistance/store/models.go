@@ -139,6 +139,16 @@ type Artifact struct {
 	PromptRender sql.NullString `json:"prompt_render"`
 }
 
+type ChunkingConfig struct {
+	ID           uuid.UUID `json:"id"`
+	Version      int32     `json:"version"`
+	ChunkSize    int32     `json:"chunk_size"`
+	ChunkOverlap int32     `json:"chunk_overlap"`
+	IsActive     bool      `json:"is_active"`
+	CreatedBy    uuid.UUID `json:"created_by"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
 type Curricula struct {
 	ID uuid.UUID `json:"id"`
 	// Subject this curriculum belongs to
@@ -230,6 +240,20 @@ type EvalItemReview struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type ModelConfig struct {
+	ID          uuid.UUID       `json:"id"`
+	Version     int32           `json:"version"`
+	ModelName   string          `json:"model_name"`
+	Temperature sql.NullFloat64 `json:"temperature"`
+	MaxTokens   sql.NullInt32   `json:"max_tokens"`
+	TopP        sql.NullFloat64 `json:"top_p"`
+	TopK        sql.NullInt32   `json:"top_k"`
+	IsActive    bool            `json:"is_active"`
+	CreatedBy   uuid.UUID       `json:"created_by"`
+	CreatedAt   time.Time       `json:"created_at"`
+	MimeType    sql.NullString  `json:"mime_type"`
+}
+
 type PromptTemplate struct {
 	ID          uuid.UUID             `json:"id"`
 	Key         string                `json:"key"`
@@ -267,6 +291,15 @@ type Subject struct {
 	UserID      uuid.UUID      `json:"user_id"`
 	CreatedAt   time.Time      `json:"created_at"`
 	UpdatedAt   time.Time      `json:"updated_at"`
+}
+
+type SystemInstruction struct {
+	ID        uuid.UUID `json:"id"`
+	Version   int32     `json:"version"`
+	Text      string    `json:"text"`
+	IsActive  bool      `json:"is_active"`
+	CreatedBy uuid.UUID `json:"created_by"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type TestAttempt struct {

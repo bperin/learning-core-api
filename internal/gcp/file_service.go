@@ -20,7 +20,6 @@ type FileService struct {
 	fileSearchStore *genai.FileSearchStores
 	storeName       string
 	chunkingConfig  *genai.ChunkingConfig
-	defaultTTL      time.Duration
 }
 
 type UploadURLResponse struct {
@@ -36,14 +35,13 @@ type FileSearchUploadResult struct {
 	ObjectName string
 }
 
-func NewFileService(gcs *GCSService, client *genai.Client, storeName string, signedURLTTL time.Duration) *FileService {
+func NewFileService(gcs *GCSService, client *genai.Client, storeName string) *FileService {
 	return &FileService{
 		gcs:             gcs,
 		client:          client,
 		fileSearchStore: client.FileSearchStores,
 		storeName:       storeName,
 		chunkingConfig:  defaultChunkingConfig(),
-		defaultTTL:      signedURLTTL,
 	}
 }
 
@@ -68,7 +66,7 @@ func NewFileServiceFromConfig(ctx context.Context, cfg *config.Config, gcs *GCSS
 		return nil, err
 	}
 
-	service := NewFileService(gcs, client, cfg.FileStoreName, parseSignedURLTTL(cfg.SignedURLTTL))
+	service := NewFileService(gcs, client, cfg.FileStoreName)
 	if err := service.EnsureStore(ctx); err != nil {
 		return nil, err
 	}
@@ -115,9 +113,9 @@ func (s *FileService) EnsureStore(ctx context.Context) error {
 	return s.waitForStore(ctx)
 }
 
-func (s *FileService) GenerateUploadURL(ctx context.Context, documentID uuid.UUID, filename string, contentType string) (*UploadURLResponse, error) {
+func (s *FileService) GenerateUploadURL(ctx context.Context, documentID uuid.UUID, filename string, contentType string, ttl time.Duration) (*UploadURLResponse, error) {
 	objectName := s.objectName(documentID, filename)
-	url, err := s.gcs.GenerateSignedUploadURL(ctx, objectName, contentType, s.defaultTTL)
+	url, err := s.gcs.GenerateSignedUploadURL(ctx, objectName, contentType, ttl)
 	if err != nil {
 		return nil, err
 	}
@@ -195,6 +193,68 @@ func (s *FileService) ListFiles(ctx context.Context, storeName string) ([]*genai
 		documents = append(documents, doc)
 	}
 	return documents, nil
+}
+
+func (s *FileService) DeleteAllFiles(ctx context.Context, storeName string) error {
+	if s.client == nil || s.client.FileSearchStores == nil || s.client.FileSearchStores.Documents == nil {
+		return fmt.Errorf("file search store documents client is required")
+	}
+	if storeName == "" {
+		storeName = s.storeName
+	}
+	if storeName == "" {
+		return nil // Nothing to delete
+	}
+
+	files, err := s.ListFiles(ctx, storeName)
+	if err != nil {
+		return fmt.Errorf("failed to list files for deletion in store %q: %w", storeName, err)
+	}
+
+	for _, doc := range files {
+		if err := s.client.FileSearchStores.Documents.Delete(ctx, doc.Name, nil); err != nil {
+			return fmt.Errorf("failed to delete file %q from store %q: %w", doc.Name, storeName, err)
+		}
+	}
+	return nil
+}
+
+func (s *FileService) DeleteStore(ctx context.Context, storeName string) error {
+	if s.client == nil || s.client.FileSearchStores == nil {
+		return fmt.Errorf("file search store client is required")
+	}
+	if storeName == "" {
+		storeName = s.storeName
+	}
+	if storeName == "" {
+		return nil
+	}
+
+	force := true
+	config := &genai.DeleteFileSearchStoreConfig{
+		Force: &force,
+	}
+
+	if err := s.client.FileSearchStores.Delete(ctx, storeName, config); err != nil {
+		return fmt.Errorf("failed to delete file search store %q: %w", storeName, err)
+	}
+	return nil
+}
+
+func (s *FileService) ClearAllStores(ctx context.Context) error {
+	stores, err := s.ListStores(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to list stores for clearing: %w", err)
+	}
+
+	for _, store := range stores {
+		if err := s.DeleteStore(ctx, store.Name); err != nil {
+			// If we fail to delete the store, try deleting files as fallback
+			_ = s.DeleteAllFiles(ctx, store.Name)
+			return err
+		}
+	}
+	return nil
 }
 
 func (s *FileService) matchStoreByDisplayName(ctx context.Context) (bool, error) {
@@ -281,15 +341,4 @@ func newGenAIClient(ctx context.Context, apiKey string) (*genai.Client, error) {
 		APIKey:  apiKey,
 		Backend: genai.BackendGeminiAPI,
 	})
-}
-
-func parseSignedURLTTL(value string) time.Duration {
-	if value == "" {
-		return 15 * time.Minute
-	}
-	parsed, err := time.ParseDuration(value)
-	if err != nil {
-		return 15 * time.Minute
-	}
-	return parsed
 }

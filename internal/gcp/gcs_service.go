@@ -111,6 +111,23 @@ func (s *GCSService) DeleteObject(ctx context.Context, objectName string) error 
 	return nil
 }
 
+func (s *GCSService) EmptyBucket(ctx context.Context) error {
+	it := s.client.Bucket(s.bucketName).Objects(ctx, nil)
+	for {
+		attrs, err := it.Next()
+		if err == iterator.Done {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to list objects for deletion: %w", err)
+		}
+		if err := s.DeleteObject(ctx, attrs.Name); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (s *GCSService) ListObjects(ctx context.Context, prefix string) ([]*storage.ObjectAttrs, error) {
 	query := &storage.Query{Prefix: prefix}
 	it := s.client.Bucket(s.bucketName).Objects(ctx, query)
