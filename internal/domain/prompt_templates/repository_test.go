@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -24,31 +23,39 @@ func setupTestRepo(t *testing.T) (*sql.Tx, *store.Queries, Repository, func()) {
 }
 
 func TestPromptTemplateRepository_CreateActivate(t *testing.T) {
-	_, _, repo, cleanup := setupTestRepo(t)
+	_, queries, repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	active := true
 	createdBy := "tester"
-	key := "intent_extraction_" + uuid.NewString()
+	generationType := "CLASSIFICATION"
+	baseVersion := int32(0)
+	existing, err := queries.GetPromptTemplatesByGenerationType(ctx, store.GenerationType(generationType))
+	require.NoError(t, err)
+	for _, tmpl := range existing {
+		if tmpl.Version > baseVersion {
+			baseVersion = tmpl.Version
+		}
+	}
 
 	first, err := repo.Create(ctx, CreatePromptTemplateRequest{
-		Key:       key,
-		Version:   1,
-		IsActive:  active,
-		Title:     "Intent Extraction v1",
-		Template:  "Extract intent from: {{.text}}",
-		CreatedBy: &createdBy,
+		GenerationType: generationType,
+		Version:        baseVersion + 1,
+		IsActive:       active,
+		Title:          "Classification v1",
+		Template:       "Classify: {{.text}}",
+		CreatedBy:      &createdBy,
 	})
 	require.NoError(t, err)
 	assert.True(t, first.IsActive)
 
 	second, err := repo.CreateVersion(ctx, CreatePromptTemplateVersionRequest{
-		Key:       key,
-		IsActive:  active,
-		Title:     "Intent Extraction v2",
-		Template:  "Extract intents: {{.text}}",
-		CreatedBy: &createdBy,
+		GenerationType: generationType,
+		IsActive:       active,
+		Title:          "Classification v2",
+		Template:       "Classify text: {{.text}}",
+		CreatedBy:      &createdBy,
 	})
 	require.NoError(t, err)
 	assert.True(t, second.IsActive)
@@ -57,7 +64,7 @@ func TestPromptTemplateRepository_CreateActivate(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, firstReload.IsActive)
 
-	activeTemplate, err := repo.GetActiveByKey(ctx, key)
+	activeTemplate, err := repo.GetActiveByGenerationType(ctx, generationType)
 	require.NoError(t, err)
 	assert.Equal(t, second.ID, activeTemplate.ID)
 
@@ -65,7 +72,7 @@ func TestPromptTemplateRepository_CreateActivate(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, activated.IsActive)
 
-	activeTemplate, err = repo.GetActiveByKey(ctx, key)
+	activeTemplate, err = repo.GetActiveByGenerationType(ctx, generationType)
 	require.NoError(t, err)
 	assert.Equal(t, first.ID, activeTemplate.ID)
 

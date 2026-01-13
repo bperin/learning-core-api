@@ -14,6 +14,8 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
+
+	"learning-core-api/internal/persistance/seeds"
 )
 
 var (
@@ -197,6 +199,9 @@ func ensureMigrated(t *testing.T, db *sql.DB) {
 			}
 			if err := Migrate(db); err != nil {
 				return fmt.Errorf("failed to run migrations: %w", err)
+			}
+			if err := seeds.Run(context.Background(), db); err != nil {
+				return fmt.Errorf("failed to seed test database: %w", err)
 			}
 			return nil
 		})

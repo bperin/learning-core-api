@@ -52,7 +52,7 @@ test-verbose:
 
 test-gcp-integration:
 	@echo "Running GCP file service integration test..."
-	@go test ./internal/gcp -run TestGCSSignedUploadURLIntegration -v
+	@go test ./internal/gcp -run TestFileSearchMetadataFilterIntegration -v
 
 # Postgres targets (Real DB)
 migrate-up:

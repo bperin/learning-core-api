@@ -14,7 +14,7 @@ type ModelConfig struct {
 	Temperature float64   `json:"temperature"`
 	MaxTokens   int32     `json:"max_tokens"`
 	TopP        float64   `json:"top_p"`
-	TopK        int32     `json:"top_k"`
+	TopK        float64   `json:"top_k"`
 	MimeType    string    `json:"mime_type"`
 	IsActive    bool      `json:"is_active"`
 	CreatedBy   uuid.UUID `json:"created_by"`
@@ -27,7 +27,7 @@ type CreateModelConfigRequest struct {
 	Temperature float64   `json:"temperature"`
 	MaxTokens   int32     `json:"max_tokens"`
 	TopP        float64   `json:"top_p"`
-	TopK        int32     `json:"top_k"`
+	TopK        float64   `json:"top_k"`
 	MimeType    string    `json:"mime_type"`
 	IsActive    bool      `json:"is_active"`
 	CreatedBy   uuid.UUID `json:"created_by"`

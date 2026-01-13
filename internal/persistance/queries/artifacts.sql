@@ -24,11 +24,11 @@ SELECT * FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2;
 
 -- name: CreateArtifact :one
 INSERT INTO artifacts (
-  type, status, eval_id, eval_item_id, attempt_id, reviewer_id,
+  type, generation_type, status, eval_id, eval_item_id, attempt_id, reviewer_id,
   text, output_json, model, prompt, prompt_template_id, schema_template_id,
   model_params, prompt_render, input_hash, meta, error
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
 ) RETURNING *;
 
 -- name: GetArtifactsByTypeAndEntity :many

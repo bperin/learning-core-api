@@ -2,6 +2,7 @@ package gcp
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -212,6 +213,92 @@ func TestGCSSignedUploadURLIntegration(t *testing.T) {
 	}
 }
 
+func TestFileSearchMetadataFilterIntegration(t *testing.T) {
+	storeName := os.Getenv("FILE_STORE_NAME")
+	apiKey := os.Getenv("GOOGLE_API_KEY")
+	if storeName == "" || apiKey == "" {
+		_ = godotenv.Load()
+		storeName = os.Getenv("FILE_STORE_NAME")
+		apiKey = os.Getenv("GOOGLE_API_KEY")
+	}
+	if storeName == "" || apiKey == "" {
+		t.Skipf("missing FILE_STORE_NAME or GOOGLE_API_KEY (store=%t api_key=%t)", storeName != "", apiKey != "")
+	}
+
+	ctx := context.Background()
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  apiKey,
+		Backend: genai.BackendGeminiAPI,
+	})
+	require.NoError(t, err)
+
+	storeName, err = ensureFileSearchStore(ctx, client, storeName)
+	require.NoError(t, err)
+	t.Logf("using file search store: %s", storeName)
+
+	localPath := filepath.Join("../../test_docs", "test.pdf")
+	metadataID := uuid.NewString()
+
+	uploadCfg := &genai.UploadToFileSearchStoreConfig{
+		MIMEType:    "application/pdf",
+		DisplayName: fmt.Sprintf("rag-test-%s", metadataID),
+		CustomMetadata: []*genai.CustomMetadata{
+			{
+				Key:         "id",
+				StringValue: metadataID,
+			},
+		},
+	}
+
+	operation, err := client.FileSearchStores.UploadToFileSearchStoreFromPath(ctx, localPath, storeName, uploadCfg)
+	require.NoError(t, err)
+
+	deadline := time.Now().Add(2 * time.Minute)
+	for !operation.Done && time.Now().Before(deadline) {
+		time.Sleep(3 * time.Second)
+		operation, err = client.Operations.GetUploadToFileSearchStoreOperation(ctx, operation, nil)
+		require.NoError(t, err)
+	}
+
+	require.True(t, operation.Done, "upload operation did not complete in time")
+	require.NotNil(t, operation.Response)
+	require.NotEmpty(t, operation.Response.DocumentName)
+	t.Logf("uploaded document: %s", operation.Response.DocumentName)
+
+	filter := fmt.Sprintf("id = \"%s\"", metadataID)
+	tools := []*genai.Tool{
+		{
+			FileSearch: &genai.FileSearch{
+				FileSearchStoreNames: []string{storeName},
+				MetadataFilter:       filter,
+			},
+		},
+	}
+	genConfig := &genai.GenerateContentConfig{Tools: tools}
+
+	resp, err := client.Models.GenerateContent(ctx, "gemini-3-flash-preview", genai.Text("Summarize the document in a few paragraphs highlight key topics and components"), genConfig)
+	require.NoError(t, err)
+	require.NotEmpty(t, resp.Candidates)
+
+	var outputText string
+	for _, part := range resp.Candidates[0].Content.Parts {
+		outputText += part.Text
+	}
+	t.Logf("model response: %s", outputText)
+
+	outputPath, err := writeFileSearchOutput(metadataID, outputText, resp.Candidates[0].GroundingMetadata)
+	require.NoError(t, err)
+	t.Logf("saved output to %s", outputPath)
+
+	if resp.Candidates[0].GroundingMetadata != nil {
+		data, err := json.MarshalIndent(resp.Candidates[0].GroundingMetadata, "", "  ")
+		require.NoError(t, err)
+		t.Logf("grounding metadata: %s", string(data))
+	} else {
+		t.Log("grounding metadata: <nil>")
+	}
+}
+
 func resolveCredentialsPath(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("GOOGLE_APPLICATION_CREDENTIALS is empty")
@@ -246,4 +333,93 @@ func resolveCredentialsPath(path string) (string, error) {
 	}
 
 	return "", fmt.Errorf("credentials file not found from %s", wd)
+}
+
+func ensureFileSearchStore(ctx context.Context, client *genai.Client, storeName string) (string, error) {
+	if client == nil || client.FileSearchStores == nil {
+		return "", fmt.Errorf("file search store client is required")
+	}
+	if storeName == "" {
+		return "", fmt.Errorf("file search store name is required")
+	}
+
+	store, err := client.FileSearchStores.Get(ctx, storeName, nil)
+	if err == nil && store != nil && store.Name != "" {
+		return store.Name, nil
+	}
+	if err != nil && !isNotFoundError(err) {
+		if matched, matchErr := matchStoreByDisplayName(ctx, client, storeName); matchErr == nil && matched != nil {
+			return matched.Name, nil
+		}
+		return "", err
+	}
+
+	if matched, matchErr := matchStoreByDisplayName(ctx, client, storeName); matchErr == nil && matched != nil {
+		return matched.Name, nil
+	}
+
+	created, err := client.FileSearchStores.Create(ctx, &genai.CreateFileSearchStoreConfig{
+		DisplayName: storeName,
+	})
+	if err != nil {
+		return "", err
+	}
+	if created != nil && created.Name != "" {
+		return created.Name, nil
+	}
+
+	deadline := time.Now().Add(2 * time.Minute)
+	for time.Now().Before(deadline) {
+		if matched, matchErr := matchStoreByDisplayName(ctx, client, storeName); matchErr == nil && matched != nil {
+			return matched.Name, nil
+		}
+		time.Sleep(3 * time.Second)
+	}
+
+	return "", fmt.Errorf("timed out waiting for file search store %q", storeName)
+}
+
+func matchStoreByDisplayName(ctx context.Context, client *genai.Client, storeName string) (*genai.FileSearchStore, error) {
+	for store, err := range client.FileSearchStores.All(ctx) {
+		if err != nil {
+			return nil, err
+		}
+		if store == nil {
+			continue
+		}
+		if store.Name == storeName || store.DisplayName == storeName {
+			return store, nil
+		}
+	}
+	return nil, nil
+}
+
+func writeFileSearchOutput(metadataID string, outputText string, grounding *genai.GroundingMetadata) (string, error) {
+	dir := filepath.Join("tmp", "filesearch_outputs")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+
+	payload := struct {
+		MetadataID string                   `json:"metadata_id"`
+		OutputText string                   `json:"output_text"`
+		Grounding  *genai.GroundingMetadata `json:"grounding_metadata,omitempty"`
+		WrittenAt  time.Time                `json:"written_at"`
+	}{
+		MetadataID: metadataID,
+		OutputText: outputText,
+		Grounding:  grounding,
+		WrittenAt:  time.Now().UTC(),
+	}
+
+	data, err := json.MarshalIndent(payload, "", "  ")
+	if err != nil {
+		return "", err
+	}
+
+	path := filepath.Join(dir, fmt.Sprintf("filesearch_%s.json", metadataID))
+	if err := os.WriteFile(path, data, 0o644); err != nil {
+		return "", err
+	}
+	return path, nil
 }

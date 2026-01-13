@@ -16,32 +16,32 @@ import (
 
 const activateSchemaTemplate = `-- name: ActivateSchemaTemplate :one
 WITH target AS (
-  SELECT schema_type FROM schema_templates WHERE schema_templates.id = $1
+  SELECT generation_type FROM schema_templates WHERE schema_templates.id = $1
 ),
 deactivated AS (
   UPDATE schema_templates SET
     is_active = false,
     locked_at = COALESCE(locked_at, now())
-  WHERE schema_type = (SELECT schema_type FROM target) AND id != $1
+  WHERE generation_type = (SELECT generation_type FROM target) AND id != $1
 ),
 activated AS (
   UPDATE schema_templates SET
     is_active = true
   WHERE id = $1
-  RETURNING id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at
+  RETURNING id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at
 )
-SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM activated
+SELECT id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at FROM activated
 `
 
 type ActivateSchemaTemplateRow struct {
-	ID         uuid.UUID       `json:"id"`
-	SchemaType string          `json:"schema_type"`
-	Version    int32           `json:"version"`
-	SchemaJson json.RawMessage `json:"schema_json"`
-	IsActive   bool            `json:"is_active"`
-	CreatedBy  uuid.UUID       `json:"created_by"`
-	CreatedAt  time.Time       `json:"created_at"`
-	LockedAt   sql.NullTime    `json:"locked_at"`
+	ID             uuid.UUID       `json:"id"`
+	GenerationType GenerationType  `json:"generation_type"`
+	Version        int32           `json:"version"`
+	SchemaJson     json.RawMessage `json:"schema_json"`
+	IsActive       bool            `json:"is_active"`
+	CreatedBy      uuid.UUID       `json:"created_by"`
+	CreatedAt      time.Time       `json:"created_at"`
+	LockedAt       sql.NullTime    `json:"locked_at"`
 }
 
 func (q *Queries) ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (ActivateSchemaTemplateRow, error) {
@@ -49,7 +49,7 @@ func (q *Queries) ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (Act
 	var i ActivateSchemaTemplateRow
 	err := row.Scan(
 		&i.ID,
-		&i.SchemaType,
+		&i.GenerationType,
 		&i.Version,
 		&i.SchemaJson,
 		&i.IsActive,
@@ -63,48 +63,48 @@ func (q *Queries) ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (Act
 const createSchemaTemplate = `-- name: CreateSchemaTemplate :one
 WITH inserted AS (
   INSERT INTO schema_templates (
-    schema_type, version, schema_json,
+    generation_type, version, schema_json,
     is_active, created_by, locked_at
   ) VALUES (
     $1,
-    (SELECT COALESCE(MAX(version), 0) + 1 FROM schema_templates WHERE schema_type = $1),
+    (SELECT COALESCE(MAX(version), 0) + 1 FROM schema_templates WHERE generation_type = $1),
     $2, $3, $4, $5
   )
-  RETURNING id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at
+  RETURNING id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at
 ),
 deactivated AS (
   UPDATE schema_templates SET
     is_active = false,
     locked_at = COALESCE(locked_at, now())
-  WHERE schema_type = (SELECT schema_type FROM inserted)
+  WHERE generation_type = (SELECT generation_type FROM inserted)
     AND id != (SELECT id FROM inserted)
     AND (SELECT is_active FROM inserted) = true
 )
-SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM inserted
+SELECT id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at FROM inserted
 `
 
 type CreateSchemaTemplateParams struct {
-	SchemaType string          `json:"schema_type"`
-	SchemaJson json.RawMessage `json:"schema_json"`
-	IsActive   bool            `json:"is_active"`
-	CreatedBy  uuid.UUID       `json:"created_by"`
-	LockedAt   sql.NullTime    `json:"locked_at"`
+	GenerationType GenerationType  `json:"generation_type"`
+	SchemaJson     json.RawMessage `json:"schema_json"`
+	IsActive       bool            `json:"is_active"`
+	CreatedBy      uuid.UUID       `json:"created_by"`
+	LockedAt       sql.NullTime    `json:"locked_at"`
 }
 
 type CreateSchemaTemplateRow struct {
-	ID         uuid.UUID       `json:"id"`
-	SchemaType string          `json:"schema_type"`
-	Version    int32           `json:"version"`
-	SchemaJson json.RawMessage `json:"schema_json"`
-	IsActive   bool            `json:"is_active"`
-	CreatedBy  uuid.UUID       `json:"created_by"`
-	CreatedAt  time.Time       `json:"created_at"`
-	LockedAt   sql.NullTime    `json:"locked_at"`
+	ID             uuid.UUID       `json:"id"`
+	GenerationType GenerationType  `json:"generation_type"`
+	Version        int32           `json:"version"`
+	SchemaJson     json.RawMessage `json:"schema_json"`
+	IsActive       bool            `json:"is_active"`
+	CreatedBy      uuid.UUID       `json:"created_by"`
+	CreatedAt      time.Time       `json:"created_at"`
+	LockedAt       sql.NullTime    `json:"locked_at"`
 }
 
 func (q *Queries) CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemplateParams) (CreateSchemaTemplateRow, error) {
 	row := q.db.QueryRowContext(ctx, createSchemaTemplate,
-		arg.SchemaType,
+		arg.GenerationType,
 		arg.SchemaJson,
 		arg.IsActive,
 		arg.CreatedBy,
@@ -113,7 +113,7 @@ func (q *Queries) CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemp
 	var i CreateSchemaTemplateRow
 	err := row.Scan(
 		&i.ID,
-		&i.SchemaType,
+		&i.GenerationType,
 		&i.Version,
 		&i.SchemaJson,
 		&i.IsActive,
@@ -124,16 +124,16 @@ func (q *Queries) CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemp
 	return i, err
 }
 
-const getActiveSchemaTemplateByType = `-- name: GetActiveSchemaTemplateByType :one
-SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates WHERE schema_type = $1 AND is_active = true LIMIT 1
+const getActiveSchemaTemplateByGenerationType = `-- name: GetActiveSchemaTemplateByGenerationType :one
+SELECT id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates WHERE generation_type = $1 AND is_active = true LIMIT 1
 `
 
-func (q *Queries) GetActiveSchemaTemplateByType(ctx context.Context, schemaType string) (SchemaTemplate, error) {
-	row := q.db.QueryRowContext(ctx, getActiveSchemaTemplateByType, schemaType)
+func (q *Queries) GetActiveSchemaTemplateByGenerationType(ctx context.Context, generationType GenerationType) (SchemaTemplate, error) {
+	row := q.db.QueryRowContext(ctx, getActiveSchemaTemplateByGenerationType, generationType)
 	var i SchemaTemplate
 	err := row.Scan(
 		&i.ID,
-		&i.SchemaType,
+		&i.GenerationType,
 		&i.Version,
 		&i.SchemaJson,
 		&i.IsActive,
@@ -145,7 +145,7 @@ func (q *Queries) GetActiveSchemaTemplateByType(ctx context.Context, schemaType 
 }
 
 const getSchemaTemplate = `-- name: GetSchemaTemplate :one
-SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates WHERE id = $1 LIMIT 1
+SELECT id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTemplate, error) {
@@ -153,7 +153,7 @@ func (q *Queries) GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTe
 	var i SchemaTemplate
 	err := row.Scan(
 		&i.ID,
-		&i.SchemaType,
+		&i.GenerationType,
 		&i.Version,
 		&i.SchemaJson,
 		&i.IsActive,
@@ -165,9 +165,9 @@ func (q *Queries) GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTe
 }
 
 const listActiveSchemaTemplates = `-- name: ListActiveSchemaTemplates :many
-SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates
+SELECT id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates
 WHERE is_active = true
-ORDER BY schema_type ASC, version DESC
+ORDER BY generation_type ASC, version DESC
 `
 
 func (q *Queries) ListActiveSchemaTemplates(ctx context.Context) ([]SchemaTemplate, error) {
@@ -181,7 +181,7 @@ func (q *Queries) ListActiveSchemaTemplates(ctx context.Context) ([]SchemaTempla
 		var i SchemaTemplate
 		if err := rows.Scan(
 			&i.ID,
-			&i.SchemaType,
+			&i.GenerationType,
 			&i.Version,
 			&i.SchemaJson,
 			&i.IsActive,
@@ -202,14 +202,14 @@ func (q *Queries) ListActiveSchemaTemplates(ctx context.Context) ([]SchemaTempla
 	return items, nil
 }
 
-const listSchemaTemplatesByType = `-- name: ListSchemaTemplatesByType :many
-SELECT id, schema_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates
-WHERE schema_type = $1
+const listSchemaTemplatesByGenerationType = `-- name: ListSchemaTemplatesByGenerationType :many
+SELECT id, generation_type, version, schema_json, is_active, created_by, created_at, locked_at FROM schema_templates
+WHERE generation_type = $1
 ORDER BY version DESC
 `
 
-func (q *Queries) ListSchemaTemplatesByType(ctx context.Context, schemaType string) ([]SchemaTemplate, error) {
-	rows, err := q.db.QueryContext(ctx, listSchemaTemplatesByType, schemaType)
+func (q *Queries) ListSchemaTemplatesByGenerationType(ctx context.Context, generationType GenerationType) ([]SchemaTemplate, error) {
+	rows, err := q.db.QueryContext(ctx, listSchemaTemplatesByGenerationType, generationType)
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (q *Queries) ListSchemaTemplatesByType(ctx context.Context, schemaType stri
 		var i SchemaTemplate
 		if err := rows.Scan(
 			&i.ID,
-			&i.SchemaType,
+			&i.GenerationType,
 			&i.Version,
 			&i.SchemaJson,
 			&i.IsActive,

@@ -1,0 +1,102 @@
+{
+  "metadata_id": "a3e56bcc-b5fa-4464-94a6-632a31eb4851",
+  "output_text": "The provided document, titled **\"BIO 101: Introductory Biology I,\"** serves as a foundational guide to cell biology and plant science. It begins by establishing the cell as the basic unit of life, detailing the history of the **cell theory** through the work of scientists like Robert Hooke, Schleiden, Schwann, and Virchow. The text emphasizes that all living organisms are composed of cells, which can be either unicellular or multicellular, and highlights the technological advancements in microscopy that allowed for these discoveries.\n\nA significant portion of the document is dedicated to **cellular structure and function**. It describes the roles of key components such as the plasma membrane, which regulates material flow, and various organelles like chloroplasts, vacuoles, and the nucleus. The text provides a detailed comparison between **prokaryotic and eukaryotic cells**, noting differences in size, genetic systems, and the presence of membrane-bound organelles. For instance, it specifies that while prokaryotes lack a nuclear membrane and complex organelles like mitochondria, eukaryotes possess these features and undergo more complex division processes like mitosis.\n\nThe document also explores **plant morphology and classification**. It defines plant morphology as the study of the forms and features of plant organs, distinguishing between **vegetative parts** (roots, stems, and leaves) involved in growth and nutrition, and **reproductive parts** (flowers, fruits, and seeds). Finally, it outlines the **classification of the plant kingdom**, contrasting older systems with modern taxonomic hierarchies. This includes divisions such as Thallophyta (algae and fungi), Bryophyta, and Tracheophyta, further categorizing plants into groups like gymnosperms and angiosperms based on their seed and flower characteristics.",
+  "grounding_metadata": {
+    "groundingChunks": [
+      {
+        "retrievedContext": {
+          "text": "a German botanist, announced that all plant tissues were composed\n of cells. A year later one of his countrymen, Theodor Schwann, described animal\n cells as being similar to plant cells. Schleiden and Schwann are thus credited\n with the unifying cell theory. Some 20 years after the announcements of\n Schleiden and Schwann, Rudolf Virchow, a great German physician, made\n another important generalization, cells come only from pre-existing cells.\n Cells are separated from their external environment by an interface or plasma\n membrane. Everything inside the plasma membrane is sometimes referred to as\n protoplasm, consisting of the jelly like cytoplasm (cyto-cell, plasma thing) and\n various structures collectively known as organelleles, including the membrane,\n bound nucleus. Each organelles represents a highly specialized compartment or\n submodule in which particular functions of the cell are localized.\n\n(diagram)\n\n\n--- PAGE 2 ---\n\nSTRUCTURE AND FUNCTIONS\n\nThe Plasma membrane: Typically the eukaryotic cell is enclosed within a thin,\n study, differentially permeable plasma membrane. This structure regulates the\n flow of materials between the cell and its surroundings. In some cells, such as\n nerve cells, the plasma membrane also is involved in intercellular communication\n in other cells, such as intestinal epithelium, the plasma membrane is modified\n into numerous, small, finger like projection called microvilli",
+          "title": "rag-test-a3e56bcc-b5fa-4464-94a6-632a31eb4851"
+        }
+      },
+      {
+        "retrievedContext": {
+          "text": "--- PAGE 1 ---\n\nΒΙΟ 101\n\nINTRODUCTORY BIOLOGY I\n\nTHE CELL\n\nA cell may be defined as he standard unit of biological activity bounded by a\n membrane, and able to reproduce itself independently of any other living system.\n All living organisms, large and small, plant and animal, fish and fowl, man and\n microbe, are made up of cells. All cells are basically similar to each other, having\n many structural features in common. Organisms may be composed of only one\n cell, when we describe them as being unicellular, or of many cells when we say\n they are multicellular.\n\nWith the exception of eggs, which are the largest cells (in volume) known, cells\n are small and mostly invisible to the unaided eye.\n Consequently, our\n understanding of cells paralleled technical advances in the resolving power of\n microscopes. Englishman Robert Kooke first saw the remains of dead cells in\n 1665 in a piece of cork as he was using his newly invented microscope and he\n coined the work \"cell\" to describe the tiny structures, thinking that they\n resembled the unadorned cells occupied by the monks. In 1838 Mathias\n Schleiden, a German botanist, announced that all plant tissues were composed\n of cells. A year later one of his countrymen, Theodor",
+          "title": "rag-test-a3e56bcc-b5fa-4464-94a6-632a31eb4851"
+        }
+      },
+      {
+        "retrievedContext": {
+          "text": "is trapped and utilized for the synthesis of complex organic\n materials from simple inorganic molecules.\n\n\n--- PAGE 4 ---\n\nEach chloroplast is surrounded by two membranes that enclosed its contents and\n separate it from the cytoplasm. The internal portion of the chloroplast consists\n mainly of two parts: a fluid matrix (stroma) surrounding a complex membrane.\n The membrane system generally consists of a series of multilayered fluid-fluid\n discs (grana) resembling a stack of coins and a system of closed flat sacs\n (lamellae) extending throughout the chloroplast and connecting the grana.\n Higher plants contain a variety of intracellular bodies called plastids. Usually\n there are two types; the chromoplasts (coloured bodies) and leucoplasts (white\n or colourless bodies). Chloroplasts belong to the chromoplasts group. Other\n kinds of chromoplasts give many flowers and leaves their colours or yellow,\n orange or red. Leucoplasts serve as food storage deposits for the cell and\n contain oil, starch grains and protein.\n\nVacuoles: inner space: The cell may contain fluid filled spaces surrounded by a\n membrane, called vacuoles. Plant cells have more prominent vacuoles in young\n plant cells the vacuoles are many and they are rather small, but as the plant\n ages (gets older), these vacuoles fuse to form a large, conspicuous central\n",
+          "title": "rag-test-a3e56bcc-b5fa-4464-94a6-632a31eb4851"
+        }
+      },
+      {
+        "retrievedContext": {
+          "text": "each species.\n\nTable The Table below summarizes the existing differences between\n prokaryotic and eukaryotic cells\n\nFeatures\n\nProkaryotes\n\nEukaryotes\n\nCell size\n\nMostly small (1-10cm)\n\nMostly large (10-100cm)\n\nPlasma membrane\n\nPresent\n\nPresent\n\nNuclear membrane\n\nAbsent\n\nPresent\n\nGenetic system\n\nDNA with some non DNA complexed with\n\nhistone, protein simple, histone and nonhistone;\n\ncircular chromosome in proteins\n\nis\n\ncomplex;\n\nnucleus, nucleus\n\nnot chromosomes within the\n\nmembrane bound\n\nnucleus; nucleus with\n\n\n--- PAGE 8 ---\n\n,,\"membraneous envelope\n\"\r\n\"Cell division\n\",\"Direct by binary fission or\n\",\"Some form of mitosis\n\"\r\n,\"budding. No mitosis\n\",\"occur; centrioles many,\n\"\r\n,,\"mitotic spindle present\n\"\r\n\"Sexual system\n\",\"Absent in most;\n highly\n\",\"Present in most; there are\n\"\r\n,\"modified if present\n\",\"male and female partners;\n\"\r\n,,\"gametes that fuse other\n\"\r\n\"Nutrition\n\",\"Absorption\n by\n most,\n\",\"Absorption, ingestion,\n\"\r\n,\"photosynthesis by some\n\",\"photosynthesis by some\n\"\r\n\"Intracellular\n\",\"None\n\",\"Cytoplasmic\n streaming,\n\"\r\n\"movement\n\",,\"phagocytosis, pinocytosis\n\"\r\n\"Mitochondria\n\",\"Absent\n\",\"Present\n\"\r\n\"Endoplasmic\n\",\"Absent\n\",\"Present\n\"\r\n\"reticulum\n\",,\r\n\"Golgi apparatus\n\",\"Absent\n\",\"Present\n\"\r\n\"Ribosomes\n\",\"Present\n\",\"Present\n\"\r\n\"Cell wall\n\",\"Present, composed\n of\n\",\"Lacking in animals, present\n\"\r\n,\"amino acids and muramic\n acid\n\",\"in plants, with cellulose a\n\n\nmajor component\n\"\r\n\"Vacuoles\n\",\"Absent\n\",\"Present (particularly in\n plants)\n\"\n\n--- PAGE 9 ---\n\nTable 2:\n\nPLANT KINGDOM\n\nCRYPTOGAMS (Non-flowering plants)\n\nPHANEROGAMS (flowering plants)\n\n\n\"Thallophyta\n\",\"Bryophyta\n\",\"Pteridophyta\n\",\"Gymnosperms\n\",\"Angiosperms\n\"\r\n,\"Liverworts moses\n\",\"-naked\n\",\"ovule\n\",\"-enclosed ovule\n\"\r\n,,,\"-flowers without\n\",\"flowers with\n\"\r\n,,\"Whorls\n\",,\"whorls\n\"\n\nAlgae Fungi Lichens\n\nSimplified classification\n\n1.\n\nOLD CLASSIFICATION\n\nPLANT KINGDOM\n\nDIVISION:\n\nCryptogams\n\nFlowerless plants\n\n(seedless)\n\n-Thallophyta\n\nSpermatophyta\n\nFlowering plants\n\n(Seed Plants)\n\nGymnospermae\n\n(naked seed plants) Cycads, conifers, etc.\n\n-Angiospermae\n\n-Byrophyta\n\n(closed - seed plants) monocots \u0026 dicots\n\n-Pteridophyta\n\n2.\n\nMODERN CLASSIFICATION\n\nKINGDOM PLANTAE\n\n(A)\n\nSUB KINGDOM - Thallophyta (plants not forming standard embryo)\n\n\n--- PAGE 10 ---\n\nDIVISIONS - 1. Algae (phycophyta) 6 classes\n\n(Cyanophyta) Blue green\n\n(Euglenophyta) Euglenoids\n\nClasses\n\n(Bacillarophyta) Diatoms\n\n11.\n\n(Chlorophyta) Green algae\n\n(Phacophyta) Brown algae\n\n(Rodophyta) Red algae\n\nFungi (Mycophyta) 6 classes\n\nClasses\n\n(Schizomycophyta) - Bacteria\n\n(Myxomycophyta) - Slime fungi\n\n(Eumycophyta) - true fungi\n\n(Phycomycetes) algalike fungi\n\n(Ascomycetes) - sac fungi\n\n(Basidiomycetes) - club fungi\n\n(B) SUB KINGDOM: Embryophyta (Plants forming embryo)\n\nDIVISIONS\n\n1.\n\n11.\n\nBryophyta (Plants with vascular tissues)\n\nLiverworts, mosses\n\nTracheophyta (plants with vascular tissues)\n\n(a)",
+          "title": "rag-test-a3e56bcc-b5fa-4464-94a6-632a31eb4851"
+        }
+      },
+      {
+        "retrievedContext": {
+          "text": "plant morphology.\n\nThe word Morphology was derived from two Latin words Morphe = forme and\n Logos = study. Plant morphology deals with the study of forms and features of\n different plant organs such as roots, stems, leaves, flowers, fruits and seeds.\n (Diagram)\n\nAn angiospermic plant has the root and shoot systems. The root systems is\n positioned below the ground level and its primary functions are\n fixation/anchorage of the plant to the soil and absorption of water and mineral\n salts from the soil into the plant.\n\nThe shoot system is the part of the plant found above the ground level. This\n comprises the stem, leaves, flowers, fruits and seeds. These plant organs are\n grouped into vegetative and reproductive parts. Vegetative parts are the plant\n organs that are concerned with the nutrition and growth of the plant i.e. the root\n system and parts of the shoot system such as the stem and leaves. The stem\n and leaves perform three major functions which are support, conduction and\n food manufacture. Reproductive shoot comprises the flower, which is concerned\n with the reproduction of the plants.\n\n\n--- PAGE 20 ---\n\nCLASSIFICATION AND NOMENCLATURE OF PLANTS\n\nAll plants belong to the plant kingdom. Plants are further put in smaller\n hierarchical taxonomic groups that",
+          "title": "rag-test-a3e56bcc-b5fa-4464-94a6-632a31eb4851"
+        }
+      }
+    ],
+    "groundingSupports": [
+      {
+        "groundingChunkIndices": [
+          0
+        ],
+        "segment": {
+          "endIndex": 324,
+          "startIndex": 135,
+          "text": "It begins by establishing the cell as the basic unit of life, detailing the history of the **cell theory** through the work of scientists like Robert Hooke, Schleiden, Schwann, and Virchow."
+        }
+      },
+      {
+        "groundingChunkIndices": [
+          1
+        ],
+        "segment": {
+          "endIndex": 539,
+          "startIndex": 325,
+          "text": "The text emphasizes that all living organisms are composed of cells, which can be either unicellular or multicellular, and highlights the technological advancements in microscopy that allowed for these discoveries."
+        }
+      },
+      {
+        "groundingChunkIndices": [
+          2,
+          0
+        ],
+        "segment": {
+          "endIndex": 631,
+          "startIndex": 541,
+          "text": "A significant portion of the document is dedicated to **cellular structure and function**."
+        }
+      },
+      {
+        "groundingChunkIndices": [
+          0
+        ],
+        "segment": {
+          "endIndex": 801,
+          "startIndex": 632,
+          "text": "It describes the roles of key components such as the plasma membrane, which regulates material flow, and various organelles like chloroplasts, vacuoles, and the nucleus."
+        }
+      },
+      {
+        "groundingChunkIndices": [
+          3
+        ],
+        "segment": {
+          "endIndex": 979,
+          "startIndex": 802,
+          "text": "The text provides a detailed comparison between **prokaryotic and eukaryotic cells**, noting differences in size, genetic systems, and the presence of membrane-bound organelles."
+        }
+      },
+      {
+        "groundingChunkIndices": [
+          4
+        ],
+        "segment": {
+          "endIndex": 1502,
+          "startIndex": 1257,
+          "text": "It defines plant morphology as the study of the forms and features of plant organs, distinguishing between **vegetative parts** (roots, stems, and leaves) involved in growth and nutrition, and **reproductive parts** (flowers, fruits, and seeds)."
+        }
+      }
+    ]
+  },
+  "written_at": "2026-01-11T00:26:57.776308Z"
+}

@@ -28,11 +28,11 @@ func (r *RepositoryImpl) Create(ctx context.Context, req CreateSchemaTemplateReq
 	}
 
 	storeTemplate, err := r.queries.CreateSchemaTemplate(ctx, store.CreateSchemaTemplateParams{
-		SchemaType: req.SchemaType,
-		SchemaJson: req.SchemaJSON,
-		IsActive:   isActive,
-		CreatedBy:  req.CreatedBy,
-		LockedAt:   utils.SqlNullTime(req.LockedAt),
+		GenerationType: store.GenerationType(req.GenerationType),
+		SchemaJson:     req.SchemaJSON,
+		IsActive:       isActive,
+		CreatedBy:      req.CreatedBy,
+		LockedAt:       utils.SqlNullTime(req.LockedAt),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create schema template: %w", err)
@@ -51,9 +51,9 @@ func (r *RepositoryImpl) GetByID(ctx context.Context, id uuid.UUID) (*SchemaTemp
 	return toDomainSchemaTemplate(&storeTemplate), nil
 }
 
-// GetActiveByType retrieves the active schema template for a type.
-func (r *RepositoryImpl) GetActiveByType(ctx context.Context, schemaType string) (*SchemaTemplate, error) {
-	storeTemplate, err := r.queries.GetActiveSchemaTemplateByType(ctx, schemaType)
+// GetActiveByGenerationType retrieves the active schema template for a generation type.
+func (r *RepositoryImpl) GetActiveByGenerationType(ctx context.Context, generationType string) (*SchemaTemplate, error) {
+	storeTemplate, err := r.queries.GetActiveSchemaTemplateByGenerationType(ctx, store.GenerationType(generationType))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get active schema template: %w", err)
 	}
@@ -61,11 +61,11 @@ func (r *RepositoryImpl) GetActiveByType(ctx context.Context, schemaType string)
 	return toDomainSchemaTemplate(&storeTemplate), nil
 }
 
-// ListByType lists schema templates by type.
-func (r *RepositoryImpl) ListByType(ctx context.Context, schemaType string) ([]*SchemaTemplate, error) {
-	storeTemplates, err := r.queries.ListSchemaTemplatesByType(ctx, schemaType)
+// ListByGenerationType lists schema templates by generation type.
+func (r *RepositoryImpl) ListByGenerationType(ctx context.Context, generationType string) ([]*SchemaTemplate, error) {
+	storeTemplates, err := r.queries.ListSchemaTemplatesByGenerationType(ctx, store.GenerationType(generationType))
 	if err != nil {
-		return nil, fmt.Errorf("failed to list schema templates by type: %w", err)
+		return nil, fmt.Errorf("failed to list schema templates by generation type: %w", err)
 	}
 
 	return toDomainSchemaTemplates(storeTemplates), nil
@@ -101,39 +101,39 @@ func toDomainSchemaTemplates(storeTemplates []store.SchemaTemplate) []*SchemaTem
 
 func toDomainSchemaTemplate(storeTemplate *store.SchemaTemplate) *SchemaTemplate {
 	return &SchemaTemplate{
-		ID:         storeTemplate.ID,
-		SchemaType: storeTemplate.SchemaType,
-		Version:    storeTemplate.Version,
-		SchemaJSON: storeTemplate.SchemaJson,
-		IsActive:   storeTemplate.IsActive,
-		CreatedBy:  storeTemplate.CreatedBy,
-		CreatedAt:  storeTemplate.CreatedAt,
-		LockedAt:   utils.NullTimeToPtr(storeTemplate.LockedAt),
+		ID:             storeTemplate.ID,
+		GenerationType: string(storeTemplate.GenerationType),
+		Version:        storeTemplate.Version,
+		SchemaJSON:     storeTemplate.SchemaJson,
+		IsActive:       storeTemplate.IsActive,
+		CreatedBy:      storeTemplate.CreatedBy,
+		CreatedAt:      storeTemplate.CreatedAt,
+		LockedAt:       utils.NullTimeToPtr(storeTemplate.LockedAt),
 	}
 }
 
 func toDomainSchemaTemplateRow(storeTemplate *store.ActivateSchemaTemplateRow) *SchemaTemplate {
 	return &SchemaTemplate{
-		ID:         storeTemplate.ID,
-		SchemaType: storeTemplate.SchemaType,
-		Version:    storeTemplate.Version,
-		SchemaJSON: storeTemplate.SchemaJson,
-		IsActive:   storeTemplate.IsActive,
-		CreatedBy:  storeTemplate.CreatedBy,
-		CreatedAt:  storeTemplate.CreatedAt,
-		LockedAt:   utils.NullTimeToPtr(storeTemplate.LockedAt),
+		ID:             storeTemplate.ID,
+		GenerationType: string(storeTemplate.GenerationType),
+		Version:        storeTemplate.Version,
+		SchemaJSON:     storeTemplate.SchemaJson,
+		IsActive:       storeTemplate.IsActive,
+		CreatedBy:      storeTemplate.CreatedBy,
+		CreatedAt:      storeTemplate.CreatedAt,
+		LockedAt:       utils.NullTimeToPtr(storeTemplate.LockedAt),
 	}
 }
 
 func toDomainSchemaTemplateCreate(storeTemplate *store.CreateSchemaTemplateRow) *SchemaTemplate {
 	return &SchemaTemplate{
-		ID:         storeTemplate.ID,
-		SchemaType: storeTemplate.SchemaType,
-		Version:    storeTemplate.Version,
-		SchemaJSON: storeTemplate.SchemaJson,
-		IsActive:   storeTemplate.IsActive,
-		CreatedBy:  storeTemplate.CreatedBy,
-		CreatedAt:  storeTemplate.CreatedAt,
-		LockedAt:   utils.NullTimeToPtr(storeTemplate.LockedAt),
+		ID:             storeTemplate.ID,
+		GenerationType: string(storeTemplate.GenerationType),
+		Version:        storeTemplate.Version,
+		SchemaJSON:     storeTemplate.SchemaJson,
+		IsActive:       storeTemplate.IsActive,
+		CreatedBy:      storeTemplate.CreatedBy,
+		CreatedAt:      storeTemplate.CreatedAt,
+		LockedAt:       utils.NullTimeToPtr(storeTemplate.LockedAt),
 	}
 }

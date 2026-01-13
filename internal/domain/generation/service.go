@@ -47,6 +47,10 @@ func NewService(db *sql.DB, artifactsService *artifacts.Service, generator Gener
 }
 
 func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateResponse, error) {
+	if req.Instructions.GenerationType != "" && req.Output.GenerationType != "" && req.Instructions.GenerationType != req.Output.GenerationType {
+		return nil, fmt.Errorf("generation_type mismatch between instructions and output")
+	}
+
 	// 1. Resolve Model Configuration
 	resolvedModel, err := s.resolveModelConfig(ctx, req.ModelConfigID)
 	if err != nil {
@@ -87,7 +91,7 @@ func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateR
 	outputText := resp.OutputText
 
 	var outputJSON json.RawMessage
-	if req.Output.Format == "json" || req.Output.SchemaKey != "" || req.Output.InlineSchema != nil {
+	if req.Output.Format == "json" || req.Output.GenerationType != "" || req.Output.InlineSchema != nil {
 		outputJSON = json.RawMessage(outputText)
 	}
 
@@ -133,7 +137,7 @@ func (s *Service) resolveModelConfig(ctx context.Context, id uuid.UUID) (*ModelC
 	temperature := float32(dbConfig.Temperature)
 	maxTokens := dbConfig.MaxTokens
 	topP := float32(dbConfig.TopP)
-	topK := dbConfig.TopK
+	topK := float32(dbConfig.TopK)
 
 	baseConfig.Temperature = &temperature
 	baseConfig.MaxTokens = &maxTokens
@@ -165,20 +169,20 @@ func (s *Service) resolveInstructions(ctx context.Context, inst Instructions) (s
 	if inst.Inline != "" {
 		return inst.Inline, systemInstr, uuid.Nil, nil
 	}
-	if inst.PromptKey == "" {
-		return "", "", uuid.Nil, fmt.Errorf("prompt key is required")
+	if inst.GenerationType == "" {
+		return "", "", uuid.Nil, fmt.Errorf("generation type is required")
 	}
 
 	var promptTmpl *prompt_templates.PromptTemplate
 	var err error
 	if inst.PromptVersion > 0 {
-		promptTmpl, err = s.promptTemplates.GetByKeyAndVersion(ctx, inst.PromptKey, inst.PromptVersion)
+		promptTmpl, err = s.promptTemplates.GetByGenerationTypeAndVersion(ctx, inst.GenerationType, inst.PromptVersion)
 	} else {
-		promptTmpl, err = s.promptTemplates.GetActiveByKey(ctx, inst.PromptKey)
+		promptTmpl, err = s.promptTemplates.GetActiveByGenerationType(ctx, inst.GenerationType)
 	}
 
 	if err != nil {
-		return "", "", uuid.Nil, fmt.Errorf("failed to fetch prompt template %q: %w", inst.PromptKey, err)
+		return "", "", uuid.Nil, fmt.Errorf("failed to fetch prompt template %q: %w", inst.GenerationType, err)
 	}
 
 	tmpl, err := template.New("prompt").Parse(promptTmpl.Template)
@@ -203,7 +207,7 @@ func (s *Service) resolveOutputConfig(ctx context.Context, out OutputConfig) (js
 		return out.InlineSchema, uuid.Nil, nil
 	}
 
-	if out.SchemaKey == "" {
+	if out.GenerationType == "" {
 		return nil, uuid.Nil, nil
 	}
 
@@ -212,10 +216,10 @@ func (s *Service) resolveOutputConfig(ctx context.Context, out OutputConfig) (js
 	if out.SchemaVersion > 0 {
 		return nil, uuid.Nil, fmt.Errorf("schema_version is not supported; use the active schema")
 	}
-	schemaTmpl, err = s.schemaTemplates.GetActiveByType(ctx, out.SchemaKey)
+	schemaTmpl, err = s.schemaTemplates.GetActiveByGenerationType(ctx, out.GenerationType)
 
 	if err != nil {
-		return nil, uuid.Nil, fmt.Errorf("failed to fetch schema template %q: %w", out.SchemaKey, err)
+		return nil, uuid.Nil, fmt.Errorf("failed to fetch schema template %q: %w", out.GenerationType, err)
 	}
 
 	return schemaTmpl.SchemaJSON, schemaTmpl.ID, nil
@@ -227,8 +231,14 @@ func (s *Service) saveArtifact(ctx context.Context, req GenerateRequest, promptT
 		status = "ERROR"
 	}
 
+	generationType := req.Instructions.GenerationType
+	if generationType == "" {
+		generationType = req.Output.GenerationType
+	}
+
 	params := artifacts.CreateArtifactParams{
-		Type:             "GENERATION",
+		Type:             "OTHER",
+		GenerationType:   generationType,
 		Status:           status,
 		UserID:           req.UserID,
 		DocumentID:       uuid.NullUUID{UUID: ptrToUUID(req.Target.DocumentID), Valid: req.Target.DocumentID != nil},

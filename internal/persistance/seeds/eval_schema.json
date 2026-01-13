@@ -1,0 +1,64 @@
+{
+    "type": "OBJECT",
+    "properties": {
+        "derived_objectives": {
+            "type": "ARRAY",
+            "description": "Learning objectives inferred from the documents",
+            "items": {
+                "type": "STRING"
+            }
+        },
+        "difficulty_level": {
+            "type": "STRING",
+            "enum": ["introductory", "intermediate", "advanced"],
+            "description": "Overall difficulty of the evaluation"
+        },
+        "evaluation_items": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "id": {
+                        "type": "STRING",
+                        "description": "Unique identifier for the evaluation item"
+                    },
+                    "type": {
+                        "type": "STRING",
+                        "enum": ["multiple_choice", "short_answer"],
+                        "description": "Question type"
+                    },
+                    "question": {
+                        "type": "STRING",
+                        "description": "The question presented to the learner"
+                    },
+                    "options": {
+                        "type": "ARRAY",
+                        "description": "Answer options (required for multiple choice)",
+                        "items": {
+                            "type": "OBJECT",
+                            "properties": {
+                                "id": { "type": "STRING" },
+                                "text": { "type": "STRING" }
+                            },
+                            "required": ["id", "text"]
+                        }
+                    },
+                    "correct_option_id": {
+                        "type": "STRING",
+                        "description": "Correct option ID (multiple choice only)"
+                    },
+                    "expected_answer": {
+                        "type": "STRING",
+                        "description": "Expected answer (short answer only)"
+                    },
+                    "source_reference": {
+                        "type": "STRING",
+                        "description": "Brief reference to where the answer is supported in the documents"
+                    }
+                },
+                "required": ["id", "type", "question", "source_reference"]
+            }
+        }
+    },
+    "required": ["derived_objectives", "difficulty_level", "evaluation_items"]
+}

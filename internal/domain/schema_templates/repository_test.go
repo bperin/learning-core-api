@@ -37,38 +37,47 @@ func createTestUser(t *testing.T, db *sql.Tx) uuid.UUID {
 }
 
 func TestSchemaTemplateRepository_CreateActivate(t *testing.T) {
-	db, _, repo, cleanup := setupTestRepo(t)
+	db, queries, repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := createTestUser(t, db)
 	active := true
+	generationType := "CLASSIFICATION"
+	baseVersion := int32(0)
+	existing, err := queries.ListSchemaTemplatesByGenerationType(ctx, store.GenerationType(generationType))
+	require.NoError(t, err)
+	for _, tmpl := range existing {
+		if tmpl.Version > baseVersion {
+			baseVersion = tmpl.Version
+		}
+	}
 
 	first, err := repo.Create(ctx, CreateSchemaTemplateRequest{
-		SchemaType: "eval_generation",
-		SchemaJSON: []byte(`{"type":"object"}`),
-		IsActive:   &active,
-		CreatedBy:  userID,
+		GenerationType: generationType,
+		SchemaJSON:     []byte(`{"type":"object"}`),
+		IsActive:       &active,
+		CreatedBy:      userID,
 	})
 	require.NoError(t, err)
 	assert.True(t, first.IsActive)
-	assert.Equal(t, int32(1), first.Version)
+	assert.Equal(t, baseVersion+1, first.Version)
 
 	second, err := repo.Create(ctx, CreateSchemaTemplateRequest{
-		SchemaType: "eval_generation",
-		SchemaJSON: []byte(`{"type":"object","properties":{"x":{"type":"string"}}}`),
-		IsActive:   &active,
-		CreatedBy:  userID,
+		GenerationType: generationType,
+		SchemaJSON:     []byte(`{"type":"object","properties":{"x":{"type":"string"}}}`),
+		IsActive:       &active,
+		CreatedBy:      userID,
 	})
 	require.NoError(t, err)
 	assert.True(t, second.IsActive)
-	assert.Equal(t, int32(2), second.Version)
+	assert.Equal(t, first.Version+1, second.Version)
 
 	firstReload, err := repo.GetByID(ctx, first.ID)
 	require.NoError(t, err)
 	assert.False(t, firstReload.IsActive)
 
-	activeSchema, err := repo.GetActiveByType(ctx, "eval_generation")
+	activeSchema, err := repo.GetActiveByGenerationType(ctx, generationType)
 	require.NoError(t, err)
 	assert.Equal(t, second.ID, activeSchema.ID)
 
@@ -76,7 +85,7 @@ func TestSchemaTemplateRepository_CreateActivate(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, activated.IsActive)
 
-	activeSchema, err = repo.GetActiveByType(ctx, "eval_generation")
+	activeSchema, err = repo.GetActiveByGenerationType(ctx, generationType)
 	require.NoError(t, err)
 	assert.Equal(t, first.ID, activeSchema.ID)
 

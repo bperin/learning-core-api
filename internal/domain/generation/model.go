@@ -37,17 +37,17 @@ type Target struct {
 
 type Instructions struct {
 	SystemInstructionID *uuid.UUID             `json:"system_instruction_id,omitempty"`
-	PromptKey           string                 `json:"prompt_key,omitempty"`     // Reference to DB template
-	PromptVersion       int32                  `json:"prompt_version,omitempty"` // 0 for latest
-	Variables           map[string]interface{} `json:"variables,omitempty"`      // Variables to inject into template
-	Inline              string                 `json:"inline,omitempty"`         // Raw prompt text (if not using key)
+	GenerationType      string                 `json:"generation_type,omitempty"` // Reference to DB template
+	PromptVersion       int32                  `json:"prompt_version,omitempty"`  // 0 for latest
+	Variables           map[string]interface{} `json:"variables,omitempty"`       // Variables to inject into template
+	Inline              string                 `json:"inline,omitempty"`          // Raw prompt text (if not using generation type)
 }
 
 type OutputConfig struct {
-	SchemaKey     string          `json:"schema_key,omitempty"`     // Reference to DB schema
-	SchemaVersion int32           `json:"schema_version,omitempty"` // 0 for latest
-	InlineSchema  json.RawMessage `json:"inline_schema,omitempty"`  // Raw JSON Schema
-	Format        string          `json:"format"`                   // "text" or "json"
+	GenerationType string          `json:"generation_type,omitempty"` // Reference to DB schema
+	SchemaVersion  int32           `json:"schema_version,omitempty"`  // 0 for latest
+	InlineSchema   json.RawMessage `json:"inline_schema,omitempty"`   // Raw JSON Schema
+	Format         string          `json:"format"`                    // "text" or "json"
 }
 
 type ToolConfig struct {
@@ -60,7 +60,7 @@ type ModelConfig struct {
 	Temperature *float32 `json:"temperature,omitempty"`
 	MaxTokens   *int32   `json:"max_tokens,omitempty"`
 	TopP        *float32 `json:"top_p,omitempty"`
-	TopK        *int32   `json:"top_k,omitempty"`
+	TopK        *float32 `json:"top_k,omitempty"`
 	MimeType    string   `json:"mime_type,omitempty"` // e.g. "application/json"
 }
 

@@ -49,7 +49,7 @@ type CreateModelConfigParams struct {
 	Temperature sql.NullFloat64 `json:"temperature"`
 	MaxTokens   sql.NullInt32   `json:"max_tokens"`
 	TopP        sql.NullFloat64 `json:"top_p"`
-	TopK        sql.NullInt32   `json:"top_k"`
+	TopK        sql.NullFloat64 `json:"top_k"`
 	MimeType    sql.NullString  `json:"mime_type"`
 	IsActive    bool            `json:"is_active"`
 	CreatedBy   uuid.UUID       `json:"created_by"`
@@ -62,7 +62,7 @@ type CreateModelConfigRow struct {
 	Temperature sql.NullFloat64 `json:"temperature"`
 	MaxTokens   sql.NullInt32   `json:"max_tokens"`
 	TopP        sql.NullFloat64 `json:"top_p"`
-	TopK        sql.NullInt32   `json:"top_k"`
+	TopK        sql.NullFloat64 `json:"top_k"`
 	IsActive    bool            `json:"is_active"`
 	CreatedBy   uuid.UUID       `json:"created_by"`
 	CreatedAt   time.Time       `json:"created_at"`

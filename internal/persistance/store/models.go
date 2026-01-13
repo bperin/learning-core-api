@@ -67,6 +67,47 @@ func (ns NullArtifactType) Value() (driver.Value, error) {
 	return string(ns.ArtifactType), nil
 }
 
+type GenerationType string
+
+const (
+	GenerationTypeCLASSIFICATION GenerationType = "CLASSIFICATION"
+)
+
+func (e *GenerationType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = GenerationType(s)
+	case string:
+		*e = GenerationType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for GenerationType: %T", src)
+	}
+	return nil
+}
+
+type NullGenerationType struct {
+	GenerationType GenerationType `json:"generation_type"`
+	Valid          bool           `json:"valid"` // Valid is true if GenerationType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGenerationType) Scan(value interface{}) error {
+	if value == nil {
+		ns.GenerationType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.GenerationType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGenerationType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.GenerationType), nil
+}
+
 // Possible verdicts for eval item reviews
 type ReviewVerdict string
 
@@ -137,6 +178,8 @@ type Artifact struct {
 	ModelParams pqtype.NullRawMessage `json:"model_params"`
 	// Rendered prompt text sent to the model
 	PromptRender sql.NullString `json:"prompt_render"`
+	// Generation type associated with the prompt/schema output
+	GenerationType NullGenerationType `json:"generation_type"`
 }
 
 type ChunkingConfig struct {
@@ -226,7 +269,7 @@ type ModelConfig struct {
 	Temperature sql.NullFloat64 `json:"temperature"`
 	MaxTokens   sql.NullInt32   `json:"max_tokens"`
 	TopP        sql.NullFloat64 `json:"top_p"`
-	TopK        sql.NullInt32   `json:"top_k"`
+	TopK        sql.NullFloat64 `json:"top_k"`
 	IsActive    bool            `json:"is_active"`
 	CreatedBy   uuid.UUID       `json:"created_by"`
 	CreatedAt   time.Time       `json:"created_at"`
@@ -234,24 +277,25 @@ type ModelConfig struct {
 }
 
 type PromptTemplate struct {
-	ID          uuid.UUID             `json:"id"`
-	Key         string                `json:"key"`
-	Version     int32                 `json:"version"`
-	IsActive    bool                  `json:"is_active"`
-	Title       string                `json:"title"`
-	Description sql.NullString        `json:"description"`
-	Template    string                `json:"template"`
-	Metadata    pqtype.NullRawMessage `json:"metadata"`
-	CreatedBy   sql.NullString        `json:"created_by"`
-	CreatedAt   time.Time             `json:"created_at"`
-	UpdatedAt   time.Time             `json:"updated_at"`
+	ID uuid.UUID `json:"id"`
+	// Generation type this prompt supports
+	GenerationType GenerationType        `json:"generation_type"`
+	Version        int32                 `json:"version"`
+	IsActive       bool                  `json:"is_active"`
+	Title          string                `json:"title"`
+	Description    sql.NullString        `json:"description"`
+	Template       string                `json:"template"`
+	Metadata       pqtype.NullRawMessage `json:"metadata"`
+	CreatedBy      sql.NullString        `json:"created_by"`
+	CreatedAt      time.Time             `json:"created_at"`
+	UpdatedAt      time.Time             `json:"updated_at"`
 }
 
 type SchemaTemplate struct {
 	ID uuid.UUID `json:"id"`
-	// Schema purpose (eval_generation, intent_extraction, etc.)
-	SchemaType string `json:"schema_type"`
-	Version    int32  `json:"version"`
+	// Generation type this schema supports
+	GenerationType GenerationType `json:"generation_type"`
+	Version        int32          `json:"version"`
 	// JSON schema defining expected AI output
 	SchemaJson json.RawMessage `json:"schema_json"`
 	IsActive   bool            `json:"is_active"`

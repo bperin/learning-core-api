@@ -15,16 +15,17 @@ import (
 
 const createArtifact = `-- name: CreateArtifact :one
 INSERT INTO artifacts (
-  type, status, eval_id, eval_item_id, attempt_id, reviewer_id,
+  type, generation_type, status, eval_id, eval_item_id, attempt_id, reviewer_id,
   text, output_json, model, prompt, prompt_template_id, schema_template_id,
   model_params, prompt_render, input_hash, meta, error
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
-) RETURNING id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18
+) RETURNING id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type
 `
 
 type CreateArtifactParams struct {
 	Type             string                `json:"type"`
+	GenerationType   NullGenerationType    `json:"generation_type"`
 	Status           string                `json:"status"`
 	EvalID           uuid.NullUUID         `json:"eval_id"`
 	EvalItemID       uuid.NullUUID         `json:"eval_item_id"`
@@ -46,6 +47,7 @@ type CreateArtifactParams struct {
 func (q *Queries) CreateArtifact(ctx context.Context, arg CreateArtifactParams) (Artifact, error) {
 	row := q.db.QueryRowContext(ctx, createArtifact,
 		arg.Type,
+		arg.GenerationType,
 		arg.Status,
 		arg.EvalID,
 		arg.EvalItemID,
@@ -84,12 +86,13 @@ func (q *Queries) CreateArtifact(ctx context.Context, arg CreateArtifactParams) 
 		&i.SchemaTemplateID,
 		&i.ModelParams,
 		&i.PromptRender,
+		&i.GenerationType,
 	)
 	return i, err
 }
 
 const getArtifact = `-- name: GetArtifact :one
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE id = $1 LIMIT 1
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetArtifact(ctx context.Context, id uuid.UUID) (Artifact, error) {
@@ -115,6 +118,7 @@ func (q *Queries) GetArtifact(ctx context.Context, id uuid.UUID) (Artifact, erro
 		&i.SchemaTemplateID,
 		&i.ModelParams,
 		&i.PromptRender,
+		&i.GenerationType,
 	)
 	return i, err
 }
@@ -151,7 +155,7 @@ func (q *Queries) GetArtifactStats(ctx context.Context) (GetArtifactStatsRow, er
 }
 
 const getArtifactsByAttempt = `-- name: GetArtifactsByAttempt :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE attempt_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE attempt_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByAttempt(ctx context.Context, attemptID uuid.NullUUID) ([]Artifact, error) {
@@ -183,6 +187,7 @@ func (q *Queries) GetArtifactsByAttempt(ctx context.Context, attemptID uuid.Null
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -198,7 +203,7 @@ func (q *Queries) GetArtifactsByAttempt(ctx context.Context, attemptID uuid.Null
 }
 
 const getArtifactsByEval = `-- name: GetArtifactsByEval :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE eval_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE eval_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByEval(ctx context.Context, evalID uuid.NullUUID) ([]Artifact, error) {
@@ -230,6 +235,7 @@ func (q *Queries) GetArtifactsByEval(ctx context.Context, evalID uuid.NullUUID) 
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -245,7 +251,7 @@ func (q *Queries) GetArtifactsByEval(ctx context.Context, evalID uuid.NullUUID) 
 }
 
 const getArtifactsByEvalItem = `-- name: GetArtifactsByEvalItem :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE eval_item_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE eval_item_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByEvalItem(ctx context.Context, evalItemID uuid.NullUUID) ([]Artifact, error) {
@@ -277,6 +283,7 @@ func (q *Queries) GetArtifactsByEvalItem(ctx context.Context, evalItemID uuid.Nu
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -292,7 +299,7 @@ func (q *Queries) GetArtifactsByEvalItem(ctx context.Context, evalItemID uuid.Nu
 }
 
 const getArtifactsByInputHash = `-- name: GetArtifactsByInputHash :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts 
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts 
 WHERE input_hash = $1 
 ORDER BY created_at DESC
 `
@@ -326,6 +333,7 @@ func (q *Queries) GetArtifactsByInputHash(ctx context.Context, inputHash sql.Nul
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -341,7 +349,7 @@ func (q *Queries) GetArtifactsByInputHash(ctx context.Context, inputHash sql.Nul
 }
 
 const getArtifactsByReviewer = `-- name: GetArtifactsByReviewer :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE reviewer_id = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE reviewer_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByReviewer(ctx context.Context, reviewerID uuid.NullUUID) ([]Artifact, error) {
@@ -373,6 +381,7 @@ func (q *Queries) GetArtifactsByReviewer(ctx context.Context, reviewerID uuid.Nu
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -388,7 +397,7 @@ func (q *Queries) GetArtifactsByReviewer(ctx context.Context, reviewerID uuid.Nu
 }
 
 const getArtifactsByStatus = `-- name: GetArtifactsByStatus :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE status = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE status = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByStatus(ctx context.Context, status string) ([]Artifact, error) {
@@ -420,6 +429,7 @@ func (q *Queries) GetArtifactsByStatus(ctx context.Context, status string) ([]Ar
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -435,7 +445,7 @@ func (q *Queries) GetArtifactsByStatus(ctx context.Context, status string) ([]Ar
 }
 
 const getArtifactsByType = `-- name: GetArtifactsByType :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts WHERE type = $1 ORDER BY created_at DESC
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts WHERE type = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetArtifactsByType(ctx context.Context, type_ string) ([]Artifact, error) {
@@ -467,6 +477,7 @@ func (q *Queries) GetArtifactsByType(ctx context.Context, type_ string) ([]Artif
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -482,7 +493,7 @@ func (q *Queries) GetArtifactsByType(ctx context.Context, type_ string) ([]Artif
 }
 
 const getArtifactsByTypeAndEntity = `-- name: GetArtifactsByTypeAndEntity :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts 
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts 
 WHERE type = $1 
 AND (
   (eval_id = $2 AND $2 IS NOT NULL) OR
@@ -533,6 +544,7 @@ func (q *Queries) GetArtifactsByTypeAndEntity(ctx context.Context, arg GetArtifa
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}
@@ -548,7 +560,7 @@ func (q *Queries) GetArtifactsByTypeAndEntity(ctx context.Context, arg GetArtifa
 }
 
 const getLatestArtifactByTypeAndEntity = `-- name: GetLatestArtifactByTypeAndEntity :one
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts 
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts 
 WHERE type = $1 
 AND (
   (eval_id = $2 AND $2 IS NOT NULL) OR
@@ -594,12 +606,13 @@ func (q *Queries) GetLatestArtifactByTypeAndEntity(ctx context.Context, arg GetL
 		&i.SchemaTemplateID,
 		&i.ModelParams,
 		&i.PromptRender,
+		&i.GenerationType,
 	)
 	return i, err
 }
 
 const listArtifacts = `-- name: ListArtifacts :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
 type ListArtifactsParams struct {
@@ -636,6 +649,7 @@ func (q *Queries) ListArtifacts(ctx context.Context, arg ListArtifactsParams) ([
 			&i.SchemaTemplateID,
 			&i.ModelParams,
 			&i.PromptRender,
+			&i.GenerationType,
 		); err != nil {
 			return nil, err
 		}

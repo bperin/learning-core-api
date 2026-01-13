@@ -28,6 +28,7 @@ func NewService(db *sql.DB) *Service {
 // using easier-to-use types than the sqlc generated ones (e.g. string vs sql.NullString)
 type CreateArtifactParams struct {
 	Type             string
+	GenerationType   string
 	Status           string
 	UserID           uuid.UUID
 	DocumentID       uuid.NullUUID
@@ -51,6 +52,7 @@ func (s *Service) CreateArtifact(ctx context.Context, params CreateArtifactParam
 	// Convert standard types to sqlc types
 	storeParams := store.CreateArtifactParams{
 		Type:             params.Type,
+		GenerationType:   toNullGenerationType(params.GenerationType),
 		Status:           params.Status,
 		EvalID:           params.EvalID,
 		EvalItemID:       params.EvalItemID,
@@ -75,4 +77,14 @@ func (s *Service) CreateArtifact(ctx context.Context, params CreateArtifactParam
 	}
 
 	return &artifact, nil
+}
+
+func toNullGenerationType(value string) store.NullGenerationType {
+	if value == "" {
+		return store.NullGenerationType{}
+	}
+	return store.NullGenerationType{
+		GenerationType: store.GenerationType(value),
+		Valid:          true,
+	}
 }

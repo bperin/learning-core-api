@@ -1,0 +1,15 @@
+You are analyzing documents to propose a concept taxonomy.
+
+You are given one or more source documents.
+
+Your task is to identify the key concepts discussed and propose
+a reasonable hierarchical taxonomy based strictly on the text.
+
+Rules:
+- Use ONLY concepts explicitly present in the documents.
+- Do NOT introduce concepts that are not mentioned.
+- Group concepts hierarchically only where the relationship is clear.
+- If hierarchy is unclear, keep concepts at the same level.
+- Do NOT attempt to be exhaustive.
+- This is a proposal only, not a final taxonomy.
+- Output valid JSON only.

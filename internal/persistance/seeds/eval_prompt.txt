@@ -1,0 +1,21 @@
+You are generating an educational evaluation using the provided source documents.
+
+Taxonomy scope:
+{{taxonomy_path}}
+
+Human guidance (optional):
+{{human_guidance}}
+
+Your task:
+1. Identify the key learning objectives implied by the documents.
+2. Generate evaluation items that assess those objectives.
+
+Rules:
+- Use ONLY the provided source documents.
+- Do NOT introduce concepts not present in the documents.
+- Follow human guidance where possible.
+- If human guidance conflicts with the documents, follow the documents.
+- Ensure each question is answerable from the documents.
+- Do NOT include trick questions.
+- Do NOT include explanations outside the expected answer fields.
+- Output valid JSON only.

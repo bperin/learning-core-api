@@ -37,11 +37,14 @@ func createTestUser(t *testing.T, db *sql.Tx) uuid.UUID {
 }
 
 func TestSystemInstructionRepository_CreateActivate(t *testing.T) {
-	db, _, repo, cleanup := setupTestRepo(t)
+	db, queries, repo, cleanup := setupTestRepo(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := createTestUser(t, db)
+	initial, err := queries.ListSystemInstructions(ctx)
+	require.NoError(t, err)
+	initialCount := len(initial)
 
 	active := true
 	first, err := repo.Create(ctx, CreateSystemInstructionRequest{
@@ -81,5 +84,5 @@ func TestSystemInstructionRepository_CreateActivate(t *testing.T) {
 
 	all, err := repo.ListAll(ctx)
 	require.NoError(t, err)
-	assert.Len(t, all, 2)
+	assert.Len(t, all, initialCount+2)
 }

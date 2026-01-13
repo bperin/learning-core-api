@@ -1,0 +1,29 @@
+{
+    "type": "OBJECT",
+    "properties": {
+        "proposed_taxonomy": {
+            "type": "ARRAY",
+            "items": {
+                "type": "OBJECT",
+                "properties": {
+                    "name": {
+                        "type": "STRING",
+                        "description": "Name of the concept exactly as stated in the document"
+                    },
+                    "description": {
+                        "type": "STRING",
+                        "description": "Short description derived from the document"
+                    },
+                    "children": {
+                        "type": "ARRAY",
+                        "items": {
+                            "$ref": "#/properties/proposed_taxonomy/items"
+                        }
+                    }
+                },
+                "required": ["name", "children"]
+            }
+        }
+    },
+    "required": ["proposed_taxonomy"]
+}
