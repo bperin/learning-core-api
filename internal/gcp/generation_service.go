@@ -14,6 +14,11 @@ type GenerationService struct {
 	client *genai.Client
 }
 
+type fileSearchToolConfig struct {
+	StoreNames     []string `json:"store_names"`
+	MetadataFilter string   `json:"metadata_filter,omitempty"`
+}
+
 func NewGenerationService(client *genai.Client) (*GenerationService, error) {
 	if client == nil {
 		return nil, fmt.Errorf("genai client is required")
@@ -92,7 +97,22 @@ func (s *GenerationService) Generate(ctx context.Context, req generation.Generat
 
 	for _, tool := range req.Tools {
 		if tool.Type == "file_search" {
-			// TODO: Configure file search tool integration.
+			var cfg fileSearchToolConfig
+			if len(tool.Config) == 0 {
+				return nil, fmt.Errorf("file_search tool config is required")
+			}
+			if err := json.Unmarshal(tool.Config, &cfg); err != nil {
+				return nil, fmt.Errorf("failed to parse file_search config: %w", err)
+			}
+			if len(cfg.StoreNames) == 0 {
+				return nil, fmt.Errorf("file_search store_names is required")
+			}
+			genConfig.Tools = append(genConfig.Tools, &genai.Tool{
+				FileSearch: &genai.FileSearch{
+					FileSearchStoreNames: cfg.StoreNames,
+					MetadataFilter:       cfg.MetadataFilter,
+				},
+			})
 		}
 	}
 

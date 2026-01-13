@@ -16,6 +16,7 @@ import (
 	"github.com/sqlc-dev/pqtype"
 
 	"learning-core-api/internal/persistance/store"
+	"learning-core-api/internal/utils"
 )
 
 const (
@@ -175,6 +176,7 @@ func seedChunkingConfig(ctx context.Context, queries *store.Queries, createdBy u
 func ensureSystemUser(ctx context.Context, queries *store.Queries) (uuid.UUID, error) {
 	user, err := queries.GetUserByEmail(ctx, systemSeedEmail)
 	if err == nil {
+		log.Printf("system user already exists: email=%s", systemSeedEmail)
 		return user.ID, nil
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
@@ -194,6 +196,7 @@ func ensureSystemUser(ctx context.Context, queries *store.Queries) (uuid.UUID, e
 		return uuid.Nil, err
 	}
 
+	log.Printf("seeded system user: email=%s", systemSeedEmail)
 	return created.ID, nil
 }
 
@@ -258,14 +261,14 @@ func seedPromptTemplates(ctx context.Context, queries *store.Queries) error {
 	}
 
 	seed := promptTemplateSeed{
-		GenerationType: "CLASSIFICATION",
+		GenerationType: utils.GenerationTypeClassification.String(),
 		Title:          "Taxonomy Classification Prompt",
 		Description:    stringPtr("Seed prompt template for taxonomy classification"),
 		Template:       promptText,
 		CreatedBy:      stringPtr(systemSeedEmail),
 	}
 
-	existing, err := queries.GetPromptTemplatesByGenerationType(ctx, store.GenerationType(seed.GenerationType))
+	existing, err := queries.GetPromptTemplatesByGenerationType(ctx, utils.GenerationTypeClassification.DB())
 	if err != nil {
 		return err
 	}
@@ -307,7 +310,7 @@ func seedPromptTemplates(ctx context.Context, queries *store.Queries) error {
 	}
 
 	_, err = queries.CreateNewVersion(ctx, store.CreateNewVersionParams{
-		GenerationType: store.GenerationType(seed.GenerationType),
+		GenerationType: utils.GenerationTypeClassification.DB(),
 		IsActive:       true,
 		Title:          seed.Title,
 		Description:    sql.NullString{String: stringValue(seed.Description), Valid: seed.Description != nil},
@@ -340,12 +343,12 @@ func seedSchemaTemplates(ctx context.Context, queries *store.Queries, createdBy 
 	}
 
 	seed := schemaTemplateSeed{
-		GenerationType: "CLASSIFICATION",
+		GenerationType: utils.GenerationTypeClassification.String(),
 		SchemaJSON:     schemaJSON,
 		IsActive:       boolPtr(true),
 	}
 
-	existing, err := queries.ListSchemaTemplatesByGenerationType(ctx, store.GenerationType(seed.GenerationType))
+	existing, err := queries.ListSchemaTemplatesByGenerationType(ctx, utils.GenerationTypeClassification.DB())
 	if err != nil {
 		return err
 	}
@@ -371,7 +374,7 @@ func seedSchemaTemplates(ctx context.Context, queries *store.Queries, createdBy 
 	}
 
 	_, err = queries.CreateSchemaTemplate(ctx, store.CreateSchemaTemplateParams{
-		GenerationType: store.GenerationType(seed.GenerationType),
+		GenerationType: utils.GenerationTypeClassification.DB(),
 		SchemaJson:     seed.SchemaJSON,
 		IsActive:       boolValue(seed.IsActive),
 		CreatedBy:      createdBy,

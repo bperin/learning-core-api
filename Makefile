@@ -6,7 +6,7 @@ endif
 BINARY_NAME=learning-api
 MIGRATIONS_DIR=internal/persistance/migrations
 
-.PHONY: build run clean sqlc test swagger tidy migrate-up migrate-down migrate-status db-dump test-gcp-integration
+.PHONY: build run clean sqlc test swagger tidy migrate-up migrate-down migrate-status migrate-reset migrate-reset-test db-dump test-gcp-integration
 
 tidy:
 	@echo "Tidying go modules..."
@@ -52,7 +52,7 @@ test-verbose:
 
 test-gcp-integration:
 	@echo "Running GCP file service integration test..."
-	@go test ./internal/gcp -run TestFileSearchMetadataFilterIntegration -v
+	@go test ./internal/gcp -run TestClassificationGenerationWithFileSearchIntegration -v
 
 # Postgres targets (Real DB)
 migrate-up:
@@ -66,6 +66,14 @@ migrate-down:
 migrate-status:
 	@echo "Migration status (Postgres)..."
 	@go run github.com/pressly/goose/v3/cmd/goose -dir $(MIGRATIONS_DIR) postgres "$(DB_URL)" status
+
+migrate-reset:
+	@echo "Dropping all tables/types and resetting public schema (Postgres)..."
+	@psql "$(DB_URL)" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+
+migrate-reset-test:
+	@echo "Dropping all tables/types and resetting public schema (TEST_DB_URL)..."
+	@psql "$(TEST_DB_URL)" -v ON_ERROR_STOP=1 -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 
 db-dump:
 	@echo "Dumping schema to schema.sql..."

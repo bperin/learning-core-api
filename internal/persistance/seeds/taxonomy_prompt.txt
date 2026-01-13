@@ -12,4 +12,7 @@ Rules:
 - If hierarchy is unclear, keep concepts at the same level.
 - Do NOT attempt to be exhaustive.
 - This is a proposal only, not a final taxonomy.
+- The "children" field must contain ONLY objects with "name"/"description"/"children" fields (no raw strings).
+- Avoid generic container nodes like "taxonomy" or "taxonomic groups" unless the document explicitly frames them as first-class concepts.
+- Node "name" values should be concise concept labels, not full-sentence descriptions.
 - Output valid JSON only.

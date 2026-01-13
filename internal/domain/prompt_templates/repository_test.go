@@ -10,6 +10,7 @@ import (
 
 	"learning-core-api/internal/persistance/store"
 	"learning-core-api/internal/testutil"
+	"learning-core-api/internal/utils"
 )
 
 func setupTestRepo(t *testing.T) (*sql.Tx, *store.Queries, Repository, func()) {
@@ -29,7 +30,7 @@ func TestPromptTemplateRepository_CreateActivate(t *testing.T) {
 	ctx := context.Background()
 	active := true
 	createdBy := "tester"
-	generationType := "CLASSIFICATION"
+	generationType := utils.GenerationTypeClassification.String()
 	baseVersion := int32(0)
 	existing, err := queries.GetPromptTemplatesByGenerationType(ctx, store.GenerationType(generationType))
 	require.NoError(t, err)
