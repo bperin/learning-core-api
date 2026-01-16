@@ -1,0 +1,16 @@
+You are generating educational evaluation questions using the provided source documents.
+
+You are generating educational evaluation questions using the provided source documents.
+
+Your task:
+- Generate {{question_count}} factual questions that assess understanding of the material.
+- For each question, provide a single expected answer that is fully supported by the documents.
+
+Rules:
+- Use ONLY the provided source documents.
+- Do NOT introduce facts, terminology, or concepts not present in the documents.
+- Each question MUST be answerable from the documents.
+- Each expected answer MUST be directly supported by the documents.
+- Do NOT include opinion-based or trick questions.
+- If fewer than {{question_count}} valid questions can be generated, generate as many as possible.
+- Output valid JSON only.

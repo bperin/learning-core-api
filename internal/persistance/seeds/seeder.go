@@ -23,9 +23,11 @@ const (
 	systemInstructionsSeed = "system_instructions.txt"
 	taxonomyPromptSeed     = "taxonomy_prompt.txt"
 	taxonomySchemaSeed     = "taxonomy_schema.json"
+	questionsPromptSeed    = "questions_prompt.txt"
+	questionsSchemaSeed    = "questions_schema.json"
 	chunkingConfigSeedFile = "chunking_config.json"
 
-	systemSeedEmail    = "system@memorang.local"
+	systemSeedEmail    = "admin@test.local"
 	systemSeedPassword = "seed_placeholder_password"
 )
 
@@ -242,148 +244,192 @@ func seedSystemInstructions(ctx context.Context, queries *store.Queries, created
 }
 
 func seedPromptTemplates(ctx context.Context, queries *store.Queries) error {
-	path, err := seedPath(taxonomyPromptSeed)
-	if err != nil {
-		return err
-	}
-	promptText, ok, err := readSeedText(path)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		log.Printf("no prompt template seeds found in %s", path)
-		return nil
+	type promptSeedDefinition struct {
+		filename       string
+		generationType utils.GenerationType
+		title          string
+		description    string
 	}
 
-	promptText = strings.TrimSpace(promptText)
-	if promptText == "" {
-		return fmt.Errorf("prompt template seed is empty: %s", path)
+	seeds := []promptSeedDefinition{
+		{
+			filename:       taxonomyPromptSeed,
+			generationType: utils.GenerationTypeClassification,
+			title:          "Taxonomy Classification Prompt",
+			description:    "Seed prompt template for taxonomy classification",
+		},
+		{
+			filename:       questionsPromptSeed,
+			generationType: utils.GenerationTypeQuestions,
+			title:          "Question Generation Prompt",
+			description:    "Seed prompt template for question generation",
+		},
 	}
 
-	seed := promptTemplateSeed{
-		GenerationType: utils.GenerationTypeClassification.String(),
-		Title:          "Taxonomy Classification Prompt",
-		Description:    stringPtr("Seed prompt template for taxonomy classification"),
-		Template:       promptText,
-		CreatedBy:      stringPtr(systemSeedEmail),
-	}
-
-	existing, err := queries.GetPromptTemplatesByGenerationType(ctx, utils.GenerationTypeClassification.DB())
-	if err != nil {
-		return err
-	}
-	if len(existing) > 0 {
-		log.Printf("prompt templates already exist: generation_type=%s", seed.GenerationType)
-		return nil
-	}
-
-	normalizedSeedMeta, err := normalizeJSON(seed.Metadata)
-	if err != nil {
-		return fmt.Errorf("invalid prompt metadata: %w", err)
-	}
-
-	for _, tmpl := range existing {
-		if tmpl.Title != seed.Title {
-			continue
-		}
-		if tmpl.Template != seed.Template {
-			continue
-		}
-		if tmpl.Description.Valid && seed.Description == nil {
-			continue
-		}
-		if !tmpl.Description.Valid && seed.Description != nil {
-			continue
-		}
-		if tmpl.Description.Valid && seed.Description != nil && tmpl.Description.String != *seed.Description {
-			continue
-		}
-
-		normalizedExisting, err := normalizeJSON(tmpl.Metadata.RawMessage)
+	for _, def := range seeds {
+		path, err := seedPath(def.filename)
 		if err != nil {
 			return err
 		}
-		if jsonEqual(normalizedExisting, normalizedSeedMeta) {
-			log.Printf("prompt template already exists: generation_type=%s", seed.GenerationType)
-			return nil
+		promptText, ok, err := readSeedText(path)
+		if err != nil {
+			return err
 		}
+		if !ok {
+			log.Printf("no prompt template seeds found in %s", path)
+			continue
+		}
+
+		promptText = strings.TrimSpace(promptText)
+		if promptText == "" {
+			return fmt.Errorf("prompt template seed is empty: %s", path)
+		}
+
+		seed := promptTemplateSeed{
+			GenerationType: def.generationType.String(),
+			Title:          def.title,
+			Description:    stringPtr(def.description),
+			Template:       promptText,
+			CreatedBy:      stringPtr(systemSeedEmail),
+		}
+
+		existing, err := queries.GetPromptTemplatesByGenerationType(ctx, def.generationType.DB())
+		if err != nil {
+			return err
+		}
+		if len(existing) > 0 {
+			log.Printf("prompt templates already exist: generation_type=%s", seed.GenerationType)
+			continue
+		}
+
+		normalizedSeedMeta, err := normalizeJSON(seed.Metadata)
+		if err != nil {
+			return fmt.Errorf("invalid prompt metadata: %w", err)
+		}
+
+		for _, tmpl := range existing {
+			if tmpl.Title != seed.Title {
+				continue
+			}
+			if tmpl.Template != seed.Template {
+				continue
+			}
+			if tmpl.Description.Valid && seed.Description == nil {
+				continue
+			}
+			if !tmpl.Description.Valid && seed.Description != nil {
+				continue
+			}
+			if tmpl.Description.Valid && seed.Description != nil && tmpl.Description.String != *seed.Description {
+				continue
+			}
+
+			normalizedExisting, err := normalizeJSON(tmpl.Metadata.RawMessage)
+			if err != nil {
+				return err
+			}
+			if jsonEqual(normalizedExisting, normalizedSeedMeta) {
+				log.Printf("prompt template already exists: generation_type=%s", seed.GenerationType)
+				continue
+			}
+		}
+
+		_, err = queries.CreateNewVersion(ctx, store.CreateNewVersionParams{
+			GenerationType: def.generationType.DB(),
+			IsActive:       true,
+			Title:          seed.Title,
+			Description:    sql.NullString{String: stringValue(seed.Description), Valid: seed.Description != nil},
+			Template:       seed.Template,
+			Metadata:       toNullRawMessage(seed.Metadata),
+			CreatedBy:      sql.NullString{String: stringValue(seed.CreatedBy), Valid: seed.CreatedBy != nil},
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("seeded prompt template: generation_type=%s", seed.GenerationType)
 	}
 
-	_, err = queries.CreateNewVersion(ctx, store.CreateNewVersionParams{
-		GenerationType: utils.GenerationTypeClassification.DB(),
-		IsActive:       true,
-		Title:          seed.Title,
-		Description:    sql.NullString{String: stringValue(seed.Description), Valid: seed.Description != nil},
-		Template:       seed.Template,
-		Metadata:       toNullRawMessage(seed.Metadata),
-		CreatedBy:      sql.NullString{String: stringValue(seed.CreatedBy), Valid: seed.CreatedBy != nil},
-	})
-	if err != nil {
-		return err
-	}
-	log.Printf("seeded prompt template: generation_type=%s", seed.GenerationType)
 	return nil
 }
 
 func seedSchemaTemplates(ctx context.Context, queries *store.Queries, createdBy uuid.UUID) error {
-	path, err := seedPath(taxonomySchemaSeed)
-	if err != nil {
-		return err
-	}
-	schemaJSON, ok, err := readSeedJSON(path)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		log.Printf("no schema template seeds found in %s", path)
-		return nil
-	}
-	if len(schemaJSON) == 0 {
-		return fmt.Errorf("schema template seed is empty: %s", path)
+	type schemaSeedDefinition struct {
+		filename       string
+		generationType utils.GenerationType
 	}
 
-	seed := schemaTemplateSeed{
-		GenerationType: utils.GenerationTypeClassification.String(),
-		SchemaJSON:     schemaJSON,
-		IsActive:       boolPtr(true),
+	seeds := []schemaSeedDefinition{
+		{
+			filename:       taxonomySchemaSeed,
+			generationType: utils.GenerationTypeClassification,
+		},
+		{
+			filename:       questionsSchemaSeed,
+			generationType: utils.GenerationTypeQuestions,
+		},
 	}
 
-	existing, err := queries.ListSchemaTemplatesByGenerationType(ctx, utils.GenerationTypeClassification.DB())
-	if err != nil {
-		return err
-	}
-	if len(existing) > 0 {
-		log.Printf("schema templates already exist: generation_type=%s", seed.GenerationType)
-		return nil
-	}
-
-	normalizedSeed, err := normalizeJSON(seed.SchemaJSON)
-	if err != nil {
-		return fmt.Errorf("invalid schema_json: %w", err)
-	}
-
-	for _, tmpl := range existing {
-		normalizedExisting, err := normalizeJSON(tmpl.SchemaJson)
+	for _, def := range seeds {
+		path, err := seedPath(def.filename)
 		if err != nil {
 			return err
 		}
-		if jsonEqual(normalizedExisting, normalizedSeed) {
-			log.Printf("schema template already exists: generation_type=%s", seed.GenerationType)
-			return nil
+		schemaJSON, ok, err := readSeedJSON(path)
+		if err != nil {
+			return err
 		}
+		if !ok {
+			log.Printf("no schema template seeds found in %s", path)
+			continue
+		}
+		if len(schemaJSON) == 0 {
+			return fmt.Errorf("schema template seed is empty: %s", path)
+		}
+
+		seed := schemaTemplateSeed{
+			GenerationType: def.generationType.String(),
+			SchemaJSON:     schemaJSON,
+			IsActive:       boolPtr(true),
+		}
+
+		existing, err := queries.ListSchemaTemplatesByGenerationType(ctx, def.generationType.DB())
+		if err != nil {
+			return err
+		}
+		if len(existing) > 0 {
+			log.Printf("schema templates already exist: generation_type=%s", seed.GenerationType)
+			continue
+		}
+
+		normalizedSeed, err := normalizeJSON(seed.SchemaJSON)
+		if err != nil {
+			return fmt.Errorf("invalid schema_json: %w", err)
+		}
+
+		for _, tmpl := range existing {
+			normalizedExisting, err := normalizeJSON(tmpl.SchemaJson)
+			if err != nil {
+				return err
+			}
+			if jsonEqual(normalizedExisting, normalizedSeed) {
+				log.Printf("schema template already exists: generation_type=%s", seed.GenerationType)
+				continue
+			}
+		}
+
+		_, err = queries.CreateSchemaTemplate(ctx, store.CreateSchemaTemplateParams{
+			GenerationType: def.generationType.DB(),
+			SchemaJson:     seed.SchemaJSON,
+			IsActive:       boolValue(seed.IsActive),
+			CreatedBy:      createdBy,
+			LockedAt:       sql.NullTime{},
+		})
+		if err != nil {
+			return err
+		}
+		log.Printf("seeded schema template: generation_type=%s", seed.GenerationType)
 	}
 
-	_, err = queries.CreateSchemaTemplate(ctx, store.CreateSchemaTemplateParams{
-		GenerationType: utils.GenerationTypeClassification.DB(),
-		SchemaJson:     seed.SchemaJSON,
-		IsActive:       boolValue(seed.IsActive),
-		CreatedBy:      createdBy,
-		LockedAt:       sql.NullTime{},
-	})
-	if err != nil {
-		return err
-	}
-	log.Printf("seeded schema template: generation_type=%s", seed.GenerationType)
 	return nil
 }
 

@@ -71,6 +71,7 @@ type GenerationType string
 
 const (
 	GenerationTypeCLASSIFICATION GenerationType = "CLASSIFICATION"
+	GenerationTypeQUESTIONS      GenerationType = "QUESTIONS"
 )
 
 func (e *GenerationType) Scan(src interface{}) error {

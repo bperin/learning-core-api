@@ -1,0 +1,27 @@
+{
+  "type": "OBJECT",
+  "properties": {
+    "questions": {
+      "type": "ARRAY",
+      "items": {
+        "type": "OBJECT",
+        "properties": {
+          "id": {
+            "type": "STRING",
+            "description": "Unique identifier for the question"
+          },
+          "question": {
+            "type": "STRING",
+            "description": "The question presented to the learner"
+          },
+          "expected_answer": {
+            "type": "STRING",
+            "description": "The correct answer derived strictly from the source documents"
+          }
+        },
+        "required": ["id", "question", "expected_answer"]
+      }
+    }
+  },
+  "required": ["questions"]
+}
