@@ -87,7 +87,7 @@ This is the single source of truth for working in this repository. If another do
 
 # ownership.md — Ownership, Mutability, and Responsibility Model
 
-This document defines **who owns what**, **what is mutable vs immutable**, and **who is allowed to create or change data** across the Memorang stack.
+This document defines **who owns what**, **what is mutable vs immutable**, and **who is allowed to create or change data** across the stack.
 
 It reflects the finalized role model:
 
@@ -399,4 +399,4 @@ This is the **gold correctness signal**.
 
 > Learners consume truth, teachers validate truth, admins govern policy, and the system enforces immutability.
 
-This document defines the ownership and mutability guarantees of the Memorang platform.
+This document defines the ownership and mutability guarantees of the platform.
