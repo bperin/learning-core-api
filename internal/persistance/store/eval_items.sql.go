@@ -17,20 +17,22 @@ import (
 
 const createEvalItem = `-- name: CreateEvalItem :one
 INSERT INTO eval_items (
-  eval_id, prompt, options, correct_idx, hint, explanation, metadata
+  eval_id, prompt, options, correct_idx, hint, explanation, metadata, grounding_metadata, source_document_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at
+  $1, $2, $3, $4, $5, $6, $7, $8, $9
+) RETURNING id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at, grounding_metadata, source_document_id
 `
 
 type CreateEvalItemParams struct {
-	EvalID      uuid.UUID             `json:"eval_id"`
-	Prompt      string                `json:"prompt"`
-	Options     []string              `json:"options"`
-	CorrectIdx  int32                 `json:"correct_idx"`
-	Hint        sql.NullString        `json:"hint"`
-	Explanation sql.NullString        `json:"explanation"`
-	Metadata    pqtype.NullRawMessage `json:"metadata"`
+	EvalID            uuid.UUID             `json:"eval_id"`
+	Prompt            string                `json:"prompt"`
+	Options           []string              `json:"options"`
+	CorrectIdx        int32                 `json:"correct_idx"`
+	Hint              sql.NullString        `json:"hint"`
+	Explanation       sql.NullString        `json:"explanation"`
+	Metadata          pqtype.NullRawMessage `json:"metadata"`
+	GroundingMetadata pqtype.NullRawMessage `json:"grounding_metadata"`
+	SourceDocumentID  uuid.NullUUID         `json:"source_document_id"`
 }
 
 func (q *Queries) CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) (EvalItem, error) {
@@ -42,6 +44,8 @@ func (q *Queries) CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) 
 		arg.Hint,
 		arg.Explanation,
 		arg.Metadata,
+		arg.GroundingMetadata,
+		arg.SourceDocumentID,
 	)
 	var i EvalItem
 	err := row.Scan(
@@ -55,12 +59,14 @@ func (q *Queries) CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) 
 		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroundingMetadata,
+		&i.SourceDocumentID,
 	)
 	return i, err
 }
 
 const getEvalItem = `-- name: GetEvalItem :one
-SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at FROM eval_items WHERE id = $1 LIMIT 1
+SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at, grounding_metadata, source_document_id FROM eval_items WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetEvalItem(ctx context.Context, id uuid.UUID) (EvalItem, error) {
@@ -77,13 +83,15 @@ func (q *Queries) GetEvalItem(ctx context.Context, id uuid.UUID) (EvalItem, erro
 		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroundingMetadata,
+		&i.SourceDocumentID,
 	)
 	return i, err
 }
 
 const getEvalItemWithReviews = `-- name: GetEvalItemWithReviews :one
 SELECT 
-  ei.id, ei.eval_id, ei.prompt, ei.options, ei.correct_idx, ei.hint, ei.explanation, ei.metadata, ei.created_at, ei.updated_at,
+  ei.id, ei.eval_id, ei.prompt, ei.options, ei.correct_idx, ei.hint, ei.explanation, ei.metadata, ei.created_at, ei.updated_at, ei.grounding_metadata, ei.source_document_id,
   COUNT(eir.id) as review_count,
   COUNT(CASE WHEN eir.verdict = 'APPROVED' THEN 1 END) as approved_count,
   COUNT(CASE WHEN eir.verdict = 'REJECTED' THEN 1 END) as rejected_count,
@@ -105,6 +113,8 @@ type GetEvalItemWithReviewsRow struct {
 	Metadata           pqtype.NullRawMessage `json:"metadata"`
 	CreatedAt          time.Time             `json:"created_at"`
 	UpdatedAt          time.Time             `json:"updated_at"`
+	GroundingMetadata  pqtype.NullRawMessage `json:"grounding_metadata"`
+	SourceDocumentID   uuid.NullUUID         `json:"source_document_id"`
 	ReviewCount        int64                 `json:"review_count"`
 	ApprovedCount      int64                 `json:"approved_count"`
 	RejectedCount      int64                 `json:"rejected_count"`
@@ -125,6 +135,8 @@ func (q *Queries) GetEvalItemWithReviews(ctx context.Context, id uuid.UUID) (Get
 		&i.Metadata,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GroundingMetadata,
+		&i.SourceDocumentID,
 		&i.ReviewCount,
 		&i.ApprovedCount,
 		&i.RejectedCount,
@@ -134,7 +146,7 @@ func (q *Queries) GetEvalItemWithReviews(ctx context.Context, id uuid.UUID) (Get
 }
 
 const getEvalItemsByEval = `-- name: GetEvalItemsByEval :many
-SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at FROM eval_items WHERE eval_id = $1 ORDER BY id ASC
+SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at, grounding_metadata, source_document_id FROM eval_items WHERE eval_id = $1 ORDER BY id ASC
 `
 
 func (q *Queries) GetEvalItemsByEval(ctx context.Context, evalID uuid.UUID) ([]EvalItem, error) {
@@ -157,6 +169,8 @@ func (q *Queries) GetEvalItemsByEval(ctx context.Context, evalID uuid.UUID) ([]E
 			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroundingMetadata,
+			&i.SourceDocumentID,
 		); err != nil {
 			return nil, err
 		}
@@ -173,7 +187,7 @@ func (q *Queries) GetEvalItemsByEval(ctx context.Context, evalID uuid.UUID) ([]E
 
 const getEvalItemsWithAnswerStats = `-- name: GetEvalItemsWithAnswerStats :many
 SELECT 
-  ei.id, ei.eval_id, ei.prompt, ei.options, ei.correct_idx, ei.hint, ei.explanation, ei.metadata, ei.created_at, ei.updated_at,
+  ei.id, ei.eval_id, ei.prompt, ei.options, ei.correct_idx, ei.hint, ei.explanation, ei.metadata, ei.created_at, ei.updated_at, ei.grounding_metadata, ei.source_document_id,
   COUNT(ua.id) as total_answers,
   COUNT(CASE WHEN ua.is_correct = true THEN 1 END) as correct_answers,
   CASE 
@@ -189,19 +203,21 @@ ORDER BY ei.id ASC
 `
 
 type GetEvalItemsWithAnswerStatsRow struct {
-	ID             uuid.UUID             `json:"id"`
-	EvalID         uuid.UUID             `json:"eval_id"`
-	Prompt         string                `json:"prompt"`
-	Options        []string              `json:"options"`
-	CorrectIdx     int32                 `json:"correct_idx"`
-	Hint           sql.NullString        `json:"hint"`
-	Explanation    sql.NullString        `json:"explanation"`
-	Metadata       pqtype.NullRawMessage `json:"metadata"`
-	CreatedAt      time.Time             `json:"created_at"`
-	UpdatedAt      time.Time             `json:"updated_at"`
-	TotalAnswers   int64                 `json:"total_answers"`
-	CorrectAnswers int64                 `json:"correct_answers"`
-	SuccessRate    int32                 `json:"success_rate"`
+	ID                uuid.UUID             `json:"id"`
+	EvalID            uuid.UUID             `json:"eval_id"`
+	Prompt            string                `json:"prompt"`
+	Options           []string              `json:"options"`
+	CorrectIdx        int32                 `json:"correct_idx"`
+	Hint              sql.NullString        `json:"hint"`
+	Explanation       sql.NullString        `json:"explanation"`
+	Metadata          pqtype.NullRawMessage `json:"metadata"`
+	CreatedAt         time.Time             `json:"created_at"`
+	UpdatedAt         time.Time             `json:"updated_at"`
+	GroundingMetadata pqtype.NullRawMessage `json:"grounding_metadata"`
+	SourceDocumentID  uuid.NullUUID         `json:"source_document_id"`
+	TotalAnswers      int64                 `json:"total_answers"`
+	CorrectAnswers    int64                 `json:"correct_answers"`
+	SuccessRate       int32                 `json:"success_rate"`
 }
 
 func (q *Queries) GetEvalItemsWithAnswerStats(ctx context.Context, evalID uuid.UUID) ([]GetEvalItemsWithAnswerStatsRow, error) {
@@ -224,6 +240,8 @@ func (q *Queries) GetEvalItemsWithAnswerStats(ctx context.Context, evalID uuid.U
 			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroundingMetadata,
+			&i.SourceDocumentID,
 			&i.TotalAnswers,
 			&i.CorrectAnswers,
 			&i.SuccessRate,
@@ -242,7 +260,7 @@ func (q *Queries) GetEvalItemsWithAnswerStats(ctx context.Context, evalID uuid.U
 }
 
 const getRandomEvalItems = `-- name: GetRandomEvalItems :many
-SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at FROM eval_items 
+SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at, grounding_metadata, source_document_id FROM eval_items 
 WHERE eval_id = $1 
 ORDER BY RANDOM() 
 LIMIT $2
@@ -273,6 +291,8 @@ func (q *Queries) GetRandomEvalItems(ctx context.Context, arg GetRandomEvalItems
 			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroundingMetadata,
+			&i.SourceDocumentID,
 		); err != nil {
 			return nil, err
 		}
@@ -288,7 +308,7 @@ func (q *Queries) GetRandomEvalItems(ctx context.Context, arg GetRandomEvalItems
 }
 
 const listEvalItems = `-- name: ListEvalItems :many
-SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at FROM eval_items ORDER BY id DESC LIMIT $1 OFFSET $2
+SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at, grounding_metadata, source_document_id FROM eval_items ORDER BY id DESC LIMIT $1 OFFSET $2
 `
 
 type ListEvalItemsParams struct {
@@ -316,6 +336,8 @@ func (q *Queries) ListEvalItems(ctx context.Context, arg ListEvalItemsParams) ([
 			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroundingMetadata,
+			&i.SourceDocumentID,
 		); err != nil {
 			return nil, err
 		}
@@ -331,7 +353,7 @@ func (q *Queries) ListEvalItems(ctx context.Context, arg ListEvalItemsParams) ([
 }
 
 const searchEvalItemsByPrompt = `-- name: SearchEvalItemsByPrompt :many
-SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at FROM eval_items 
+SELECT id, eval_id, prompt, options, correct_idx, hint, explanation, metadata, created_at, updated_at, grounding_metadata, source_document_id FROM eval_items 
 WHERE prompt ILIKE '%' || $1 || '%' 
 ORDER BY created_at DESC 
 LIMIT $2 OFFSET $3
@@ -363,6 +385,8 @@ func (q *Queries) SearchEvalItemsByPrompt(ctx context.Context, arg SearchEvalIte
 			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroundingMetadata,
+			&i.SourceDocumentID,
 		); err != nil {
 			return nil, err
 		}

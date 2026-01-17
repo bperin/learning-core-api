@@ -19,7 +19,8 @@ type GeneratorRequest struct {
 }
 
 type GeneratorResponse struct {
-	OutputText   string
-	FinishReason string
-	ModelUsed    string
+	OutputText        string
+	FinishReason      string
+	ModelUsed         string
+	GroundingMetadata json.RawMessage
 }

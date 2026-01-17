@@ -65,9 +65,10 @@ type ModelConfig struct {
 }
 
 type GenerateResponse struct {
-	ArtifactID   uuid.UUID       `json:"artifact_id"`
-	OutputText   string          `json:"output_text"`
-	OutputJSON   json.RawMessage `json:"output_json,omitempty"`
-	FinishReason string          `json:"finish_reason"`
-	ModelUsed    string          `json:"model_used"`
+	ArtifactID       uuid.UUID       `json:"artifact_id"`
+	OutputText       string          `json:"output_text"`
+	OutputJSON       json.RawMessage `json:"output_json,omitempty"`
+	FinishReason     string          `json:"finish_reason"`
+	ModelUsed        string          `json:"model_used"`
+	GroundingMetadata json.RawMessage `json:"grounding_metadata,omitempty"`
 }

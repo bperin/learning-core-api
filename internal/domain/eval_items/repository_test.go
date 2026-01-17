@@ -2,6 +2,7 @@ package eval_items_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -62,7 +63,7 @@ func TestEvalItemRepository_Create(t *testing.T) {
 			CorrectIdx:  1,
 			Hint:        stringPtr("Think about basic addition"),
 			Explanation: stringPtr("2 + 2 equals 4"),
-			Metadata:    map[string]interface{}{"difficulty": "easy"},
+			Metadata:    json.RawMessage(`{"difficulty":"easy"}`),
 		}
 
 		item, err := repo.Create(ctx, req)

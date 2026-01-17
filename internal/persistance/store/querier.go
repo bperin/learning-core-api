@@ -13,6 +13,7 @@ import (
 
 type Querier interface {
 	ActivateChunkingConfig(ctx context.Context, id uuid.UUID) error
+	ActivateEvalPrompt(ctx context.Context, id uuid.UUID) error
 	ActivateModelConfig(ctx context.Context, id uuid.UUID) error
 	ActivatePromptTemplate(ctx context.Context, id uuid.UUID) (ActivatePromptTemplateRow, error)
 	ActivateSchemaTemplate(ctx context.Context, id uuid.UUID) (ActivateSchemaTemplateRow, error)
@@ -29,6 +30,8 @@ type Querier interface {
 	CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, error)
 	CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) (EvalItem, error)
 	CreateEvalItemReview(ctx context.Context, arg CreateEvalItemReviewParams) (EvalItemReview, error)
+	CreateEvalPrompt(ctx context.Context, arg CreateEvalPromptParams) (EvalPrompt, error)
+	CreateEvalResult(ctx context.Context, arg CreateEvalResultParams) (EvalResult, error)
 	CreateModelConfig(ctx context.Context, arg CreateModelConfigParams) (CreateModelConfigRow, error)
 	CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (CreateNewVersionRow, error)
 	CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (CreatePromptTemplateRow, error)
@@ -38,6 +41,7 @@ type Querier interface {
 	CreateTestAttempt(ctx context.Context, arg CreateTestAttemptParams) (TestAttempt, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateUserAnswer(ctx context.Context, arg CreateUserAnswerParams) (UserAnswer, error)
+	DeactivateEvalPrompt(ctx context.Context, id uuid.UUID) error
 	DeactivateOtherChunkingConfigs(ctx context.Context, id uuid.UUID) error
 	DeactivateOtherModelConfigs(ctx context.Context, id uuid.UUID) error
 	DeactivateOtherSystemInstructions(ctx context.Context, id uuid.UUID) error
@@ -47,6 +51,7 @@ type Querier interface {
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	GetActiveAttempts(ctx context.Context) ([]TestAttempt, error)
 	GetActiveChunkingConfig(ctx context.Context) (ChunkingConfig, error)
+	GetActiveEvalPrompt(ctx context.Context, evalType string) (EvalPrompt, error)
 	GetActiveModelConfig(ctx context.Context) (ModelConfig, error)
 	GetActivePromptTemplates(ctx context.Context) ([]PromptTemplate, error)
 	GetActiveSchemaTemplateByGenerationType(ctx context.Context, generationType GenerationType) (SchemaTemplate, error)
@@ -77,6 +82,12 @@ type Querier interface {
 	GetEvalItemWithReviews(ctx context.Context, id uuid.UUID) (GetEvalItemWithReviewsRow, error)
 	GetEvalItemsByEval(ctx context.Context, evalID uuid.UUID) ([]EvalItem, error)
 	GetEvalItemsWithAnswerStats(ctx context.Context, evalID uuid.UUID) ([]GetEvalItemsWithAnswerStatsRow, error)
+	GetEvalPrompt(ctx context.Context, id uuid.UUID) (EvalPrompt, error)
+	GetEvalPromptByVersion(ctx context.Context, arg GetEvalPromptByVersionParams) (EvalPrompt, error)
+	GetEvalResult(ctx context.Context, id uuid.UUID) (EvalResult, error)
+	GetEvalResultStats(ctx context.Context, evalType string) (GetEvalResultStatsRow, error)
+	GetEvalResultsByEvalItem(ctx context.Context, evalItemID uuid.UUID) ([]EvalResult, error)
+	GetEvalResultsByType(ctx context.Context, arg GetEvalResultsByTypeParams) ([]EvalResult, error)
 	GetEvalTestStats(ctx context.Context, evalID uuid.UUID) (GetEvalTestStatsRow, error)
 	GetEvalWithItemCount(ctx context.Context, id uuid.UUID) (GetEvalWithItemCountRow, error)
 	GetEvalsByStatus(ctx context.Context, status string) ([]Eval, error)
@@ -84,6 +95,8 @@ type Querier interface {
 	GetEvalsWithItemCounts(ctx context.Context, userID uuid.UUID) ([]GetEvalsWithItemCountsRow, error)
 	GetIncorrectAnswersByAttempt(ctx context.Context, attemptID uuid.UUID) ([]UserAnswer, error)
 	GetLatestArtifactByTypeAndEntity(ctx context.Context, arg GetLatestArtifactByTypeAndEntityParams) (Artifact, error)
+	GetLatestEvalPromptVersion(ctx context.Context, evalType string) (interface{}, error)
+	GetLatestEvalResultForItem(ctx context.Context, arg GetLatestEvalResultForItemParams) (EvalResult, error)
 	GetLatestVersionByGenerationType(ctx context.Context, generationType GenerationType) (interface{}, error)
 	GetModelConfig(ctx context.Context, id uuid.UUID) (ModelConfig, error)
 	GetPendingReviewsForEval(ctx context.Context, evalID uuid.UUID) ([]EvalItem, error)
@@ -125,6 +138,8 @@ type Querier interface {
 	ListDocumentsByTaxonomyPrefix(ctx context.Context, dollar_1 sql.NullString) ([]Document, error)
 	ListEvalItemReviews(ctx context.Context, arg ListEvalItemReviewsParams) ([]EvalItemReview, error)
 	ListEvalItems(ctx context.Context, arg ListEvalItemsParams) ([]EvalItem, error)
+	ListEvalPrompts(ctx context.Context, arg ListEvalPromptsParams) ([]EvalPrompt, error)
+	ListEvalResults(ctx context.Context, arg ListEvalResultsParams) ([]EvalResult, error)
 	ListEvals(ctx context.Context, arg ListEvalsParams) ([]Eval, error)
 	ListModelConfigs(ctx context.Context) ([]ModelConfig, error)
 	ListPromptTemplates(ctx context.Context, arg ListPromptTemplatesParams) ([]PromptTemplate, error)

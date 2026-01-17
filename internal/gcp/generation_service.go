@@ -131,9 +131,18 @@ func (s *GenerationService) Generate(ctx context.Context, req generation.Generat
 		}
 	}
 
+	// Extract grounding metadata if available
+	var groundingMetadata json.RawMessage
+	if resp.Candidates[0].GroundingMetadata != nil {
+		if groundingBytes, err := json.Marshal(resp.Candidates[0].GroundingMetadata); err == nil {
+			groundingMetadata = groundingBytes
+		}
+	}
+
 	return &generation.GeneratorResponse{
-		OutputText:   outputText,
-		FinishReason: string(resp.Candidates[0].FinishReason),
-		ModelUsed:    modelName,
+		OutputText:        outputText,
+		FinishReason:      string(resp.Candidates[0].FinishReason),
+		ModelUsed:         modelName,
+		GroundingMetadata: groundingMetadata,
 	}, nil
 }

@@ -73,7 +73,7 @@ func (q *Queries) GetEvalItemReview(ctx context.Context, id uuid.UUID) (EvalItem
 }
 
 const getPendingReviewsForEval = `-- name: GetPendingReviewsForEval :many
-SELECT DISTINCT ei.id, ei.eval_id, ei.prompt, ei.options, ei.correct_idx, ei.hint, ei.explanation, ei.metadata, ei.created_at, ei.updated_at
+SELECT DISTINCT ei.id, ei.eval_id, ei.prompt, ei.options, ei.correct_idx, ei.hint, ei.explanation, ei.metadata, ei.created_at, ei.updated_at, ei.grounding_metadata, ei.source_document_id
 FROM eval_items ei
 LEFT JOIN eval_item_reviews eir ON ei.id = eir.eval_item_id
 WHERE ei.eval_id = $1
@@ -101,6 +101,8 @@ func (q *Queries) GetPendingReviewsForEval(ctx context.Context, evalID uuid.UUID
 			&i.Metadata,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GroundingMetadata,
+			&i.SourceDocumentID,
 		); err != nil {
 			return nil, err
 		}

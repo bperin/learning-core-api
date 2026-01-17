@@ -10,6 +10,7 @@ import (
 	"github.com/sqlc-dev/pqtype"
 
 	"learning-core-api/internal/persistance/store"
+	"learning-core-api/internal/utils"
 )
 
 // RepositoryImpl implements the Repository interface using SQLC
@@ -40,14 +41,22 @@ func (r *RepositoryImpl) Create(ctx context.Context, req *CreateEvalItemRequest)
 		metadata = pqtype.NullRawMessage{RawMessage: jsonData, Valid: true}
 	}
 
+	// Convert grounding metadata
+	var groundingMetadata pqtype.NullRawMessage
+	if len(req.GroundingMetadata) > 0 {
+		groundingMetadata = pqtype.NullRawMessage{RawMessage: req.GroundingMetadata, Valid: true}
+	}
+
 	storeItem, err := r.queries.CreateEvalItem(ctx, store.CreateEvalItemParams{
-		EvalID:      req.EvalID,
-		Prompt:      req.Prompt,
-		Options:     req.Options,
-		CorrectIdx:  req.CorrectIdx,
-		Hint:        toNullString(req.Hint),
-		Explanation: toNullString(req.Explanation),
-		Metadata:    metadata,
+		EvalID:            req.EvalID,
+		Prompt:            req.Prompt,
+		Options:           req.Options,
+		CorrectIdx:        req.CorrectIdx,
+		Hint:              utils.SqlNullString(req.Hint),
+		Explanation:       utils.SqlNullString(req.Explanation),
+		Metadata:          metadata,
+		GroundingMetadata: groundingMetadata,
+		SourceDocumentID:  utils.PtrToNullUUID(req.SourceDocumentID),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create eval item: %w", err)
@@ -282,19 +291,16 @@ func toDomainEvalItem(storeItem *store.EvalItem) *EvalItem {
 	}
 
 	if storeItem.Metadata.Valid {
-		var metadata map[string]interface{}
-		if err := json.Unmarshal(storeItem.Metadata.RawMessage, &metadata); err == nil {
-			item.Metadata = metadata
-		}
+		item.Metadata = storeItem.Metadata.RawMessage
+	}
+
+	if storeItem.GroundingMetadata.Valid {
+		item.GroundingMetadata = storeItem.GroundingMetadata.RawMessage
+	}
+
+	if storeItem.SourceDocumentID.Valid {
+		item.SourceDocumentID = &storeItem.SourceDocumentID.UUID
 	}
 
 	return item
-}
-
-// toNullString converts a string pointer to sql.NullString
-func toNullString(s *string) sql.NullString {
-	if s == nil {
-		return sql.NullString{Valid: false}
-	}
-	return sql.NullString{String: *s, Valid: true}
 }

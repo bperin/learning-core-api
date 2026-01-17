@@ -83,7 +83,7 @@ func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateR
 		if metaErr != nil {
 			return nil, metaErr
 		}
-		s.saveArtifact(ctx, req, promptText, promptTmplID, schemaTmplID, modelName, modelParams, meta, "", nil, err.Error())
+		s.saveArtifact(ctx, req, promptText, promptTmplID, schemaTmplID, modelName, modelParams, meta, "", nil, err.Error(), nil)
 		return nil, fmt.Errorf("genai call failed: %w", err)
 	}
 
@@ -106,17 +106,18 @@ func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateR
 		return nil, metaErr
 	}
 
-	artifactID, saveErr := s.saveArtifact(ctx, req, promptText, promptTmplID, schemaTmplID, modelName, modelParams, meta, outputText, outputJSON, "")
+	artifactID, saveErr := s.saveArtifact(ctx, req, promptText, promptTmplID, schemaTmplID, modelName, modelParams, meta, outputText, outputJSON, "", resp.GroundingMetadata)
 	if saveErr != nil {
 		return nil, fmt.Errorf("failed to save artifact: %w", saveErr)
 	}
 
 	return &GenerateResponse{
-		ArtifactID:   artifactID,
-		OutputText:   outputText,
-		OutputJSON:   outputJSON,
-		FinishReason: resp.FinishReason,
-		ModelUsed:    modelName,
+		ArtifactID:        artifactID,
+		OutputText:        outputText,
+		OutputJSON:        outputJSON,
+		FinishReason:      resp.FinishReason,
+		ModelUsed:         modelName,
+		GroundingMetadata: resp.GroundingMetadata,
 	}, nil
 }
 
@@ -225,7 +226,7 @@ func (s *Service) resolveOutputConfig(ctx context.Context, out OutputConfig) (js
 	return schemaTmpl.SchemaJSON, schemaTmpl.ID, nil
 }
 
-func (s *Service) saveArtifact(ctx context.Context, req GenerateRequest, promptText string, promptTmplID, schemaTmplID uuid.UUID, modelName string, modelParams json.RawMessage, meta json.RawMessage, outputText string, outputJSON json.RawMessage, errorMsg string) (uuid.UUID, error) {
+func (s *Service) saveArtifact(ctx context.Context, req GenerateRequest, promptText string, promptTmplID, schemaTmplID uuid.UUID, modelName string, modelParams json.RawMessage, meta json.RawMessage, outputText string, outputJSON json.RawMessage, errorMsg string, groundingMetadata json.RawMessage) (uuid.UUID, error) {
 	status := "READY"
 	if errorMsg != "" {
 		status = "ERROR"
@@ -234,6 +235,22 @@ func (s *Service) saveArtifact(ctx context.Context, req GenerateRequest, promptT
 	generationType := req.Instructions.GenerationType
 	if generationType == "" {
 		generationType = req.Output.GenerationType
+	}
+
+	// Merge grounding metadata into meta if available
+	if len(groundingMetadata) > 0 && len(meta) > 0 {
+		var metaObj map[string]interface{}
+		var groundingObj map[string]interface{}
+		if err := json.Unmarshal(meta, &metaObj); err == nil {
+			if err := json.Unmarshal(groundingMetadata, &groundingObj); err == nil {
+				metaObj["grounding"] = groundingObj
+				if merged, err := json.Marshal(metaObj); err == nil {
+					meta = merged
+				}
+			}
+		}
+	} else if len(groundingMetadata) > 0 {
+		meta = groundingMetadata
 	}
 
 	params := artifacts.CreateArtifactParams{

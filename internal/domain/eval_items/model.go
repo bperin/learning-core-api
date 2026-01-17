@@ -1,6 +1,7 @@
 package eval_items
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -8,27 +9,31 @@ import (
 
 // EvalItem represents a single question or prompt within an evaluation
 type EvalItem struct {
-	ID          uuid.UUID              `json:"id"`
-	EvalID      uuid.UUID              `json:"eval_id"`
-	Prompt      string                 `json:"prompt"`
-	Options     []string               `json:"options"`
-	CorrectIdx  int32                  `json:"correct_idx"`
-	Hint        *string                `json:"hint,omitempty"`
-	Explanation *string                `json:"explanation,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
-	CreatedAt   time.Time              `json:"created_at"`
-	UpdatedAt   time.Time              `json:"updated_at"`
+	ID                uuid.UUID       `json:"id"`
+	EvalID            uuid.UUID       `json:"eval_id"`
+	Prompt            string          `json:"prompt"`
+	Options           []string        `json:"options"`
+	CorrectIdx        int32           `json:"correct_idx"`
+	Hint              *string         `json:"hint,omitempty"`
+	Explanation       *string         `json:"explanation,omitempty"`
+	Metadata          json.RawMessage `json:"metadata,omitempty"`
+	GroundingMetadata json.RawMessage `json:"grounding_metadata,omitempty"`
+	SourceDocumentID  *uuid.UUID      `json:"source_document_id,omitempty"`
+	CreatedAt         time.Time       `json:"created_at"`
+	UpdatedAt         time.Time       `json:"updated_at"`
 }
 
 // CreateEvalItemRequest represents the data needed to create a new evaluation item
 type CreateEvalItemRequest struct {
-	EvalID      uuid.UUID              `json:"eval_id" validate:"required"`
-	Prompt      string                 `json:"prompt" validate:"required,min=1,max=2000"`
-	Options     []string               `json:"options" validate:"required,min=2,max=10"`
-	CorrectIdx  int32                  `json:"correct_idx" validate:"required,min=0"`
-	Hint        *string                `json:"hint,omitempty" validate:"omitempty,max=500"`
-	Explanation *string                `json:"explanation,omitempty" validate:"omitempty,max=1000"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	EvalID            uuid.UUID       `json:"eval_id" validate:"required"`
+	Prompt            string          `json:"prompt" validate:"required,min=1,max=2000"`
+	Options           []string        `json:"options" validate:"required,min=2,max=10"`
+	CorrectIdx        int32           `json:"correct_idx" validate:"required,min=0"`
+	Hint              *string         `json:"hint,omitempty" validate:"omitempty,max=500"`
+	Explanation       *string         `json:"explanation,omitempty" validate:"omitempty,max=1000"`
+	Metadata          json.RawMessage `json:"metadata,omitempty"`
+	GroundingMetadata json.RawMessage `json:"grounding_metadata,omitempty"`
+	SourceDocumentID  *uuid.UUID      `json:"source_document_id,omitempty"`
 }
 
 // ListEvalItemsRequest represents parameters for listing evaluation items

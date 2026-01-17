@@ -249,6 +249,10 @@ type EvalItem struct {
 	CreatedAt time.Time `json:"created_at"`
 	// When the eval item was last updated
 	UpdatedAt time.Time `json:"updated_at"`
+	// Grounding metadata from generation (chunks, supporting text, etc.) used for eval
+	GroundingMetadata pqtype.NullRawMessage `json:"grounding_metadata"`
+	// Source document this question was generated from
+	SourceDocumentID uuid.NullUUID `json:"source_document_id"`
 }
 
 type EvalItemReview struct {
@@ -261,6 +265,38 @@ type EvalItemReview struct {
 	CreatedAt  time.Time      `json:"created_at"`
 	// When the review was last updated
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+// Versioned evaluation prompts for different eval types
+type EvalPrompt struct {
+	ID uuid.UUID `json:"id"`
+	// Type of evaluation: groundedness, answerability, hierarchy
+	EvalType    string         `json:"eval_type"`
+	Version     int32          `json:"version"`
+	PromptText  string         `json:"prompt_text"`
+	Description sql.NullString `json:"description"`
+	// Whether this version is the active/default version
+	IsActive  sql.NullBool  `json:"is_active"`
+	CreatedBy uuid.NullUUID `json:"created_by"`
+	CreatedAt sql.NullTime  `json:"created_at"`
+	UpdatedAt sql.NullTime  `json:"updated_at"`
+}
+
+// Results from running evaluations on eval items
+type EvalResult struct {
+	ID           uuid.UUID       `json:"id"`
+	EvalItemID   uuid.UUID       `json:"eval_item_id"`
+	EvalType     string          `json:"eval_type"`
+	EvalPromptID uuid.UUID       `json:"eval_prompt_id"`
+	Score        sql.NullFloat64 `json:"score"`
+	// Whether the response is grounded in the context (for groundedness evals)
+	IsGrounded sql.NullBool   `json:"is_grounded"`
+	Verdict    sql.NullString `json:"verdict"`
+	Reasoning  sql.NullString `json:"reasoning"`
+	// List of claims not supported by context (for groundedness evals)
+	UnsupportedClaims pqtype.NullRawMessage `json:"unsupported_claims"`
+	GcpEvalID         sql.NullString        `json:"gcp_eval_id"`
+	CreatedAt         sql.NullTime          `json:"created_at"`
 }
 
 type ModelConfig struct {

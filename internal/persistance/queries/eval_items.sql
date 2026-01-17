@@ -9,9 +9,9 @@ SELECT * FROM eval_items ORDER BY id DESC LIMIT $1 OFFSET $2;
 
 -- name: CreateEvalItem :one
 INSERT INTO eval_items (
-  eval_id, prompt, options, correct_idx, hint, explanation, metadata
+  eval_id, prompt, options, correct_idx, hint, explanation, metadata, grounding_metadata, source_document_id
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
+  $1, $2, $3, $4, $5, $6, $7, $8, $9
 ) RETURNING *;
 
 -- name: GetEvalItemsWithAnswerStats :many
