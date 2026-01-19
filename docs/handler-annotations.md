@@ -21,6 +21,7 @@ Use the standard swagger annotations on each handler method:
 ```
 
 Notes:
+
 - `@Security` should match the `@securityDefinitions` name in `cmd/api/main.go`.
 - If a handler is public, omit `@Security` and call that out in `@Description`.
 - Roles are documented in `@Description`; enforcement happens in middleware.
@@ -43,8 +44,8 @@ Registration is centralized in `internal/infra/http.go`:
 
 - `RegisterPublicRoutes` are mounted without auth.
 - `RegisterAdminRoutes`, `RegisterTeacherRoutes`, `RegisterLearnerRoutes` are wrapped with:
-  - `JWTMiddleware(secret)`
-  - `RequireRole(role)`
+    - `JWTMiddleware(secret)`
+    - `RequireRole(role)`
 
 Use this pattern in each handler to keep access rules explicit and consistent with
 `FLOW_OWNERSHIP.md`.
@@ -70,3 +71,23 @@ the middleware infers scopes from roles (`read` for any authenticated user,
 
 Use `RequireScope("read")` and `RequireScope("write")` in handlers to enforce
 scope requirements per route.
+
+## Schema Management Handlers
+
+The following handlers manage system configuration and generation policies:
+
+### Prompt Templates & Schema Templates
+
+- **Admin**: Full CRUD access (create, list, get, activate, deactivate)
+- **Teacher**: Read-only access to active versions via `GetActiveByGenerationType`
+- **Learner**: No access (routes not registered)
+- **Security**: `@Security OAuth2Auth[read]` for GET operations, `@Security OAuth2Auth[write]` for POST operations
+
+### Chunking Configs & System Instructions
+
+- **Admin**: Full CRUD access (create, list, get, activate)
+- **Teacher**: No access (routes not registered)
+- **Learner**: No access (routes not registered)
+- **Security**: `@Security OAuth2Auth[read]` for GET operations, `@Security OAuth2Auth[write]` for POST operations
+
+All schema management endpoints enforce immutability: new versions are created rather than edited, and only admin can activate/deactivate versions.

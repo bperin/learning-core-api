@@ -5,9 +5,13 @@ import (
 
 	"learning-core-api/internal/auth"
 	"learning-core-api/internal/domain/attempts"
+	"learning-core-api/internal/domain/chunking_configs"
 	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/evals"
+	"learning-core-api/internal/domain/prompt_templates"
 	"learning-core-api/internal/domain/reviews"
+	"learning-core-api/internal/domain/schema_templates"
+	"learning-core-api/internal/domain/system_instructions"
 	"learning-core-api/internal/domain/textbooks"
 	"learning-core-api/internal/domain/users"
 	"learning-core-api/internal/gcp"
@@ -63,6 +67,23 @@ func NewRouter(deps RouterDeps) http.Handler {
 	reviewsHandler := reviews.NewHandler()
 	attemptsHandler := attempts.NewHandler()
 
+	// Schema management handlers
+	promptTemplatesRepo := prompt_templates.NewRepository(deps.Queries)
+	promptTemplatesService := prompt_templates.NewService(promptTemplatesRepo)
+	promptTemplatesHandler := prompt_templates.NewHandler(promptTemplatesService)
+
+	schemaTemplatesRepo := schema_templates.NewRepository(deps.Queries)
+	schemaTemplatesService := schema_templates.NewService(schemaTemplatesRepo)
+	schemaTemplatesHandler := schema_templates.NewHandler(schemaTemplatesService)
+
+	chunkingConfigsRepo := chunking_configs.NewRepository(deps.Queries)
+	chunkingConfigsService := chunking_configs.NewService(chunkingConfigsRepo)
+	chunkingConfigsHandler := chunking_configs.NewHandler(chunkingConfigsService)
+
+	systemInstructionsRepo := system_instructions.NewRepository(deps.Queries)
+	systemInstructionsService := system_instructions.NewService(systemInstructionsRepo)
+	systemInstructionsHandler := system_instructions.NewHandler(systemInstructionsService)
+
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)
 
@@ -73,6 +94,10 @@ func NewRouter(deps RouterDeps) http.Handler {
 	registerRoleRoutes(r, deps.JWTSecret, evalsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, reviewsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, attemptsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, promptTemplatesHandler)
+	registerRoleRoutes(r, deps.JWTSecret, schemaTemplatesHandler)
+	registerRoleRoutes(r, deps.JWTSecret, chunkingConfigsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, systemInstructionsHandler)
 
 	return r
 }

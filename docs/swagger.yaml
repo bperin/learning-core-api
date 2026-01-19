@@ -32,6 +32,151 @@ definitions:
         example: Bearer
         type: string
     type: object
+  chunking_configs.ChunkingConfig:
+    properties:
+      chunk_overlap:
+        type: integer
+      chunk_size:
+        type: integer
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      version:
+        type: integer
+    type: object
+  chunking_configs.CreateChunkingConfigRequest:
+    properties:
+      chunk_overlap:
+        type: integer
+      chunk_size:
+        type: integer
+      created_by:
+        type: string
+      is_active:
+        type: boolean
+    type: object
+  prompt_templates.CreatePromptTemplateVersionRequest:
+    properties:
+      created_by:
+        type: string
+      description:
+        type: string
+      generation_type:
+        type: string
+      is_active:
+        type: boolean
+      metadata:
+        type: object
+      template:
+        type: string
+      title:
+        type: string
+    type: object
+  prompt_templates.PromptTemplate:
+    description: Prompt template with versioning and activation support
+    properties:
+      created_at:
+        example: "2026-01-19T03:40:00Z"
+        type: string
+      created_by:
+        example: admin@example.com
+        type: string
+      description:
+        example: Classifies documents
+        type: string
+      generation_type:
+        example: CLASSIFICATION
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      metadata:
+        type: object
+      template:
+        example: Classify the following text...
+        type: string
+      title:
+        example: Classification Prompt v1
+        type: string
+      updated_at:
+        example: "2026-01-19T03:40:00Z"
+        type: string
+      version:
+        example: 1
+        type: integer
+    type: object
+  schema_templates.CreateSchemaTemplateRequest:
+    properties:
+      created_by:
+        type: string
+      generation_type:
+        type: string
+      is_active:
+        type: boolean
+      locked_at:
+        type: string
+      schema_json:
+        type: object
+    type: object
+  schema_templates.SchemaTemplate:
+    description: Schema template with versioning and activation support
+    properties:
+      created_at:
+        example: "2026-01-19T03:40:00Z"
+        type: string
+      created_by:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      generation_type:
+        example: CLASSIFICATION
+        type: string
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      is_active:
+        example: true
+        type: boolean
+      locked_at:
+        example: "2026-01-19T03:40:00Z"
+        type: string
+      schema_json:
+        type: object
+      version:
+        example: 1
+        type: integer
+    type: object
+  system_instructions.CreateSystemInstructionRequest:
+    properties:
+      created_by:
+        type: string
+      is_active:
+        type: boolean
+      text:
+        type: string
+    type: object
+  system_instructions.SystemInstruction:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      text:
+        type: string
+      version:
+        type: integer
+    type: object
   users.CreateUserRequest:
     properties:
       display_name:
@@ -152,6 +297,148 @@ paths:
       summary: Submit attempt
       tags:
       - attempts
+  /chunking-configs:
+    get:
+      description: Get all chunking configurations
+      responses:
+        "200":
+          description: List of chunking configs
+          schema:
+            items:
+              $ref: '#/definitions/chunking_configs.ChunkingConfig'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List all chunking configs
+      tags:
+      - Chunking Configs
+    post:
+      consumes:
+      - application/json
+      description: Create a new chunking configuration (immutable - cannot edit existing)
+      parameters:
+      - description: Chunking config request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/chunking_configs.CreateChunkingConfigRequest'
+      responses:
+        "201":
+          description: Created chunking config
+          schema:
+            $ref: '#/definitions/chunking_configs.ChunkingConfig'
+        "400":
+          description: Bad request - invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create new chunking config
+      tags:
+      - Chunking Configs
+  /chunking-configs/{id}:
+    get:
+      description: Retrieve a specific chunking configuration by its UUID
+      parameters:
+      - description: Config ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Chunking config details
+          schema:
+            $ref: '#/definitions/chunking_configs.ChunkingConfig'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Config not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get chunking config by ID
+      tags:
+      - Chunking Configs
+  /chunking-configs/{id}/activate:
+    post:
+      description: Mark a chunking configuration as active (deactivates other versions)
+      parameters:
+      - description: Config ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Activation status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Activate chunking config
+      tags:
+      - Chunking Configs
+  /chunking-configs/active:
+    get:
+      description: Retrieve the currently active chunking configuration
+      responses:
+        "200":
+          description: Active chunking config
+          schema:
+            $ref: '#/definitions/chunking_configs.ChunkingConfig'
+        "404":
+          description: Active config not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get active chunking config
+      tags:
+      - Chunking Configs
   /eval-items/{id}/reviews:
     get:
       consumes:
@@ -340,6 +627,369 @@ paths:
       summary: OAuth token endpoint
       tags:
       - auth
+  /prompt-templates:
+    get:
+      description: Get all prompt templates for a specific generation type
+      parameters:
+      - description: Generation type (CLASSIFICATION or QUESTIONS)
+        in: query
+        name: generation_type
+        required: true
+        type: string
+      responses:
+        "200":
+          description: List of prompt templates
+          schema:
+            items:
+              $ref: '#/definitions/prompt_templates.PromptTemplate'
+            type: array
+        "400":
+          description: Bad request - missing generation_type
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List prompt templates by generation type
+      tags:
+      - Prompt Templates
+    post:
+      consumes:
+      - application/json
+      description: Create a new version of a prompt template (immutable - cannot edit
+        existing)
+      parameters:
+      - description: Template version request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/prompt_templates.CreatePromptTemplateVersionRequest'
+      responses:
+        "201":
+          description: Created prompt template
+          schema:
+            $ref: '#/definitions/prompt_templates.PromptTemplate'
+        "400":
+          description: Bad request - invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create new prompt template version
+      tags:
+      - Prompt Templates
+  /prompt-templates/{id}:
+    get:
+      description: Retrieve a specific prompt template by its UUID
+      parameters:
+      - description: Template ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Prompt template details
+          schema:
+            $ref: '#/definitions/prompt_templates.PromptTemplate'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Template not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get prompt template by ID
+      tags:
+      - Prompt Templates
+  /prompt-templates/{id}/activate:
+    post:
+      description: Mark a prompt template version as active (deactivates other versions)
+      parameters:
+      - description: Template ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Activated prompt template
+          schema:
+            $ref: '#/definitions/prompt_templates.PromptTemplate'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Activate prompt template
+      tags:
+      - Prompt Templates
+  /prompt-templates/{id}/deactivate:
+    post:
+      description: Mark a prompt template version as inactive
+      parameters:
+      - description: Template ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Deactivated prompt template
+          schema:
+            $ref: '#/definitions/prompt_templates.PromptTemplate'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Deactivate prompt template
+      tags:
+      - Prompt Templates
+  /prompt-templates/generation-type/{generationType}:
+    get:
+      description: Retrieve the currently active prompt template for a specific generation
+        type
+      parameters:
+      - description: Generation type (CLASSIFICATION or QUESTIONS)
+        in: path
+        name: generationType
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Active prompt template
+          schema:
+            $ref: '#/definitions/prompt_templates.PromptTemplate'
+        "400":
+          description: Bad request - missing generation_type
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Active template not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get active prompt template by generation type
+      tags:
+      - Prompt Templates
+  /schema-templates:
+    get:
+      description: Get all schema templates for a specific generation type
+      parameters:
+      - description: Generation type (CLASSIFICATION or QUESTIONS)
+        in: query
+        name: generation_type
+        required: true
+        type: string
+      responses:
+        "200":
+          description: List of schema templates
+          schema:
+            items:
+              $ref: '#/definitions/schema_templates.SchemaTemplate'
+            type: array
+        "400":
+          description: Bad request - missing generation_type
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List schema templates by generation type
+      tags:
+      - Schema Templates
+    post:
+      consumes:
+      - application/json
+      description: Create a new schema template (immutable - cannot edit existing)
+      parameters:
+      - description: Schema template request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/schema_templates.CreateSchemaTemplateRequest'
+      responses:
+        "201":
+          description: Created schema template
+          schema:
+            $ref: '#/definitions/schema_templates.SchemaTemplate'
+        "400":
+          description: Bad request - invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create new schema template
+      tags:
+      - Schema Templates
+  /schema-templates/{id}:
+    get:
+      description: Retrieve a specific schema template by its UUID
+      parameters:
+      - description: Template ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Schema template details
+          schema:
+            $ref: '#/definitions/schema_templates.SchemaTemplate'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Template not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get schema template by ID
+      tags:
+      - Schema Templates
+  /schema-templates/{id}/activate:
+    post:
+      description: Mark a schema template version as active (deactivates other versions)
+      parameters:
+      - description: Template ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Activated schema template
+          schema:
+            $ref: '#/definitions/schema_templates.SchemaTemplate'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Activate schema template
+      tags:
+      - Schema Templates
+  /schema-templates/generation-type/{generationType}:
+    get:
+      description: Retrieve the currently active schema template for a specific generation
+        type
+      parameters:
+      - description: Generation type (CLASSIFICATION or QUESTIONS)
+        in: path
+        name: generationType
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Active schema template
+          schema:
+            $ref: '#/definitions/schema_templates.SchemaTemplate'
+        "400":
+          description: Bad request - missing generation_type
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Active template not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get active schema template by generation type
+      tags:
+      - Schema Templates
   /signup:
     post:
       consumes:
@@ -370,6 +1020,148 @@ paths:
       summary: Sign up a new user
       tags:
       - users
+  /system-instructions:
+    get:
+      description: Get all system instructions
+      responses:
+        "200":
+          description: List of system instructions
+          schema:
+            items:
+              $ref: '#/definitions/system_instructions.SystemInstruction'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List all system instructions
+      tags:
+      - System Instructions
+    post:
+      consumes:
+      - application/json
+      description: Create a new system instruction (immutable - cannot edit existing)
+      parameters:
+      - description: System instruction request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/system_instructions.CreateSystemInstructionRequest'
+      responses:
+        "201":
+          description: Created system instruction
+          schema:
+            $ref: '#/definitions/system_instructions.SystemInstruction'
+        "400":
+          description: Bad request - invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create new system instruction
+      tags:
+      - System Instructions
+  /system-instructions/{id}:
+    get:
+      description: Retrieve a specific system instruction by its UUID
+      parameters:
+      - description: Instruction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: System instruction details
+          schema:
+            $ref: '#/definitions/system_instructions.SystemInstruction'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Instruction not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get system instruction by ID
+      tags:
+      - System Instructions
+  /system-instructions/{id}/activate:
+    post:
+      description: Mark a system instruction as active (deactivates other versions)
+      parameters:
+      - description: Instruction ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Activation status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Activate system instruction
+      tags:
+      - System Instructions
+  /system-instructions/active:
+    get:
+      description: Retrieve the currently active system instruction
+      responses:
+        "200":
+          description: Active system instruction
+          schema:
+            $ref: '#/definitions/system_instructions.SystemInstruction'
+        "404":
+          description: Active instruction not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get active system instruction
+      tags:
+      - System Instructions
   /users:
     post:
       consumes:

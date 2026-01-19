@@ -47,6 +47,218 @@
         },
         "type": "object"
       },
+      "chunking_configs.ChunkingConfig": {
+        "properties": {
+          "chunk_overlap": {
+            "type": "integer"
+          },
+          "chunk_size": {
+            "type": "integer"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "chunking_configs.CreateChunkingConfigRequest": {
+        "properties": {
+          "chunk_overlap": {
+            "type": "integer"
+          },
+          "chunk_size": {
+            "type": "integer"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "prompt_templates.CreatePromptTemplateVersionRequest": {
+        "properties": {
+          "created_by": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "generation_type": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "template": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "prompt_templates.PromptTemplate": {
+        "description": "Prompt template with versioning and activation support",
+        "properties": {
+          "created_at": {
+            "example": "2026-01-19T03:40:00Z",
+            "type": "string"
+          },
+          "created_by": {
+            "example": "admin@example.com",
+            "type": "string"
+          },
+          "description": {
+            "example": "Classifies documents",
+            "type": "string"
+          },
+          "generation_type": {
+            "example": "CLASSIFICATION",
+            "type": "string"
+          },
+          "id": {
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "type": "string"
+          },
+          "is_active": {
+            "example": true,
+            "type": "boolean"
+          },
+          "metadata": {
+            "type": "object"
+          },
+          "template": {
+            "example": "Classify the following text...",
+            "type": "string"
+          },
+          "title": {
+            "example": "Classification Prompt v1",
+            "type": "string"
+          },
+          "updated_at": {
+            "example": "2026-01-19T03:40:00Z",
+            "type": "string"
+          },
+          "version": {
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "schema_templates.CreateSchemaTemplateRequest": {
+        "properties": {
+          "created_by": {
+            "type": "string"
+          },
+          "generation_type": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "locked_at": {
+            "type": "string"
+          },
+          "schema_json": {
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "schema_templates.SchemaTemplate": {
+        "description": "Schema template with versioning and activation support",
+        "properties": {
+          "created_at": {
+            "example": "2026-01-19T03:40:00Z",
+            "type": "string"
+          },
+          "created_by": {
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "type": "string"
+          },
+          "generation_type": {
+            "example": "CLASSIFICATION",
+            "type": "string"
+          },
+          "id": {
+            "example": "550e8400-e29b-41d4-a716-446655440000",
+            "type": "string"
+          },
+          "is_active": {
+            "example": true,
+            "type": "boolean"
+          },
+          "locked_at": {
+            "example": "2026-01-19T03:40:00Z",
+            "type": "string"
+          },
+          "schema_json": {
+            "type": "object"
+          },
+          "version": {
+            "example": 1,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "system_instructions.CreateSystemInstructionRequest": {
+        "properties": {
+          "created_by": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "system_instructions.SystemInstruction": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "created_by": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "text": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "users.CreateUserRequest": {
         "properties": {
           "display_name": {
@@ -237,6 +449,288 @@
         "summary": "Submit attempt",
         "tags": [
           "attempts"
+        ]
+      }
+    },
+    "/chunking-configs": {
+      "get": {
+        "description": "Get all chunking configurations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/chunking_configs.ChunkingConfig"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of chunking configs"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List all chunking configs",
+        "tags": [
+          "Chunking Configs"
+        ]
+      },
+      "post": {
+        "description": "Create a new chunking configuration (immutable - cannot edit existing)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/chunking_configs.CreateChunkingConfigRequest"
+              }
+            }
+          },
+          "description": "Chunking config request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/chunking_configs.ChunkingConfig"
+                }
+              }
+            },
+            "description": "Created chunking config"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid request body"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create new chunking config",
+        "tags": [
+          "Chunking Configs"
+        ]
+      }
+    },
+    "/chunking-configs/active": {
+      "get": {
+        "description": "Retrieve the currently active chunking configuration",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/chunking_configs.ChunkingConfig"
+                }
+              }
+            },
+            "description": "Active chunking config"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Active config not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get active chunking config",
+        "tags": [
+          "Chunking Configs"
+        ]
+      }
+    },
+    "/chunking-configs/{id}": {
+      "get": {
+        "description": "Retrieve a specific chunking configuration by its UUID",
+        "parameters": [
+          {
+            "description": "Config ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/chunking_configs.ChunkingConfig"
+                }
+              }
+            },
+            "description": "Chunking config details"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Config not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get chunking config by ID",
+        "tags": [
+          "Chunking Configs"
+        ]
+      }
+    },
+    "/chunking-configs/{id}/activate": {
+      "post": {
+        "description": "Mark a chunking configuration as active (deactivates other versions)",
+        "parameters": [
+          {
+            "description": "Config ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Activation status"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Activate chunking config",
+        "tags": [
+          "Chunking Configs"
         ]
       }
     },
@@ -540,6 +1034,725 @@
         ]
       }
     },
+    "/prompt-templates": {
+      "get": {
+        "description": "Get all prompt templates for a specific generation type",
+        "parameters": [
+          {
+            "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+            "in": "query",
+            "name": "generation_type",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/prompt_templates.PromptTemplate"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of prompt templates"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - missing generation_type"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List prompt templates by generation type",
+        "tags": [
+          "Prompt Templates"
+        ]
+      },
+      "post": {
+        "description": "Create a new version of a prompt template (immutable - cannot edit existing)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/prompt_templates.CreatePromptTemplateVersionRequest"
+              }
+            }
+          },
+          "description": "Template version request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/prompt_templates.PromptTemplate"
+                }
+              }
+            },
+            "description": "Created prompt template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid request body"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create new prompt template version",
+        "tags": [
+          "Prompt Templates"
+        ]
+      }
+    },
+    "/prompt-templates/generation-type/{generationType}": {
+      "get": {
+        "description": "Retrieve the currently active prompt template for a specific generation type",
+        "parameters": [
+          {
+            "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+            "in": "path",
+            "name": "generationType",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/prompt_templates.PromptTemplate"
+                }
+              }
+            },
+            "description": "Active prompt template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - missing generation_type"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Active template not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get active prompt template by generation type",
+        "tags": [
+          "Prompt Templates"
+        ]
+      }
+    },
+    "/prompt-templates/{id}": {
+      "get": {
+        "description": "Retrieve a specific prompt template by its UUID",
+        "parameters": [
+          {
+            "description": "Template ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/prompt_templates.PromptTemplate"
+                }
+              }
+            },
+            "description": "Prompt template details"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Template not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get prompt template by ID",
+        "tags": [
+          "Prompt Templates"
+        ]
+      }
+    },
+    "/prompt-templates/{id}/activate": {
+      "post": {
+        "description": "Mark a prompt template version as active (deactivates other versions)",
+        "parameters": [
+          {
+            "description": "Template ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/prompt_templates.PromptTemplate"
+                }
+              }
+            },
+            "description": "Activated prompt template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Activate prompt template",
+        "tags": [
+          "Prompt Templates"
+        ]
+      }
+    },
+    "/prompt-templates/{id}/deactivate": {
+      "post": {
+        "description": "Mark a prompt template version as inactive",
+        "parameters": [
+          {
+            "description": "Template ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/prompt_templates.PromptTemplate"
+                }
+              }
+            },
+            "description": "Deactivated prompt template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Deactivate prompt template",
+        "tags": [
+          "Prompt Templates"
+        ]
+      }
+    },
+    "/schema-templates": {
+      "get": {
+        "description": "Get all schema templates for a specific generation type",
+        "parameters": [
+          {
+            "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+            "in": "query",
+            "name": "generation_type",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/schema_templates.SchemaTemplate"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of schema templates"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - missing generation_type"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List schema templates by generation type",
+        "tags": [
+          "Schema Templates"
+        ]
+      },
+      "post": {
+        "description": "Create a new schema template (immutable - cannot edit existing)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/schema_templates.CreateSchemaTemplateRequest"
+              }
+            }
+          },
+          "description": "Schema template request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/schema_templates.SchemaTemplate"
+                }
+              }
+            },
+            "description": "Created schema template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid request body"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create new schema template",
+        "tags": [
+          "Schema Templates"
+        ]
+      }
+    },
+    "/schema-templates/generation-type/{generationType}": {
+      "get": {
+        "description": "Retrieve the currently active schema template for a specific generation type",
+        "parameters": [
+          {
+            "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+            "in": "path",
+            "name": "generationType",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/schema_templates.SchemaTemplate"
+                }
+              }
+            },
+            "description": "Active schema template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - missing generation_type"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Active template not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get active schema template by generation type",
+        "tags": [
+          "Schema Templates"
+        ]
+      }
+    },
+    "/schema-templates/{id}": {
+      "get": {
+        "description": "Retrieve a specific schema template by its UUID",
+        "parameters": [
+          {
+            "description": "Template ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/schema_templates.SchemaTemplate"
+                }
+              }
+            },
+            "description": "Schema template details"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Template not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get schema template by ID",
+        "tags": [
+          "Schema Templates"
+        ]
+      }
+    },
+    "/schema-templates/{id}/activate": {
+      "post": {
+        "description": "Mark a schema template version as active (deactivates other versions)",
+        "parameters": [
+          {
+            "description": "Template ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/schema_templates.SchemaTemplate"
+                }
+              }
+            },
+            "description": "Activated schema template"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Activate schema template",
+        "tags": [
+          "Schema Templates"
+        ]
+      }
+    },
     "/signup": {
       "post": {
         "description": "Create a new user account with email, password, and role",
@@ -590,6 +1803,288 @@
         "summary": "Sign up a new user",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/system-instructions": {
+      "get": {
+        "description": "Get all system instructions",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/system_instructions.SystemInstruction"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of system instructions"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List all system instructions",
+        "tags": [
+          "System Instructions"
+        ]
+      },
+      "post": {
+        "description": "Create a new system instruction (immutable - cannot edit existing)",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/system_instructions.CreateSystemInstructionRequest"
+              }
+            }
+          },
+          "description": "System instruction request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/system_instructions.SystemInstruction"
+                }
+              }
+            },
+            "description": "Created system instruction"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid request body"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create new system instruction",
+        "tags": [
+          "System Instructions"
+        ]
+      }
+    },
+    "/system-instructions/active": {
+      "get": {
+        "description": "Retrieve the currently active system instruction",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/system_instructions.SystemInstruction"
+                }
+              }
+            },
+            "description": "Active system instruction"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Active instruction not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get active system instruction",
+        "tags": [
+          "System Instructions"
+        ]
+      }
+    },
+    "/system-instructions/{id}": {
+      "get": {
+        "description": "Retrieve a specific system instruction by its UUID",
+        "parameters": [
+          {
+            "description": "Instruction ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/system_instructions.SystemInstruction"
+                }
+              }
+            },
+            "description": "System instruction details"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Instruction not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get system instruction by ID",
+        "tags": [
+          "System Instructions"
+        ]
+      }
+    },
+    "/system-instructions/{id}/activate": {
+      "post": {
+        "description": "Mark a system instruction as active (deactivates other versions)",
+        "parameters": [
+          {
+            "description": "Instruction ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Activation status"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Activate system instruction",
+        "tags": [
+          "System Instructions"
         ]
       }
     },
