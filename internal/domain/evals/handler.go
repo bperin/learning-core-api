@@ -39,7 +39,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Accept json
 // @Produce json
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /evals [post]
 func (h *Handler) CreateEval(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -53,7 +53,7 @@ func (h *Handler) CreateEval(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Eval ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /evals/{id}/publish [post]
 func (h *Handler) PublishEval(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -66,7 +66,7 @@ func (h *Handler) PublishEval(w http.ResponseWriter, r *http.Request) {
 // @Accept json
 // @Produce json
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /evals [get]
 func (h *Handler) ListEvals(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -80,7 +80,7 @@ func (h *Handler) ListEvals(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Eval ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /evals/{id} [get]
 func (h *Handler) GetEval(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")

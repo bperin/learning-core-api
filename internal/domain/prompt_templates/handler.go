@@ -45,7 +45,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Summary List prompt templates by generation type
 // @Description Get all prompt templates for a specific generation type
 // @Tags Prompt Templates
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param generation_type query string true "Generation type (CLASSIFICATION or QUESTIONS)"
 // @Success 200 {array} PromptTemplate "List of prompt templates"
 // @Failure 400 {object} map[string]string "Bad request - missing generation_type"
@@ -72,7 +72,7 @@ func (h *Handler) ListByGenerationType(w http.ResponseWriter, r *http.Request) {
 // @Summary Get prompt template by ID
 // @Description Retrieve a specific prompt template by its UUID
 // @Tags Prompt Templates
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param id path string true "Template ID (UUID)"
 // @Success 200 {object} PromptTemplate "Prompt template details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -100,7 +100,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Summary Get active prompt template by generation type
 // @Description Retrieve the currently active prompt template for a specific generation type
 // @Tags Prompt Templates
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param generationType path string true "Generation type (CLASSIFICATION or QUESTIONS)"
 // @Success 200 {object} PromptTemplate "Active prompt template"
 // @Failure 400 {object} map[string]string "Bad request - missing generation_type"
@@ -127,7 +127,7 @@ func (h *Handler) GetActiveByGenerationType(w http.ResponseWriter, r *http.Reque
 // @Summary Create new prompt template version
 // @Description Create a new version of a prompt template (immutable - cannot edit existing)
 // @Tags Prompt Templates
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Accept json
 // @Param request body CreatePromptTemplateVersionRequest true "Template version request"
 // @Success 201 {object} PromptTemplate "Created prompt template"
@@ -155,7 +155,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 // @Summary Activate prompt template
 // @Description Mark a prompt template version as active (deactivates other versions)
 // @Tags Prompt Templates
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param id path string true "Template ID (UUID)"
 // @Success 200 {object} PromptTemplate "Activated prompt template"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -183,7 +183,7 @@ func (h *Handler) Activate(w http.ResponseWriter, r *http.Request) {
 // @Summary Deactivate prompt template
 // @Description Mark a prompt template version as inactive
 // @Tags Prompt Templates
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param id path string true "Template ID (UUID)"
 // @Success 200 {object} PromptTemplate "Deactivated prompt template"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"

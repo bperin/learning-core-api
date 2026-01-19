@@ -27,7 +27,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -83,7 +83,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -116,7 +116,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -161,7 +161,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -215,7 +215,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -266,7 +266,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -305,7 +305,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -344,7 +344,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -383,7 +383,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -417,7 +417,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -473,7 +473,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -506,7 +506,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -557,7 +557,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -611,12 +611,10 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
-                            "read"
-                        ]
+                        "OAuth2": []
                     }
                 ],
-                "description": "Fetch books from the provided subject URLs for test creation workflow",
+                "description": "Fetch books from the provided subject URLs for test creation workflow. Returns book title, detail page URL, and PDF download link when available.",
                 "consumes": [
                     "application/json"
                 ],
@@ -640,7 +638,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "List of books with subject information",
+                        "description": "List of books with subject information and PDF links",
                         "schema": {
                             "$ref": "#/definitions/content_discovery.BookListResponse"
                         }
@@ -670,7 +668,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -707,7 +705,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -746,7 +744,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -774,7 +772,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -804,7 +802,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -843,7 +841,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -882,7 +880,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -921,7 +919,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -955,7 +953,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1008,7 +1006,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1041,7 +1039,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1092,7 +1090,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1201,7 +1199,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1253,7 +1251,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1309,7 +1307,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1360,7 +1358,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1411,7 +1409,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1462,7 +1460,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1513,7 +1511,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1565,7 +1563,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1621,7 +1619,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1672,7 +1670,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1723,7 +1721,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1820,7 +1818,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1859,7 +1857,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1898,7 +1896,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -1932,7 +1930,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -1988,7 +1986,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -2021,7 +2019,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -2072,7 +2070,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -2126,7 +2124,7 @@ const docTemplate = `{
             "post": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -2179,7 +2177,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -2236,7 +2234,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -2278,7 +2276,7 @@ const docTemplate = `{
             "get": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "read"
                         ]
                     }
@@ -2333,7 +2331,7 @@ const docTemplate = `{
             "delete": {
                 "security": [
                     {
-                        "OAuth2Auth": [
+                        "OAuth2": [
                             "write"
                         ]
                     }
@@ -2597,6 +2595,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "description": {
+                    "type": "string"
+                },
+                "pdf_link": {
                     "type": "string"
                 },
                 "selected": {

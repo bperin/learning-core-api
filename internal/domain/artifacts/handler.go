@@ -44,7 +44,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Summary List all artifacts
 // @Description Get all artifacts with pagination support
 // @Tags Artifacts
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param page query int false "Page number (default: 1)"
 // @Param page_size query int false "Page size (default: 20, max: 100)"
 // @Success 200 {object} artifacts.ArtifactListResponse "Paginated list of artifacts"
@@ -94,7 +94,7 @@ func (h *Handler) ListArtifacts(w http.ResponseWriter, r *http.Request) {
 // @Summary Get artifact by ID
 // @Description Retrieve a specific artifact by its UUID
 // @Tags Artifacts
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param id path string true "Artifact ID (UUID)"
 // @Success 200 {object} artifacts.Artifact "Artifact details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -122,7 +122,7 @@ func (h *Handler) GetArtifactByID(w http.ResponseWriter, r *http.Request) {
 // @Summary Get artifacts by type
 // @Description Retrieve artifacts filtered by their type with pagination
 // @Tags Artifacts
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param type path string true "Artifact type"
 // @Param page query int false "Page number (default: 1)"
 // @Param page_size query int false "Page size (default: 20, max: 100)"
@@ -173,7 +173,7 @@ func (h *Handler) GetArtifactsByType(w http.ResponseWriter, r *http.Request) {
 // @Summary Get artifacts by status
 // @Description Retrieve artifacts filtered by their status
 // @Tags Artifacts
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param status path string true "Artifact status"
 // @Success 200 {array} artifacts.Artifact "List of artifacts"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -199,7 +199,7 @@ func (h *Handler) GetArtifactsByStatus(w http.ResponseWriter, r *http.Request) {
 // @Summary Get artifact statistics
 // @Description Retrieve statistics about artifacts (counts by status, etc.)
 // @Tags Artifacts
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {object} store.GetArtifactStatsRow "Artifact statistics"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /artifacts/stats [get]

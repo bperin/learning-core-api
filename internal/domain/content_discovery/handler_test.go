@@ -191,7 +191,7 @@ func TestHandler_ListBooks_WithSubSubjects(t *testing.T) {
 
 	subjectID := uuid.New()
 	subSubjectID := uuid.New()
-	
+
 	mockSubjects := []subjects.Subject{
 		{
 			ID:   subjectID,
@@ -234,66 +234,4 @@ func TestHandler_ListBooks_WithSubSubjects(t *testing.T) {
 	assert.GreaterOrEqual(t, response.Total, 0)
 
 	mockSubjectsService.AssertExpectations(t)
-}
-
-func TestCleanTitle(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected string
-	}{
-		{
-			name:     "Remove extra whitespace",
-			input:    "  Introduction to   Psychology  ",
-			expected: "Introduction to Psychology",
-		},
-		{
-			name:     "Remove View prefix",
-			input:    "View Introduction to Psychology",
-			expected: "Introduction to Psychology",
-		},
-		{
-			name:     "Remove library suffix",
-			input:    "Introduction to Psychology - Open Textbook Library",
-			expected: "Introduction to Psychology",
-		},
-		{
-			name:     "Clean complex title",
-			input:    "  View   Introduction to Psychology - Open Textbook Library  ",
-			expected: "Introduction to Psychology",
-		},
-		{
-			name:     "Normal title",
-			input:    "Introduction to Psychology",
-			expected: "Introduction to Psychology",
-		},
-		{
-			name:     "Empty title",
-			input:    "",
-			expected: "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := cleanTitle(tt.input)
-			assert.Equal(t, tt.expected, result)
-		})
-	}
-}
-
-func TestRemoveDuplicateBooks(t *testing.T) {
-	books := []Book{
-		{Title: "Book A", URL: "http://example.com/a"},
-		{Title: "Book B", URL: "http://example.com/b"},
-		{Title: "Book A", URL: "http://example.com/a2"}, // Duplicate title
-		{Title: "Book C", URL: "http://example.com/c"},
-	}
-
-	result := removeDuplicateBooks(books)
-
-	assert.Equal(t, 3, len(result))
-	assert.Equal(t, "Book A", result[0].Title)
-	assert.Equal(t, "Book B", result[1].Title)
-	assert.Equal(t, "Book C", result[2].Title)
 }

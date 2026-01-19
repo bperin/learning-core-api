@@ -42,7 +42,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Summary List all model configs
 // @Description Get all model configurations
 // @Tags Model Configs
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {array} ModelConfig "List of model configs"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /model-configs [get]
@@ -61,7 +61,7 @@ func (h *Handler) ListAll(w http.ResponseWriter, r *http.Request) {
 // @Summary Get model config by ID
 // @Description Retrieve a specific model configuration by its UUID
 // @Tags Model Configs
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param id path string true "Config ID (UUID)"
 // @Success 200 {object} ModelConfig "Model config details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -89,7 +89,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Summary Get active model config
 // @Description Retrieve the currently active model configuration
 // @Tags Model Configs
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {object} ModelConfig "Active model config"
 // @Failure 404 {object} map[string]string "Active config not found"
 // @Router /model-configs/active [get]
@@ -108,7 +108,7 @@ func (h *Handler) GetActive(w http.ResponseWriter, r *http.Request) {
 // @Summary Create model config
 // @Description Create a new model configuration
 // @Tags Model Configs
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param request body CreateModelConfigRequest true "Model config data"
 // @Success 201 {object} ModelConfig "Created model config"
 // @Failure 400 {object} map[string]string "Bad request"
@@ -135,7 +135,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 // @Summary Activate model config
 // @Description Mark a model configuration as active
 // @Tags Model Configs
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param id path string true "Config ID (UUID)"
 // @Success 200 {object} map[string]string "Success message"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"

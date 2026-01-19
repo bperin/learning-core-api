@@ -42,7 +42,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Summary List all system instructions
 // @Description Get all system instructions
 // @Tags System Instructions
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {array} SystemInstruction "List of system instructions"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /system-instructions [get]
@@ -61,7 +61,7 @@ func (h *Handler) ListAll(w http.ResponseWriter, r *http.Request) {
 // @Summary Get system instruction by ID
 // @Description Retrieve a specific system instruction by its UUID
 // @Tags System Instructions
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param id path string true "Instruction ID (UUID)"
 // @Success 200 {object} SystemInstruction "System instruction details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -89,7 +89,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Summary Get active system instruction
 // @Description Retrieve the currently active system instruction
 // @Tags System Instructions
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {object} SystemInstruction "Active system instruction"
 // @Failure 404 {object} map[string]string "Active instruction not found"
 // @Router /system-instructions/active [get]
@@ -108,7 +108,7 @@ func (h *Handler) GetActive(w http.ResponseWriter, r *http.Request) {
 // @Summary Create new system instruction
 // @Description Create a new system instruction (immutable - cannot edit existing)
 // @Tags System Instructions
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Accept json
 // @Param request body CreateSystemInstructionRequest true "System instruction request"
 // @Success 201 {object} SystemInstruction "Created system instruction"
@@ -136,7 +136,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 // @Summary Activate system instruction
 // @Description Mark a system instruction as active (deactivates other versions)
 // @Tags System Instructions
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param id path string true "Instruction ID (UUID)"
 // @Success 200 {object} map[string]string "Activation status"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"

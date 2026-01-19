@@ -18,7 +18,7 @@ func NewHandler(service *Service) *Handler {
 }
 
 func (h *Handler) RegisterPublicRoutes(r chi.Router) {
-	// No public routes for content discovery
+	r.Post("/content-discovery/books", h.ListBooks)
 }
 
 func (h *Handler) RegisterAdminRoutes(r chi.Router) {
@@ -35,13 +35,13 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 
 // ListBooks lists books from selected subjects for test creation.
 // @Summary List books from selected subjects
-// @Description Fetch books from the provided subject URLs for test creation workflow
+// @Description Fetch books from the provided subject URLs for test creation workflow. Returns book title, detail page URL, and PDF download link when available.
 // @Tags Content Discovery
-// @Security OAuth2Auth[read]
+// @Security OAuth2
 // @Accept json
 // @Produce json
 // @Param request body BookListRequest true "Subject IDs and max books"
-// @Success 200 {object} BookListResponse "List of books with subject information"
+// @Success 200 {object} BookListResponse "List of books with subject information and PDF links"
 // @Failure 400 {object} map[string]string "Bad request - invalid request body"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /content-discovery/books [post]

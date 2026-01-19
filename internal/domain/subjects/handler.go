@@ -44,7 +44,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {}
 // @Produce json
 // @Success 200 {array} subjects.Subject
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /subjects [get]
 func (h *Handler) ListAll(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -65,7 +65,7 @@ func (h *Handler) ListAll(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Success 200 {array} subjects.SubjectForSelection
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /subjects/for-selection [get]
 func (h *Handler) ListForSelection(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

@@ -36,7 +36,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {}
 // @Produce json
 // @Param id path string true "Eval Item ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /eval-items/{id}/reviews [post]
 func (h *Handler) CreateEvalItemReview(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -50,7 +50,7 @@ func (h *Handler) CreateEvalItemReview(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Eval Item ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /eval-items/{id}/reviews [get]
 func (h *Handler) ListEvalItemReviews(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")

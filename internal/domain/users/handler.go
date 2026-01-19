@@ -53,7 +53,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Success 201 {object} users.User
 // @Failure 400 {string} string "invalid request"
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /users [post]
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 	var req CreateUserRequest
@@ -83,7 +83,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "invalid request"
 // @Failure 404 {string} string "not found"
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /users/{id} [get]
 func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -114,7 +114,7 @@ func (h *Handler) GetUserByID(w http.ResponseWriter, r *http.Request) {
 // @Failure 400 {string} string "invalid request"
 // @Failure 404 {string} string "not found"
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /users/email/{email} [get]
 func (h *Handler) GetUserByEmail(w http.ResponseWriter, r *http.Request) {
 	email := chi.URLParam(r, "email")
@@ -171,7 +171,7 @@ func (h *Handler) UpdateUser(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} map[string]string
 // @Failure 400 {string} string "invalid request"
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /users/{id} [delete]
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
@@ -251,7 +251,7 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 // @Success 200 {object} users.User
 // @Failure 401 {string} string "unauthorized"
 // @Failure 500 {string} string "internal server error"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /users/me [get]
 func (h *Handler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

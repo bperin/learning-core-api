@@ -40,7 +40,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Produce json
 // @Param id path string true "Eval ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /evals/{id}/attempts [post]
 func (h *Handler) StartAttempt(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -54,7 +54,7 @@ func (h *Handler) StartAttempt(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Attempt ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Router /attempts/{id} [get]
 func (h *Handler) GetAttempt(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -68,7 +68,7 @@ func (h *Handler) GetAttempt(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Attempt ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /attempts/{id}/answers [post]
 func (h *Handler) SubmitAnswer(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")
@@ -82,7 +82,7 @@ func (h *Handler) SubmitAnswer(w http.ResponseWriter, r *http.Request) {
 // @Produce json
 // @Param id path string true "Attempt ID"
 // @Success 501 {string} string "not implemented"
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Router /attempts/{id}/submit [post]
 func (h *Handler) SubmitAttempt(w http.ResponseWriter, r *http.Request) {
 	render.Error(w, http.StatusNotImplemented, "not implemented")

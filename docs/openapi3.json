@@ -214,6 +214,9 @@
           "description": {
             "type": "string"
           },
+          "pdf_link": {
+            "type": "string"
+          },
           "selected": {
             "type": "boolean"
           },
@@ -717,7 +720,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -758,7 +761,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -813,7 +816,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -881,7 +884,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -946,7 +949,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -985,7 +988,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1024,7 +1027,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1063,7 +1066,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1107,7 +1110,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1171,7 +1174,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1212,7 +1215,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1277,7 +1280,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1345,7 +1348,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1358,7 +1361,7 @@
     },
     "/content-discovery/books": {
       "post": {
-        "description": "Fetch books from the provided subject URLs for test creation workflow",
+        "description": "Fetch books from the provided subject URLs for test creation workflow. Returns book title, detail page URL, and PDF download link when available.",
         "requestBody": {
           "content": {
             "application/json": {
@@ -1380,7 +1383,7 @@
                 }
               }
             },
-            "description": "List of books with subject information"
+            "description": "List of books with subject information and PDF links"
           },
           "400": {
             "content": {
@@ -1411,9 +1414,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
-              "read"
-            ]
+            "OAuth2": []
           }
         ],
         "summary": "List books from selected subjects",
@@ -1450,7 +1451,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1487,7 +1488,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1515,7 +1516,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1541,7 +1542,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1580,7 +1581,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1619,7 +1620,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1658,7 +1659,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1702,7 +1703,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1766,7 +1767,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -1807,7 +1808,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1872,7 +1873,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -1953,7 +1954,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -2074,7 +2075,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2138,7 +2139,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -2203,7 +2204,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2268,7 +2269,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2333,7 +2334,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -2398,7 +2399,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -2466,7 +2467,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2530,7 +2531,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -2595,7 +2596,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2660,7 +2661,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2725,7 +2726,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -2819,7 +2820,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2860,7 +2861,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2904,7 +2905,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -2968,7 +2969,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -3009,7 +3010,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -3074,7 +3075,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -3142,7 +3143,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -3202,7 +3203,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -3271,7 +3272,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -3319,7 +3320,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }
@@ -3381,7 +3382,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "write"
             ]
           }
@@ -3448,7 +3449,7 @@
         },
         "security": [
           {
-            "OAuth2Auth": [
+            "OAuth2": [
               "read"
             ]
           }

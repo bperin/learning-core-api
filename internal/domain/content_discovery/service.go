@@ -2,17 +2,33 @@ package content_discovery
 
 import (
 	"context"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
-	"regexp"
 	"strings"
+	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/google/uuid"
 
 	"learning-core-api/internal/domain/subjects"
 )
+
+// Atom feed structures for parsing Open Textbook Library
+type AtomFeed struct {
+	XMLName xml.Name    `xml:"feed"`
+	Entries []AtomEntry `xml:"entry"`
+}
+
+type AtomEntry struct {
+	ID    string   `xml:"id"`
+	Title string   `xml:"title"`
+	Link  AtomLink `xml:"link"`
+}
+
+type AtomLink struct {
+	Href string `xml:"href,attr"`
+}
 
 type Service struct {
 	subjectsService subjects.Service
@@ -60,7 +76,13 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 	var allBooks []BookWithSubject
 	
 	// Process each requested subject
-	for _, subjectID := range req.SubjectIDs {
+	for _, subjectIDStr := range req.SubjectIDs {
+		// Parse string UUID to uuid.UUID
+		subjectID, err := uuid.Parse(subjectIDStr)
+		if err != nil {
+			continue // Skip invalid UUIDs
+		}
+
 		var subjectURL, subjectName string
 		
 		// Check if it's a main subject or sub-subject
@@ -107,9 +129,18 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 	}, nil
 }
 
-// fetchBooksFromURL scrapes books from a subject URL (similar to pdf-downloader logic)
+// fetchBooksFromURL fetches books from a subject URL using the Atom XML feed
+// and extracts PDF links for each book
 func (s *Service) fetchBooksFromURL(subjectURL string) ([]Book, error) {
-	resp, err := http.Get(subjectURL)
+	// Create request with Accept header for Atom feed
+	req, err := http.NewRequest("GET", subjectURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/atom+xml")
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch subject page: %w", err)
 	}
@@ -119,87 +150,192 @@ func (s *Service) fetchBooksFromURL(subjectURL string) ([]Book, error) {
 		return nil, fmt.Errorf("failed to fetch subject page: status %d", resp.StatusCode)
 	}
 
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed to read response body: %w", err)
-	}
-
-	doc, err := goquery.NewDocumentFromReader(strings.NewReader(string(body)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse HTML: %w", err)
+	// Parse the Atom feed
+	var feed AtomFeed
+	if err := xml.NewDecoder(resp.Body).Decode(&feed); err != nil {
+		return nil, fmt.Errorf("failed to parse Atom feed: %w", err)
 	}
 
 	var books []Book
-
-	// Look for book links (similar to pdf-downloader pattern)
-	doc.Find("a").Each(func(i int, s *goquery.Selection) {
-		href, exists := s.Attr("href")
-		if !exists {
-			return
-		}
-
-		// Look for textbook links (adapt this pattern based on the actual site structure)
-		if strings.Contains(href, "/textbooks/") || strings.Contains(href, "/book/") {
-			title := strings.TrimSpace(s.Text())
-			if title == "" {
-				// Try to get title from parent or child elements
-				title = strings.TrimSpace(s.Parent().Text())
+	for _, entry := range feed.Entries {
+		if entry.Link.Href != "" && entry.Title != "" {
+			// Fetch PDF link from the book's detail page
+			pdfLink, err := s.getPDFLinkFromBookPage(entry.Link.Href)
+			if err != nil || pdfLink == "" {
+				// Skip books without PDF links
+				continue
 			}
-			
-			if title != "" && len(title) > 3 {
-				// Clean up the title
-				title = cleanTitle(title)
-				
-				// Make sure we have a full URL
-				fullURL := href
-				if strings.HasPrefix(href, "/") {
-					fullURL = "https://open.umn.edu" + href
-				}
 
-				books = append(books, Book{
-					Title:    title,
-					URL:      fullURL,
-					Selected: false,
-				})
+			book := Book{
+				Title:    strings.TrimSpace(entry.Title),
+				URL:      entry.Link.Href,
+				PDFLink:  pdfLink,
+				Selected: false,
 			}
+
+			books = append(books, book)
 		}
-	})
-
-	// Remove duplicates
-	books = removeDuplicateBooks(books)
-
-	// Limit to reasonable number per subject
-	if len(books) > 20 {
-		books = books[:20]
 	}
 
 	return books, nil
 }
 
-// cleanTitle removes extra whitespace and common prefixes/suffixes
-func cleanTitle(title string) string {
-	// Remove extra whitespace
-	title = regexp.MustCompile(`\s+`).ReplaceAllString(title, " ")
-	title = strings.TrimSpace(title)
-	
-	// Remove common patterns
-	title = strings.TrimPrefix(title, "View ")
-	title = strings.TrimSuffix(title, " - Open Textbook Library")
-	
-	return title
-}
+// getPDFLinkFromBookPage extracts the PDF download link from a book detail page
+// Returns the actual PDF download URL by following the format page
+func (s *Service) getPDFLinkFromBookPage(bookURL string) (string, error) {
+	resp, err := http.Get(bookURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch book page: %w", err)
+	}
+	defer resp.Body.Close()
 
-// removeDuplicateBooks removes duplicate books based on title
-func removeDuplicateBooks(books []Book) []Book {
-	seen := make(map[string]bool)
-	var result []Book
-	
-	for _, book := range books {
-		if !seen[book.Title] {
-			seen[book.Title] = true
-			result = append(result, book)
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	htmlContent := string(body)
+
+	// Look for the PDF format link pattern: /opentextbooks/formats/XXX
+	formatsIdx := strings.Index(htmlContent, "/opentextbooks/formats/")
+	if formatsIdx != -1 {
+		urlStart := formatsIdx
+		urlEnd := strings.IndexAny(htmlContent[urlStart:], "\")")
+		if urlEnd != -1 {
+			formatPageURL := "https://open.umn.edu" + htmlContent[urlStart:urlStart+urlEnd]
+			// Now fetch the format page to get the actual PDF download link
+			return s.getDownloadLinkFromFormatPage(formatPageURL)
 		}
 	}
-	
-	return result
+
+	return "", nil
+}
+
+// getDownloadLinkFromFormatPage fetches the format page and extracts the actual PDF download link
+func (s *Service) getDownloadLinkFromFormatPage(formatPageURL string) (string, error) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return nil // Allow redirects
+		},
+	}
+
+	resp, err := client.Get(formatPageURL)
+	if err != nil {
+		return "", fmt.Errorf("failed to fetch format page: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("failed to read format page: %w", err)
+	}
+
+	htmlContent := string(body)
+	finalURL := resp.Request.URL.String()
+
+	// Strategy 1: Look for direct .pdf links
+	if link := s.findPDFLink(htmlContent, ".pdf", finalURL); link != "" {
+		return link, nil
+	}
+
+	// Strategy 2: Look for download buttons
+	if link := s.findPDFLink(htmlContent, "download", finalURL); link != "" {
+		return link, nil
+	}
+
+	// Strategy 3: Look for "Digital PDF" text
+	if link := s.findPDFLink(htmlContent, "digital pdf", finalURL); link != "" {
+		return link, nil
+	}
+
+	// Strategy 4: Look for type=pdf parameter
+	if link := s.findPDFLink(htmlContent, "type=pdf", finalURL); link != "" {
+		return link, nil
+	}
+
+	// Strategy 5: Search all hrefs for pdf/download keywords
+	return s.findAnyPDFHref(htmlContent, finalURL), nil
+}
+
+// findPDFLink searches for a pattern and extracts the href before it
+func (s *Service) findPDFLink(htmlContent, pattern, baseURL string) string {
+	idx := strings.Index(strings.ToLower(htmlContent), strings.ToLower(pattern))
+	if idx == -1 {
+		return ""
+	}
+
+	searchStart := idx
+	if searchStart > 200 {
+		searchStart = idx - 200
+	} else {
+		searchStart = 0
+	}
+
+	searchText := htmlContent[searchStart:idx]
+	hrefIdx := strings.LastIndex(searchText, "href=\"")
+	if hrefIdx == -1 {
+		return ""
+	}
+
+	hrefStart := searchStart + hrefIdx + 6
+	hrefEnd := strings.Index(htmlContent[hrefStart:], "\"")
+	if hrefEnd == -1 {
+		return ""
+	}
+
+	link := htmlContent[hrefStart : hrefStart+hrefEnd]
+	return s.makeAbsoluteURL(link, baseURL)
+}
+
+// findAnyPDFHref searches all hrefs for pdf or download keywords
+func (s *Service) findAnyPDFHref(htmlContent, baseURL string) string {
+	lowerContent := strings.ToLower(htmlContent)
+	idx := strings.Index(lowerContent, "href=\"")
+
+	for idx != -1 {
+		hrefStart := idx + 6
+		hrefEnd := strings.Index(htmlContent[hrefStart:], "\"")
+		if hrefEnd == -1 {
+			break
+		}
+
+		link := htmlContent[hrefStart : hrefStart+hrefEnd]
+		lowerLink := strings.ToLower(link)
+		if strings.Contains(lowerLink, "pdf") || strings.Contains(lowerLink, "download") {
+			return s.makeAbsoluteURL(link, baseURL)
+		}
+
+		// Find next href
+		nextIdx := strings.Index(lowerContent[hrefStart+hrefEnd:], "href=\"")
+		if nextIdx == -1 {
+			break
+		}
+		idx = hrefStart + hrefEnd + nextIdx
+	}
+
+	return ""
+}
+
+// makeAbsoluteURL converts a relative URL to absolute
+func (s *Service) makeAbsoluteURL(link, baseURL string) string {
+	if strings.HasPrefix(link, "http") {
+		return link
+	}
+	if strings.HasPrefix(link, "/") {
+		parts := strings.Split(baseURL, "/")
+		if len(parts) >= 3 {
+			domain := strings.Join(parts[:3], "/")
+			return domain + link
+		}
+	}
+	return baseURL + link
 }

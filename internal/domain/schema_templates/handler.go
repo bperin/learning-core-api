@@ -44,7 +44,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Summary List schema templates by generation type
 // @Description Get all schema templates for a specific generation type
 // @Tags Schema Templates
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param generation_type query string true "Generation type (CLASSIFICATION or QUESTIONS)"
 // @Success 200 {array} SchemaTemplate "List of schema templates"
 // @Failure 400 {object} map[string]string "Bad request - missing generation_type"
@@ -71,7 +71,7 @@ func (h *Handler) ListByGenerationType(w http.ResponseWriter, r *http.Request) {
 // @Summary Get schema template by ID
 // @Description Retrieve a specific schema template by its UUID
 // @Tags Schema Templates
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param id path string true "Template ID (UUID)"
 // @Success 200 {object} SchemaTemplate "Schema template details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -99,7 +99,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Summary Get active schema template by generation type
 // @Description Retrieve the currently active schema template for a specific generation type
 // @Tags Schema Templates
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param generationType path string true "Generation type (CLASSIFICATION or QUESTIONS)"
 // @Success 200 {object} SchemaTemplate "Active schema template"
 // @Failure 400 {object} map[string]string "Bad request - missing generation_type"
@@ -126,7 +126,7 @@ func (h *Handler) GetActiveByGenerationType(w http.ResponseWriter, r *http.Reque
 // @Summary Create new schema template
 // @Description Create a new schema template (immutable - cannot edit existing)
 // @Tags Schema Templates
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Accept json
 // @Param request body CreateSchemaTemplateRequest true "Schema template request"
 // @Success 201 {object} SchemaTemplate "Created schema template"
@@ -154,7 +154,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 // @Summary Activate schema template
 // @Description Mark a schema template version as active (deactivates other versions)
 // @Tags Schema Templates
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param id path string true "Template ID (UUID)"
 // @Success 200 {object} SchemaTemplate "Activated schema template"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"

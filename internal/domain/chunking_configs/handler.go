@@ -42,7 +42,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Summary List all chunking configs
 // @Description Get all chunking configurations
 // @Tags Chunking Configs
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {array} ChunkingConfig "List of chunking configs"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /chunking-configs [get]
@@ -61,7 +61,7 @@ func (h *Handler) ListAll(w http.ResponseWriter, r *http.Request) {
 // @Summary Get chunking config by ID
 // @Description Retrieve a specific chunking configuration by its UUID
 // @Tags Chunking Configs
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Param id path string true "Config ID (UUID)"
 // @Success 200 {object} ChunkingConfig "Chunking config details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
@@ -89,7 +89,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Summary Get active chunking config
 // @Description Retrieve the currently active chunking configuration
 // @Tags Chunking Configs
-// @Security OAuth2Auth[read]
+// @Security OAuth2[read]
 // @Success 200 {object} ChunkingConfig "Active chunking config"
 // @Failure 404 {object} map[string]string "Active config not found"
 // @Router /chunking-configs/active [get]
@@ -108,7 +108,7 @@ func (h *Handler) GetActive(w http.ResponseWriter, r *http.Request) {
 // @Summary Create new chunking config
 // @Description Create a new chunking configuration (immutable - cannot edit existing)
 // @Tags Chunking Configs
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Accept json
 // @Param request body CreateChunkingConfigRequest true "Chunking config request"
 // @Success 201 {object} ChunkingConfig "Created chunking config"
@@ -136,7 +136,7 @@ func (h *Handler) Create(w http.ResponseWriter, r *http.Request) {
 // @Summary Activate chunking config
 // @Description Mark a chunking configuration as active (deactivates other versions)
 // @Tags Chunking Configs
-// @Security OAuth2Auth[write]
+// @Security OAuth2[write]
 // @Param id path string true "Config ID (UUID)"
 // @Success 200 {object} map[string]string "Activation status"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"

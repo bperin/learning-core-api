@@ -143,6 +143,8 @@ definitions:
         type: string
       description:
         type: string
+      pdf_link:
+        type: string
       selected:
         type: boolean
       subject_id:
@@ -463,7 +465,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List all artifacts
       tags:
@@ -495,7 +497,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get artifact by ID
       tags:
@@ -515,7 +517,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get artifact statistics
       tags:
@@ -543,7 +545,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get artifacts by status
       tags:
@@ -577,7 +579,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get artifacts by type
       tags:
@@ -601,7 +603,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get attempt
       tags:
@@ -625,7 +627,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Submit answer
       tags:
@@ -649,7 +651,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Submit attempt
       tags:
@@ -671,7 +673,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List all chunking configs
       tags:
@@ -705,7 +707,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create new chunking config
       tags:
@@ -737,7 +739,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get chunking config by ID
       tags:
@@ -771,7 +773,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Activate chunking config
       tags:
@@ -791,7 +793,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get active chunking config
       tags:
@@ -800,7 +802,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Fetch books from the provided subject URLs for test creation workflow
+      description: Fetch books from the provided subject URLs for test creation workflow.
+        Returns book title, detail page URL, and PDF download link when available.
       parameters:
       - description: Subject IDs and max books
         in: body
@@ -812,7 +815,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: List of books with subject information
+          description: List of books with subject information and PDF links
           schema:
             $ref: '#/definitions/content_discovery.BookListResponse'
         "400":
@@ -828,8 +831,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
-        - read
+      - OAuth2: []
       summary: List books from selected subjects
       tags:
       - Content Discovery
@@ -852,7 +854,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List eval item reviews
       tags:
@@ -875,7 +877,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create eval item review
       tags:
@@ -893,7 +895,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List evals
       tags:
@@ -910,7 +912,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create eval
       tags:
@@ -934,7 +936,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get eval
       tags:
@@ -958,7 +960,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Start test attempt
       tags:
@@ -982,7 +984,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Publish eval
       tags:
@@ -1004,7 +1006,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List all model configs
       tags:
@@ -1036,7 +1038,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create model config
       tags:
@@ -1068,7 +1070,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get model config by ID
       tags:
@@ -1108,7 +1110,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Activate model config
       tags:
@@ -1128,7 +1130,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get active model config
       tags:
@@ -1196,7 +1198,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List prompt templates by generation type
       tags:
@@ -1231,7 +1233,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create new prompt template version
       tags:
@@ -1263,7 +1265,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get prompt template by ID
       tags:
@@ -1295,7 +1297,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Activate prompt template
       tags:
@@ -1327,7 +1329,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Deactivate prompt template
       tags:
@@ -1360,7 +1362,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get active prompt template by generation type
       tags:
@@ -1394,7 +1396,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List schema templates by generation type
       tags:
@@ -1428,7 +1430,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create new schema template
       tags:
@@ -1460,7 +1462,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get schema template by ID
       tags:
@@ -1492,7 +1494,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Activate schema template
       tags:
@@ -1525,7 +1527,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get active schema template by generation type
       tags:
@@ -1579,7 +1581,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List all subjects
       tags:
@@ -1603,7 +1605,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List subjects for test creation selection
       tags:
@@ -1625,7 +1627,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: List all system instructions
       tags:
@@ -1659,7 +1661,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create new system instruction
       tags:
@@ -1691,7 +1693,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get system instruction by ID
       tags:
@@ -1725,7 +1727,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Activate system instruction
       tags:
@@ -1745,7 +1747,7 @@ paths:
               type: string
             type: object
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get active system instruction
       tags:
@@ -1778,7 +1780,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Create a new user
       tags:
@@ -1812,7 +1814,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - write
       summary: Delete user
       tags:
@@ -1847,7 +1849,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get user by ID
       tags:
@@ -1883,7 +1885,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get user by email
       tags:
@@ -1909,7 +1911,7 @@ paths:
           schema:
             type: string
       security:
-      - OAuth2Auth:
+      - OAuth2:
         - read
       summary: Get current authenticated user
       tags:

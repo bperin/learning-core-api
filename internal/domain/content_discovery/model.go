@@ -8,6 +8,7 @@ import (
 type Book struct {
 	Title       string `json:"title"`
 	URL         string `json:"url"`
+	PDFLink     string `json:"pdf_link,omitempty"`
 	Description string `json:"description,omitempty"`
 	Authors     string `json:"authors,omitempty"`
 	Selected    bool   `json:"selected"`
@@ -15,8 +16,8 @@ type Book struct {
 
 // BookListRequest represents a request to list books from subjects
 type BookListRequest struct {
-	SubjectIDs []uuid.UUID `json:"subject_ids"`
-	MaxBooks   int         `json:"max_books,omitempty"` // Default to 10 if not specified
+	SubjectIDs []string `json:"subject_ids"`
+	MaxBooks   int      `json:"max_books,omitempty"` // Default to 10 if not specified
 }
 
 // BookListResponse represents the response with books from subjects
