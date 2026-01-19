@@ -47,3 +47,24 @@ SELECT * FROM documents
 WHERE title ILIKE '%' || @title || '%' 
 ORDER BY created_at DESC 
 LIMIT @page_limit OFFSET @page_offset;
+
+-- name: CreateDocumentWithTextbook :one
+INSERT INTO documents (
+  filename, title, mime_type, content, storage_path, storage_bucket,
+  file_store_name, file_store_file_name, rag_status,
+  user_id, textbook_id
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+) RETURNING *;
+
+-- name: GetDocumentsByTextbook :many
+SELECT * FROM documents 
+WHERE textbook_id = $1 
+ORDER BY created_at DESC;
+
+-- name: UpdateDocumentTextbook :one
+UPDATE documents SET
+  textbook_id = $2,
+  updated_at = now()
+WHERE id = $1
+RETURNING *;

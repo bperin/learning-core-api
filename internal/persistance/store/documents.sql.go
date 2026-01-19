@@ -19,7 +19,7 @@ INSERT INTO documents (
   user_id
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
-) RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name
+) RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id
 `
 
 type CreateDocumentParams struct {
@@ -63,6 +63,65 @@ func (q *Queries) CreateDocument(ctx context.Context, arg CreateDocumentParams) 
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
+		&i.TextbookID,
+	)
+	return i, err
+}
+
+const createDocumentWithTextbook = `-- name: CreateDocumentWithTextbook :one
+INSERT INTO documents (
+  filename, title, mime_type, content, storage_path, storage_bucket,
+  file_store_name, file_store_file_name, rag_status,
+  user_id, textbook_id
+) VALUES (
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+) RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id
+`
+
+type CreateDocumentWithTextbookParams struct {
+	Filename          string         `json:"filename"`
+	Title             sql.NullString `json:"title"`
+	MimeType          sql.NullString `json:"mime_type"`
+	Content           sql.NullString `json:"content"`
+	StoragePath       sql.NullString `json:"storage_path"`
+	StorageBucket     sql.NullString `json:"storage_bucket"`
+	FileStoreName     sql.NullString `json:"file_store_name"`
+	FileStoreFileName sql.NullString `json:"file_store_file_name"`
+	RagStatus         string         `json:"rag_status"`
+	UserID            uuid.UUID      `json:"user_id"`
+	TextbookID        uuid.NullUUID  `json:"textbook_id"`
+}
+
+func (q *Queries) CreateDocumentWithTextbook(ctx context.Context, arg CreateDocumentWithTextbookParams) (Document, error) {
+	row := q.db.QueryRowContext(ctx, createDocumentWithTextbook,
+		arg.Filename,
+		arg.Title,
+		arg.MimeType,
+		arg.Content,
+		arg.StoragePath,
+		arg.StorageBucket,
+		arg.FileStoreName,
+		arg.FileStoreFileName,
+		arg.RagStatus,
+		arg.UserID,
+		arg.TextbookID,
+	)
+	var i Document
+	err := row.Scan(
+		&i.ID,
+		&i.Filename,
+		&i.Title,
+		&i.MimeType,
+		&i.Content,
+		&i.StoragePath,
+		&i.RagStatus,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StorageBucket,
+		&i.FileStoreName,
+		&i.FileStoreFileName,
+		&i.TextbookID,
 	)
 	return i, err
 }
@@ -77,7 +136,7 @@ func (q *Queries) DeleteDocument(ctx context.Context, id uuid.UUID) error {
 }
 
 const getDocument = `-- name: GetDocument :one
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE id = $1 LIMIT 1
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id FROM documents WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, error) {
@@ -97,12 +156,13 @@ func (q *Queries) GetDocument(ctx context.Context, id uuid.UUID) (Document, erro
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
+		&i.TextbookID,
 	)
 	return i, err
 }
 
 const getDocumentsByRagStatus = `-- name: GetDocumentsByRagStatus :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE rag_status = $1 ORDER BY created_at DESC
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id FROM documents WHERE rag_status = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetDocumentsByRagStatus(ctx context.Context, ragStatus string) ([]Document, error) {
@@ -128,6 +188,51 @@ func (q *Queries) GetDocumentsByRagStatus(ctx context.Context, ragStatus string)
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
+			&i.TextbookID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getDocumentsByTextbook = `-- name: GetDocumentsByTextbook :many
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id FROM documents 
+WHERE textbook_id = $1 
+ORDER BY created_at DESC
+`
+
+func (q *Queries) GetDocumentsByTextbook(ctx context.Context, textbookID uuid.NullUUID) ([]Document, error) {
+	rows, err := q.db.QueryContext(ctx, getDocumentsByTextbook, textbookID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Document
+	for rows.Next() {
+		var i Document
+		if err := rows.Scan(
+			&i.ID,
+			&i.Filename,
+			&i.Title,
+			&i.MimeType,
+			&i.Content,
+			&i.StoragePath,
+			&i.RagStatus,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.StorageBucket,
+			&i.FileStoreName,
+			&i.FileStoreFileName,
+			&i.TextbookID,
 		); err != nil {
 			return nil, err
 		}
@@ -143,7 +248,7 @@ func (q *Queries) GetDocumentsByRagStatus(ctx context.Context, ragStatus string)
 }
 
 const getDocumentsByUser = `-- name: GetDocumentsByUser :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents WHERE user_id = $1 ORDER BY created_at DESC
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id FROM documents WHERE user_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]Document, error) {
@@ -169,6 +274,7 @@ func (q *Queries) GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]D
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
+			&i.TextbookID,
 		); err != nil {
 			return nil, err
 		}
@@ -184,7 +290,7 @@ func (q *Queries) GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]D
 }
 
 const listDocuments = `-- name: ListDocuments :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents ORDER BY created_at DESC LIMIT $1 OFFSET $2
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id FROM documents ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
 type ListDocumentsParams struct {
@@ -215,6 +321,7 @@ func (q *Queries) ListDocuments(ctx context.Context, arg ListDocumentsParams) ([
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
+			&i.TextbookID,
 		); err != nil {
 			return nil, err
 		}
@@ -230,7 +337,7 @@ func (q *Queries) ListDocuments(ctx context.Context, arg ListDocumentsParams) ([
 }
 
 const searchDocumentsByTitle = `-- name: SearchDocumentsByTitle :many
-SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name FROM documents 
+SELECT id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id FROM documents 
 WHERE title ILIKE '%' || $1 || '%' 
 ORDER BY created_at DESC 
 LIMIT $3 OFFSET $2
@@ -265,6 +372,7 @@ func (q *Queries) SearchDocumentsByTitle(ctx context.Context, arg SearchDocument
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
+			&i.TextbookID,
 		); err != nil {
 			return nil, err
 		}
@@ -290,7 +398,7 @@ UPDATE documents SET
   rag_status = COALESCE($8, rag_status),
   updated_at = now()
 WHERE id = $1
-RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name
+RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id
 `
 
 type UpdateDocumentParams struct {
@@ -330,6 +438,7 @@ func (q *Queries) UpdateDocument(ctx context.Context, arg UpdateDocumentParams) 
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
+		&i.TextbookID,
 	)
 	return i, err
 }
@@ -339,7 +448,7 @@ UPDATE documents SET
   rag_status = $2,
   updated_at = now()
 WHERE id = $1
-RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name
+RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id
 `
 
 type UpdateDocumentRagStatusParams struct {
@@ -364,6 +473,42 @@ func (q *Queries) UpdateDocumentRagStatus(ctx context.Context, arg UpdateDocumen
 		&i.StorageBucket,
 		&i.FileStoreName,
 		&i.FileStoreFileName,
+		&i.TextbookID,
+	)
+	return i, err
+}
+
+const updateDocumentTextbook = `-- name: UpdateDocumentTextbook :one
+UPDATE documents SET
+  textbook_id = $2,
+  updated_at = now()
+WHERE id = $1
+RETURNING id, filename, title, mime_type, content, storage_path, rag_status, user_id, created_at, updated_at, storage_bucket, file_store_name, file_store_file_name, textbook_id
+`
+
+type UpdateDocumentTextbookParams struct {
+	ID         uuid.UUID     `json:"id"`
+	TextbookID uuid.NullUUID `json:"textbook_id"`
+}
+
+func (q *Queries) UpdateDocumentTextbook(ctx context.Context, arg UpdateDocumentTextbookParams) (Document, error) {
+	row := q.db.QueryRowContext(ctx, updateDocumentTextbook, arg.ID, arg.TextbookID)
+	var i Document
+	err := row.Scan(
+		&i.ID,
+		&i.Filename,
+		&i.Title,
+		&i.MimeType,
+		&i.Content,
+		&i.StoragePath,
+		&i.RagStatus,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.StorageBucket,
+		&i.FileStoreName,
+		&i.FileStoreFileName,
+		&i.TextbookID,
 	)
 	return i, err
 }

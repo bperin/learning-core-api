@@ -210,6 +210,8 @@ type Document struct {
 	FileStoreName sql.NullString `json:"file_store_name"`
 	// File name returned by file search store
 	FileStoreFileName sql.NullString `json:"file_store_file_name"`
+	// Reference to the textbook subject if document was downloaded from Open Textbook Library
+	TextbookID uuid.NullUUID `json:"textbook_id"`
 }
 
 type DocumentTaxonomyLink struct {
@@ -340,6 +342,23 @@ type SchemaTemplate struct {
 	CreatedAt  time.Time       `json:"created_at"`
 	// Timestamp when version becomes immutable
 	LockedAt sql.NullTime `json:"locked_at"`
+}
+
+type SubSubject struct {
+	ID        uuid.UUID `json:"id"`
+	SubjectID uuid.UUID `json:"subject_id"`
+	Name      string    `json:"name"`
+	Url       string    `json:"url"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type Subject struct {
+	ID        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
+	Url       string    `json:"url"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type SystemInstruction struct {

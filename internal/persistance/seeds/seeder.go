@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sqlc-dev/pqtype"
@@ -90,6 +91,10 @@ func RunWithQueries(ctx context.Context, queries *store.Queries) error {
 
 	if err := seedSchemaTemplates(ctx, queries, systemUserID); err != nil {
 		return fmt.Errorf("failed to seed schema templates: %w", err)
+	}
+
+	if err := seedSubjects(ctx, queries); err != nil {
+		return fmt.Errorf("failed to seed subjects: %w", err)
 	}
 
 	return nil
@@ -517,4 +522,68 @@ func readSeedJSON(path string) (json.RawMessage, bool, error) {
 		return nil, ok, err
 	}
 	return json.RawMessage(text), true, nil
+}
+
+func seedSubjects(ctx context.Context, queries *store.Queries) error {
+	// Check if subjects already exist
+	existingSubjects, err := queries.GetAllSubjects(ctx)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return err
+	}
+
+	if len(existingSubjects) > 0 {
+		log.Printf("subjects already seeded (%d subjects found), skipping seed", len(existingSubjects))
+		return nil
+	}
+
+	// Load subjects from JSON file in seeds directory
+	type seedSubject struct {
+		Name string `json:"name"`
+		Slug string `json:"slug"`
+	}
+
+	path, err := seedPath("subjects.json")
+	if err != nil {
+		return err
+	}
+
+	raw, ok, err := readSeedJSON(path)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		log.Printf("no subjects seed found in %s", path)
+		return nil
+	}
+	if len(raw) == 0 {
+		return fmt.Errorf("subjects seed is empty: %s", path)
+	}
+
+	var subjects []seedSubject
+	if err := json.Unmarshal(raw, &subjects); err != nil {
+		return fmt.Errorf("failed to parse subjects seed: %w", err)
+	}
+
+	if len(subjects) == 0 {
+		log.Println("no subjects found in seed file, skipping seed")
+		return nil
+	}
+
+	// Insert subjects into database
+	for _, subject := range subjects {
+		_, err := queries.CreateSubject(ctx, store.CreateSubjectParams{
+			ID:        uuid.New(),
+			Name:      subject.Name,
+			Url:       fmt.Sprintf("https://open.umn.edu/opentextbooks/subjects/%s", subject.Slug),
+			CreatedAt: time.Now().UTC(),
+			UpdatedAt: time.Now().UTC(),
+		})
+		if err != nil {
+			log.Printf("Warning: failed to create subject %s: %v", subject.Name, err)
+			continue
+		}
+	}
+
+	log.Printf("seeded %d subjects", len(subjects))
+	return nil
 }

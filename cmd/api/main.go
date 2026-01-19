@@ -12,6 +12,7 @@ import (
 	"learning-core-api/internal/config"
 	"learning-core-api/internal/gcp"
 	"learning-core-api/internal/infra"
+	"learning-core-api/internal/persistance/seeds"
 	"learning-core-api/internal/persistance/store"
 )
 
@@ -39,6 +40,12 @@ func main() {
 	defer db.Close()
 	log.Println("Connected to database")
 
+	// 3.5. Seed database if needed
+	queries := store.New(db)
+	if err := seeds.RunWithQueries(ctx, queries); err != nil {
+		log.Printf("Warning: failed to seed database: %v", err)
+	}
+
 	// 4. Init PubSub
 	pubsubService, err := infra.NewPubSubService(ctx, cfg.GoogleProjectID, cfg.PubSubTopicID)
 	if err != nil {
@@ -49,7 +56,6 @@ func main() {
 	}
 
 	// 5. Start HTTP Server
-	queries := store.New(db)
 	var gcsService *gcp.GCSService
 	if cfg.GCSBucketName != "" && cfg.FileStoreName != "" {
 		var err error

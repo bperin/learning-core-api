@@ -1,0 +1,134 @@
+[
+  {
+    "name": "Open Textbook Library - Business Textbooks",
+    "slug": "business"
+  },
+  {
+    "name": "Open Textbook Library - Education Textbooks",
+    "slug": "education"
+  },
+  {
+    "name": "Open Textbook Library - Humanities Textbooks",
+    "slug": "humanities"
+  },
+  {
+    "name": "Open Textbook Library - Law Textbooks",
+    "slug": "law"
+  },
+  {
+    "name": "Open Textbook Library - Mathematics Textbooks",
+    "slug": "mathematics"
+  },
+  {
+    "name": "Open Textbook Library - Medicine Textbooks",
+    "slug": "medicine"
+  },
+  {
+    "name": "Open Textbook Library - Natural Sciences Textbooks",
+    "slug": "natural-sciences"
+  },
+  {
+    "name": "Open Textbook Library - Social Sciences Textbooks",
+    "slug": "social-sciences"
+  },
+  {
+    "name": "Open Textbook Library - Student Success Textbooks",
+    "slug": "student-success"
+  },
+  {
+    "name": "Open Textbook Library - Databases Textbooks",
+    "slug": "databases"
+  },
+  {
+    "name": "Open Textbook Library - Accounting Textbooks",
+    "slug": "accounting"
+  },
+  {
+    "name": "Open Textbook Library - Anthropology Textbooks",
+    "slug": "anthropology"
+  },
+  {
+    "name": "Open Textbook Library - Biology Textbooks",
+    "slug": "biology"
+  },
+  {
+    "name": "Open Textbook Library - Chemistry Textbooks",
+    "slug": "chemistry"
+  },
+  {
+    "name": "Open Textbook Library - Economics Textbooks",
+    "slug": "economics"
+  },
+  {
+    "name": "Open Textbook Library - Finance Textbooks",
+    "slug": "finance"
+  },
+  {
+    "name": "Open Textbook Library - Geography Textbooks",
+    "slug": "geography"
+  },
+  {
+    "name": "Open Textbook Library - Earth Sciences Textbooks",
+    "slug": "geology"
+  },
+  {
+    "name": "Open Textbook Library - History Textbooks",
+    "slug": "history"
+  },
+  {
+    "name": "Open Textbook Library - Human Resources Textbooks",
+    "slug": "human-resources"
+  },
+  {
+    "name": "Open Textbook Library - Linguistics Textbooks",
+    "slug": "linguistics"
+  },
+  {
+    "name": "Open Textbook Library - Management Textbooks",
+    "slug": "management"
+  },
+  {
+    "name": "Open Textbook Library - Marketing Textbooks",
+    "slug": "marketing"
+  },
+  {
+    "name": "Open Textbook Library - Music Textbooks",
+    "slug": "music"
+  },
+  {
+    "name": "Open Textbook Library - Nursing Textbooks",
+    "slug": "nursing"
+  },
+  {
+    "name": "Open Textbook Library - Nutrition Textbooks",
+    "slug": "nutrition"
+  },
+  {
+    "name": "Open Textbook Library - Philosophy Textbooks",
+    "slug": "philosophy"
+  },
+  {
+    "name": "Open Textbook Library - Physics Textbooks",
+    "slug": "physics"
+  },
+  {
+    "name": "Open Textbook Library - Political Science Textbooks",
+    "slug": "political-science"
+  },
+  {
+    "name": "Open Textbook Library - Psychology Textbooks",
+    "slug": "psychology"
+  },
+  {
+    "name": "Open Textbook Library - Religion Textbooks",
+    "slug": "religion"
+  },
+  {
+    "name": "Open Textbook Library - Sociology Textbooks",
+    "slug": "sociology"
+  },
+  {
+    "name": "Open Textbook Library - Statistics Textbooks",
+    "slug": "statistics"
+  }
+]

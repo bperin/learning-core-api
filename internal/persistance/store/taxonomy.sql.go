@@ -264,7 +264,7 @@ func (q *Queries) GetTaxonomyNode(ctx context.Context, id uuid.UUID) (TaxonomyNo
 }
 
 const listDocumentsByTaxonomyPrefix = `-- name: ListDocumentsByTaxonomyPrefix :many
-SELECT DISTINCT d.id, d.filename, d.title, d.mime_type, d.content, d.storage_path, d.rag_status, d.user_id, d.created_at, d.updated_at, d.storage_bucket, d.file_store_name, d.file_store_file_name
+SELECT DISTINCT d.id, d.filename, d.title, d.mime_type, d.content, d.storage_path, d.rag_status, d.user_id, d.created_at, d.updated_at, d.storage_bucket, d.file_store_name, d.file_store_file_name, d.textbook_id
 FROM documents d
 JOIN document_taxonomy_links dtl ON d.id = dtl.document_id
 JOIN taxonomy_nodes tn ON tn.id = dtl.taxonomy_node_id
@@ -298,6 +298,7 @@ func (q *Queries) ListDocumentsByTaxonomyPrefix(ctx context.Context, dollar_1 sq
 			&i.StorageBucket,
 			&i.FileStoreName,
 			&i.FileStoreFileName,
+			&i.TextbookID,
 		); err != nil {
 			return nil, err
 		}

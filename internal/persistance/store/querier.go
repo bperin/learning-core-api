@@ -27,6 +27,7 @@ type Querier interface {
 	CreateChunkingConfig(ctx context.Context, arg CreateChunkingConfigParams) (CreateChunkingConfigRow, error)
 	CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error)
 	CreateDocumentTaxonomyLink(ctx context.Context, arg CreateDocumentTaxonomyLinkParams) (DocumentTaxonomyLink, error)
+	CreateDocumentWithTextbook(ctx context.Context, arg CreateDocumentWithTextbookParams) (Document, error)
 	CreateEval(ctx context.Context, arg CreateEvalParams) (Eval, error)
 	CreateEvalItem(ctx context.Context, arg CreateEvalItemParams) (EvalItem, error)
 	CreateEvalItemReview(ctx context.Context, arg CreateEvalItemReviewParams) (EvalItemReview, error)
@@ -36,6 +37,8 @@ type Querier interface {
 	CreateNewVersion(ctx context.Context, arg CreateNewVersionParams) (CreateNewVersionRow, error)
 	CreatePromptTemplate(ctx context.Context, arg CreatePromptTemplateParams) (CreatePromptTemplateRow, error)
 	CreateSchemaTemplate(ctx context.Context, arg CreateSchemaTemplateParams) (CreateSchemaTemplateRow, error)
+	CreateSubSubject(ctx context.Context, arg CreateSubSubjectParams) (SubSubject, error)
+	CreateSubject(ctx context.Context, arg CreateSubjectParams) (Subject, error)
 	CreateSystemInstruction(ctx context.Context, arg CreateSystemInstructionParams) (CreateSystemInstructionRow, error)
 	CreateTaxonomyNode(ctx context.Context, arg CreateTaxonomyNodeParams) (CreateTaxonomyNodeRow, error)
 	CreateTestAttempt(ctx context.Context, arg CreateTestAttemptParams) (TestAttempt, error)
@@ -47,7 +50,9 @@ type Querier interface {
 	DeactivateOtherSystemInstructions(ctx context.Context, id uuid.UUID) error
 	DeactivateOtherVersions(ctx context.Context, arg DeactivateOtherVersionsParams) error
 	DeactivatePromptTemplate(ctx context.Context, id uuid.UUID) (PromptTemplate, error)
+	DeleteAllSubjects(ctx context.Context) error
 	DeleteDocument(ctx context.Context, id uuid.UUID) error
+	DeleteSubject(ctx context.Context, id uuid.UUID) error
 	DeleteUser(ctx context.Context, id uuid.UUID) error
 	GetActiveAttempts(ctx context.Context) ([]TestAttempt, error)
 	GetActiveChunkingConfig(ctx context.Context) (ChunkingConfig, error)
@@ -57,6 +62,7 @@ type Querier interface {
 	GetActiveSchemaTemplateByGenerationType(ctx context.Context, generationType GenerationType) (SchemaTemplate, error)
 	GetActiveSystemInstruction(ctx context.Context) (SystemInstruction, error)
 	GetActiveTaxonomyNodeByPath(ctx context.Context, path string) (TaxonomyNode, error)
+	GetAllSubjects(ctx context.Context) ([]Subject, error)
 	GetAnswerStatsForEvalItem(ctx context.Context, evalItemID uuid.UUID) (GetAnswerStatsForEvalItemRow, error)
 	GetAnswersByUserAndEval(ctx context.Context, arg GetAnswersByUserAndEvalParams) ([]GetAnswersByUserAndEvalRow, error)
 	GetArtifact(ctx context.Context, id uuid.UUID) (Artifact, error)
@@ -74,6 +80,7 @@ type Querier interface {
 	GetCorrectAnswersByAttempt(ctx context.Context, attemptID uuid.UUID) ([]UserAnswer, error)
 	GetDocument(ctx context.Context, id uuid.UUID) (Document, error)
 	GetDocumentsByRagStatus(ctx context.Context, ragStatus string) ([]Document, error)
+	GetDocumentsByTextbook(ctx context.Context, textbookID uuid.NullUUID) ([]Document, error)
 	GetDocumentsByUser(ctx context.Context, userID uuid.UUID) ([]Document, error)
 	GetDraftEvals(ctx context.Context) ([]Eval, error)
 	GetEval(ctx context.Context, id uuid.UUID) (Eval, error)
@@ -116,6 +123,9 @@ type Querier interface {
 	GetReviewsByVerdict(ctx context.Context, verdict ReviewVerdict) ([]EvalItemReview, error)
 	GetReviewsWithEvalItemDetails(ctx context.Context, arg GetReviewsWithEvalItemDetailsParams) ([]GetReviewsWithEvalItemDetailsRow, error)
 	GetSchemaTemplate(ctx context.Context, id uuid.UUID) (SchemaTemplate, error)
+	GetSubSubjectsBySubjectID(ctx context.Context, subjectID uuid.UUID) ([]SubSubject, error)
+	GetSubjectByID(ctx context.Context, id uuid.UUID) (Subject, error)
+	GetSubjectByName(ctx context.Context, name string) (Subject, error)
 	GetSystemInstruction(ctx context.Context, id uuid.UUID) (SystemInstruction, error)
 	GetTaxonomyNode(ctx context.Context, id uuid.UUID) (TaxonomyNode, error)
 	GetTestAttempt(ctx context.Context, id uuid.UUID) (TestAttempt, error)
@@ -159,6 +169,7 @@ type Querier interface {
 	UpdateDocument(ctx context.Context, arg UpdateDocumentParams) (Document, error)
 	UpdateDocumentRagStatus(ctx context.Context, arg UpdateDocumentRagStatusParams) (Document, error)
 	UpdateDocumentTaxonomyLinkState(ctx context.Context, arg UpdateDocumentTaxonomyLinkStateParams) (DocumentTaxonomyLink, error)
+	UpdateDocumentTextbook(ctx context.Context, arg UpdateDocumentTextbookParams) (Document, error)
 	UpdateTestAttemptScore(ctx context.Context, arg UpdateTestAttemptScoreParams) (TestAttempt, error)
 	UpdateTestAttemptTime(ctx context.Context, arg UpdateTestAttemptTimeParams) (TestAttempt, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)

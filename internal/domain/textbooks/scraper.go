@@ -179,3 +179,57 @@ func (s *Scraper) scrapeSubSubjectsPage(subjectURL string) ([]SubSubject, error)
 
 	return subSubjects, nil
 }
+
+// GetBooksBySubject fetches books for a given subject slug from the Atom feed
+func (s *Scraper) GetBooksBySubject(slug string) ([]Book, error) {
+	var books []Book
+
+	// Fetch the Atom feed for the subject
+	subjectURL := fmt.Sprintf("%s/%s", baseURL, slug)
+	req, err := http.NewRequest("GET", subjectURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header.Set("Accept", "application/atom+xml")
+
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch subject: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	// Parse HTML to extract book links (fallback if Atom doesn't work)
+	doc, err := goquery.NewDocumentFromReader(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse response: %w", err)
+	}
+
+	// Find all book links
+	doc.Find("a[href*='/opentextbooks/textbooks/']").Each(func(i int, s *goquery.Selection) {
+		href, exists := s.Attr("href")
+		if !exists || href == "" {
+			return
+		}
+
+		title := strings.TrimSpace(s.Text())
+		if title == "" {
+			return
+		}
+
+		// Make URL absolute if needed
+		if !strings.HasPrefix(href, "http") {
+			href = "https://open.umn.edu" + href
+		}
+
+		books = append(books, Book{
+			Title: title,
+			URL:   href,
+		})
+	})
+
+	return books, nil
+}
