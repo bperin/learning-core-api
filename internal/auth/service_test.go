@@ -7,6 +7,7 @@ import (
 
 	"learning-core-api/internal/persistance/store"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -110,4 +111,163 @@ func TestService_RefreshToken_Invalid(t *testing.T) {
 	service := NewService("secret", &mockAuthRepository{})
 	_, err := service.RefreshToken(context.Background(), "invalid-token")
 	assert.Error(t, err)
+}
+
+func TestService_GenerateTokenPair_ScopesInAccessToken(t *testing.T) {
+	service := NewService("secret", &mockAuthRepository{})
+	userID := uuid.New()
+	roles := []string{"admin"}
+
+	tokens, err := service.GenerateTokenPair(context.Background(), userID, roles)
+	require.NoError(t, err)
+	require.NotEmpty(t, tokens.AccessToken)
+
+	token, err := jwt.Parse(tokens.AccessToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	require.NoError(t, err)
+	require.True(t, token.Valid)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	require.True(t, ok)
+
+	scopes, ok := claims["scopes"].([]interface{})
+	require.True(t, ok, "scopes claim should exist and be an array")
+	require.Len(t, scopes, 2, "admin role should have read and write scopes")
+
+	scopeStrs := make([]string, len(scopes))
+	for i, s := range scopes {
+		scopeStrs[i] = s.(string)
+	}
+	assert.Contains(t, scopeStrs, "read")
+	assert.Contains(t, scopeStrs, "write")
+}
+
+func TestService_GenerateTokenPair_ScopesInRefreshToken(t *testing.T) {
+	service := NewService("secret", &mockAuthRepository{})
+	userID := uuid.New()
+	roles := []string{"learner"}
+
+	tokens, err := service.GenerateTokenPair(context.Background(), userID, roles)
+	require.NoError(t, err)
+	require.NotEmpty(t, tokens.RefreshToken)
+
+	token, err := jwt.Parse(tokens.RefreshToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	require.NoError(t, err)
+	require.True(t, token.Valid)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	require.True(t, ok)
+
+	scopes, ok := claims["scopes"].([]interface{})
+	require.True(t, ok, "scopes claim should exist and be an array")
+	require.Len(t, scopes, 2, "learner role should have read and write scopes")
+
+	scopeStrs := make([]string, len(scopes))
+	for i, s := range scopes {
+		scopeStrs[i] = s.(string)
+	}
+	assert.Contains(t, scopeStrs, "read")
+	assert.Contains(t, scopeStrs, "write")
+}
+
+func TestService_GenerateTokenPair_RolesInToken(t *testing.T) {
+	service := NewService("secret", &mockAuthRepository{})
+	userID := uuid.New()
+	roles := []string{"admin", "teacher"}
+
+	tokens, err := service.GenerateTokenPair(context.Background(), userID, roles)
+	require.NoError(t, err)
+
+	token, err := jwt.Parse(tokens.AccessToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	require.NoError(t, err)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	require.True(t, ok)
+
+	rolesInterface, ok := claims["roles"].([]interface{})
+	require.True(t, ok, "roles claim should exist and be an array")
+	require.Len(t, rolesInterface, 2)
+
+	roleStrs := make([]string, len(rolesInterface))
+	for i, r := range rolesInterface {
+		roleStrs[i] = r.(string)
+	}
+	assert.Contains(t, roleStrs, "admin")
+	assert.Contains(t, roleStrs, "teacher")
+}
+
+func TestService_RefreshToken_PreservesScopesAndRoles(t *testing.T) {
+	service := NewService("secret", &mockAuthRepository{})
+	userID := uuid.New()
+	originalRoles := []string{"admin"}
+
+	tokens, err := service.GenerateTokenPair(context.Background(), userID, originalRoles)
+	require.NoError(t, err)
+
+	refreshed, err := service.RefreshToken(context.Background(), tokens.RefreshToken)
+	require.NoError(t, err)
+	require.NotEmpty(t, refreshed.AccessToken)
+
+	token, err := jwt.Parse(refreshed.AccessToken, func(token *jwt.Token) (interface{}, error) {
+		return []byte("secret"), nil
+	})
+	require.NoError(t, err)
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	require.True(t, ok)
+
+	scopes, ok := claims["scopes"].([]interface{})
+	require.True(t, ok, "refreshed token should have scopes")
+	require.Len(t, scopes, 2)
+
+	roles, ok := claims["roles"].([]interface{})
+	require.True(t, ok, "refreshed token should have roles")
+	require.Len(t, roles, 1)
+	assert.Equal(t, "admin", roles[0].(string))
+}
+
+func TestService_ScopesFromRoles_AllRoles(t *testing.T) {
+	tests := []struct {
+		name     string
+		roles    []string
+		expected []string
+	}{
+		{
+			name:     "admin role",
+			roles:    []string{"admin"},
+			expected: []string{"read", "write"},
+		},
+		{
+			name:     "teacher role",
+			roles:    []string{"teacher"},
+			expected: []string{"read", "write"},
+		},
+		{
+			name:     "learner role",
+			roles:    []string{"learner"},
+			expected: []string{"read", "write"},
+		},
+		{
+			name:     "multiple roles",
+			roles:    []string{"admin", "teacher"},
+			expected: []string{"read", "write"},
+		},
+		{
+			name:     "empty roles",
+			roles:    []string{},
+			expected: []string{"read"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			scopes := scopesFromRoles(tt.roles)
+			assert.ElementsMatch(t, tt.expected, scopes)
+		})
+	}
 }

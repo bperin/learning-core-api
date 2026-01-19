@@ -16,13 +16,26 @@ import (
 	"learning-core-api/internal/persistance/store"
 )
 
-// @securityDefinitions.oauth2 OAuth2Auth
-// @type oauth2
-// @flow password
-// @authorizationUrl https://localhost:8080/oauth/authorize
-// @tokenUrl https://localhost:8080/oauth/token
-// @scope.read Grants read access
-// @scope.write Grants write access
+// @title Learning API
+// @version 1.0
+// @description API with password OAuth2 authentication
+// @termsOfService https://example.com/terms/
+
+// @contact.name API Support
+// @contact.email support@example.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /
+
+// =======================
+// OAuth2 (GLOBAL)
+// =======================
+
+// @securityDefinitions.oauth2.password OAuth2
+// @tokenUrl /oauth/token
 func main() {
 	// 1. Context
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)

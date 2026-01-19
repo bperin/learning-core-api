@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   authdto.TokenRequest:
     properties:
@@ -222,8 +223,18 @@ definitions:
     - UserRoleAdmin
     - UserRoleInstructor
     - UserRoleLearner
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@example.com
+    name: API Support
+  description: API with password OAuth2 authentication
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://example.com/terms/
+  title: Learning API
+  version: "1.0"
 paths:
   /attempts/{id}:
     get:
@@ -1300,4 +1311,9 @@ paths:
       summary: Get user by email
       tags:
       - users
+securityDefinitions:
+  OAuth2:
+    flow: password
+    tokenUrl: /oauth/token
+    type: oauth2
 swagger: "2.0"

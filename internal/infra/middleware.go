@@ -81,7 +81,12 @@ func JWTMiddleware(secret string) func(http.Handler) http.Handler {
 				}
 			}
 
-			ctx := authz.WithAuth(r.Context(), userID, roles, extractScopes(claims, roles))
+			// Debug logging
+			fmt.Printf("[JWT Middleware] User ID: %s, Roles: %v\n", userID, roles)
+			scopes := extractScopes(claims, roles)
+			fmt.Printf("[JWT Middleware] Scopes: %v\n", scopes)
+
+			ctx := authz.WithAuth(r.Context(), userID, roles, scopes)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

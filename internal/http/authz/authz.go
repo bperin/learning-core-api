@@ -2,6 +2,7 @@ package authz
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 )
 
@@ -41,7 +42,12 @@ func RequireRole(requiredRole string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			roles := RolesFromContext(r.Context())
+			
+			// Debug logging
+			fmt.Printf("[RequireRole] Required: %s, User roles: %v\n", requiredRole, roles)
+			
 			if len(roles) == 0 {
+				fmt.Printf("[RequireRole] No roles found in context - FORBIDDEN\n")
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
@@ -55,10 +61,12 @@ func RequireRole(requiredRole string) func(http.Handler) http.Handler {
 			}
 
 			if !hasRole {
+				fmt.Printf("[RequireRole] Role %s not found in user roles %v - FORBIDDEN\n", requiredRole, roles)
 				http.Error(w, "Forbidden", http.StatusForbidden)
 				return
 			}
 
+			fmt.Printf("[RequireRole] Role %s found - ALLOWED\n", requiredRole)
 			next.ServeHTTP(w, r)
 		})
 	}
