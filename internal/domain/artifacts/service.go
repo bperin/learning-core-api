@@ -88,3 +88,51 @@ func toNullGenerationType(value string) store.NullGenerationType {
 		Valid:          true,
 	}
 }
+
+// ListArtifacts returns paginated artifacts
+func (s *Service) ListArtifacts(ctx context.Context, limit, offset int32) ([]store.Artifact, error) {
+	artifacts, err := s.queries.ListArtifacts(ctx, store.ListArtifactsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list artifacts: %w", err)
+	}
+	return artifacts, nil
+}
+
+// GetArtifactsByType returns artifacts filtered by type
+func (s *Service) GetArtifactsByType(ctx context.Context, artifactType string) ([]store.Artifact, error) {
+	artifacts, err := s.queries.GetArtifactsByType(ctx, artifactType)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artifacts by type: %w", err)
+	}
+	return artifacts, nil
+}
+
+// GetArtifactsByStatus returns artifacts filtered by status
+func (s *Service) GetArtifactsByStatus(ctx context.Context, status string) ([]store.Artifact, error) {
+	artifacts, err := s.queries.GetArtifactsByStatus(ctx, status)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artifacts by status: %w", err)
+	}
+	return artifacts, nil
+}
+
+// GetArtifactByID returns a single artifact by ID
+func (s *Service) GetArtifactByID(ctx context.Context, id uuid.UUID) (*store.Artifact, error) {
+	artifact, err := s.queries.GetArtifact(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artifact: %w", err)
+	}
+	return &artifact, nil
+}
+
+// GetArtifactStats returns statistics about artifacts
+func (s *Service) GetArtifactStats(ctx context.Context) (*store.GetArtifactStatsRow, error) {
+	stats, err := s.queries.GetArtifactStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get artifact stats: %w", err)
+	}
+	return &stats, nil
+}

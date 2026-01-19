@@ -2,6 +2,7 @@ package infra
 
 import (
 	"bytes"
+	"database/sql"
 	"io"
 	"log"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"learning-core-api/internal/auth"
+	"learning-core-api/internal/domain/artifacts"
 	"learning-core-api/internal/domain/attempts"
 	"learning-core-api/internal/domain/chunking_configs"
 	"learning-core-api/internal/domain/documents"
@@ -31,6 +33,7 @@ import (
 type RouterDeps struct {
 	JWTSecret    string
 	Queries      *store.Queries
+	DB           *sql.DB
 	GoogleAPIKey string
 	GCSService   *gcp.GCSService
 }
@@ -151,6 +154,9 @@ func NewRouter(deps RouterDeps) http.Handler {
 	modelConfigsService := model_configs.NewService(modelConfigsRepo)
 	modelConfigsHandler := model_configs.NewHandler(modelConfigsService)
 
+	artifactsService := artifacts.NewService(deps.DB)
+	artifactsHandler := artifacts.NewHandler(artifactsService)
+
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)
 
@@ -167,6 +173,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 	registerRoleRoutes(r, deps.JWTSecret, systemInstructionsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, subjectsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, modelConfigsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, artifactsHandler)
 
 	return r
 }
