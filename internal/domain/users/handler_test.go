@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"learning-core-api/internal/domain/users"
+	"learning-core-api/internal/http/authz"
 	"learning-core-api/internal/persistance/store"
 	"learning-core-api/internal/testutil"
 )
@@ -180,4 +181,59 @@ func TestHandler_SignupDuplicateEmail(t *testing.T) {
 	handler.Signup(w, req)
 	// Should get 500 error for duplicate email
 	assert.Equal(t, http.StatusInternalServerError, w.Code)
+}
+
+func TestHandler_GetCurrentUser(t *testing.T) {
+	handler, cleanup := setupHandler(t)
+	defer cleanup()
+
+	// First, create a user via signup
+	payload := map[string]interface{}{
+		"email":    "currentuser@example.com",
+		"password": "securepassword",
+		"role":     "ADMIN",
+	}
+
+	body, err := json.Marshal(payload)
+	require.NoError(t, err)
+
+	req := httptest.NewRequest(http.MethodPost, "/signup", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	w := httptest.NewRecorder()
+	handler.Signup(w, req)
+	assert.Equal(t, http.StatusCreated, w.Code)
+
+	// Extract user ID from signup response
+	var signupResult users.User
+	err = json.Unmarshal(w.Body.Bytes(), &signupResult)
+	require.NoError(t, err)
+
+	// Now test GetCurrentUser with the user ID in context
+	req = httptest.NewRequest(http.MethodGet, "/users/me", nil)
+	ctx := authz.WithAuth(req.Context(), signupResult.ID.String(), []string{"admin"}, []string{"read", "write"})
+	req = req.WithContext(ctx)
+	w = httptest.NewRecorder()
+
+	handler.GetCurrentUser(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	var result users.User
+	err = json.Unmarshal(w.Body.Bytes(), &result)
+	require.NoError(t, err)
+	assert.Equal(t, signupResult.ID, result.ID)
+	assert.Equal(t, "currentuser@example.com", result.Email)
+}
+
+func TestHandler_GetCurrentUser_NoUserID(t *testing.T) {
+	handler, cleanup := setupHandler(t)
+	defer cleanup()
+
+	// Request without user ID in context
+	req := httptest.NewRequest(http.MethodGet, "/users/me", nil)
+	w := httptest.NewRecorder()
+
+	handler.GetCurrentUser(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }

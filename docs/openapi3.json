@@ -1,6 +1,90 @@
 {
   "components": {
     "schemas": {
+      "artifacts.Artifact": {
+        "properties": {
+          "attempt_id": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "eval_id": {
+            "type": "string"
+          },
+          "eval_item_id": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "input_hash": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          },
+          "prompt": {
+            "type": "string"
+          },
+          "prompt_template_id": {
+            "type": "string"
+          },
+          "reviewer_id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "artifacts.ArtifactListResponse": {
+        "properties": {
+          "data": {
+            "items": {
+              "$ref": "#/components/schemas/artifacts.Artifact"
+            },
+            "type": "array"
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/artifacts.PaginationMeta"
+          }
+        },
+        "type": "object"
+      },
+      "artifacts.PaginationMeta": {
+        "properties": {
+          "has_next": {
+            "type": "boolean"
+          },
+          "has_previous": {
+            "type": "boolean"
+          },
+          "page": {
+            "type": "integer"
+          },
+          "page_size": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "total_pages": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "authdto.TokenRequest": {
         "properties": {
           "email": {
@@ -86,6 +170,67 @@
           },
           "is_active": {
             "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "content_discovery.BookListRequest": {
+        "properties": {
+          "max_books": {
+            "description": "Default to 10 if not specified",
+            "type": "integer"
+          },
+          "subject_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "content_discovery.BookListResponse": {
+        "properties": {
+          "books": {
+            "items": {
+              "$ref": "#/components/schemas/content_discovery.BookWithSubject"
+            },
+            "type": "array"
+          },
+          "message": {
+            "type": "string"
+          },
+          "total": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "content_discovery.BookWithSubject": {
+        "properties": {
+          "authors": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "boolean"
+          },
+          "subject_id": {
+            "type": "string"
+          },
+          "subject_name": {
+            "type": "string"
+          },
+          "subject_url": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
           }
         },
         "type": "object"
@@ -289,6 +434,26 @@
         },
         "type": "object"
       },
+      "store.GetArtifactStatsRow": {
+        "properties": {
+          "error_count": {
+            "type": "integer"
+          },
+          "pending_count": {
+            "type": "integer"
+          },
+          "ready_count": {
+            "type": "integer"
+          },
+          "total_artifacts": {
+            "type": "integer"
+          },
+          "with_errors": {
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
       "subjects.SubSubject": {
         "properties": {
           "created_at": {
@@ -330,6 +495,26 @@
             "type": "array"
           },
           "updated_at": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "subjects.SubjectForSelection": {
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "parent_id": {
             "type": "string"
           },
           "url": {
@@ -471,6 +656,307 @@
   },
   "openapi": "3.0.3",
   "paths": {
+    "/artifacts": {
+      "get": {
+        "description": "Get all artifacts with pagination support",
+        "parameters": [
+          {
+            "description": "Page number (default: 1)",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size (default: 20, max: 100)",
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/artifacts.ArtifactListResponse"
+                }
+              }
+            },
+            "description": "Paginated list of artifacts"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid pagination parameters"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List all artifacts",
+        "tags": [
+          "Artifacts"
+        ]
+      }
+    },
+    "/artifacts/stats": {
+      "get": {
+        "description": "Retrieve statistics about artifacts (counts by status, etc.)",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/store.GetArtifactStatsRow"
+                }
+              }
+            },
+            "description": "Artifact statistics"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get artifact statistics",
+        "tags": [
+          "Artifacts"
+        ]
+      }
+    },
+    "/artifacts/status/{status}": {
+      "get": {
+        "description": "Retrieve artifacts filtered by their status",
+        "parameters": [
+          {
+            "description": "Artifact status",
+            "in": "path",
+            "name": "status",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/artifacts.Artifact"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of artifacts"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get artifacts by status",
+        "tags": [
+          "Artifacts"
+        ]
+      }
+    },
+    "/artifacts/type/{type}": {
+      "get": {
+        "description": "Retrieve artifacts filtered by their type with pagination",
+        "parameters": [
+          {
+            "description": "Artifact type",
+            "in": "path",
+            "name": "type",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Page number (default: 1)",
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Page size (default: 20, max: 100)",
+            "in": "query",
+            "name": "page_size",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/artifacts.ArtifactListResponse"
+                }
+              }
+            },
+            "description": "Paginated list of artifacts"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get artifacts by type",
+        "tags": [
+          "Artifacts"
+        ]
+      }
+    },
+    "/artifacts/{id}": {
+      "get": {
+        "description": "Retrieve a specific artifact by its UUID",
+        "parameters": [
+          {
+            "description": "Artifact ID (UUID)",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/artifacts.Artifact"
+                }
+              }
+            },
+            "description": "Artifact details"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid ID format"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Artifact not found"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get artifact by ID",
+        "tags": [
+          "Artifacts"
+        ]
+      }
+    },
     "/attempts/{id}": {
       "get": {
         "description": "Learner+Teacher+Admin. Get a test attempt by ID.",
@@ -867,6 +1353,72 @@
         "summary": "Activate chunking config",
         "tags": [
           "Chunking Configs"
+        ]
+      }
+    },
+    "/content-discovery/books": {
+      "post": {
+        "description": "Fetch books from the provided subject URLs for test creation workflow",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/content_discovery.BookListRequest"
+              }
+            }
+          },
+          "description": "Subject IDs and max books",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/content_discovery.BookListResponse"
+                }
+              }
+            },
+            "description": "List of books with subject information"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid request body"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List books from selected subjects",
+        "tags": [
+          "Content Discovery"
         ]
       }
     },
@@ -2278,6 +2830,47 @@
         ]
       }
     },
+    "/subjects/for-selection": {
+      "get": {
+        "description": "Retrieve subjects formatted for selection UI (tag cloud style)",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/subjects.SubjectForSelection"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List subjects for test creation selection",
+        "tags": [
+          "subjects"
+        ]
+      }
+    },
     "/system-instructions": {
       "get": {
         "description": "Get all system instructions",
@@ -2684,6 +3277,54 @@
           }
         ],
         "summary": "Get user by email",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/me": {
+      "get": {
+        "description": "Retrieve the current user's profile from their JWT token",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/users.User"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "unauthorized"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get current authenticated user",
         "tags": [
           "users"
         ]

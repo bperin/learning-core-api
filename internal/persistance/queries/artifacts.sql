@@ -65,3 +65,16 @@ SELECT
   COUNT(CASE WHEN status = 'ERROR' THEN 1 END) as error_count,
   COUNT(CASE WHEN error IS NOT NULL THEN 1 END) as with_errors
 FROM artifacts;
+
+-- name: ListArtifactsByType :many
+SELECT * FROM artifacts 
+WHERE type = $1 
+ORDER BY created_at DESC 
+LIMIT $2 OFFSET $3;
+
+-- name: CountArtifactsByType :one
+SELECT COUNT(*) FROM artifacts 
+WHERE type = $1;
+
+-- name: CountArtifacts :one
+SELECT COUNT(*) FROM artifacts;

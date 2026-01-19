@@ -611,6 +611,86 @@ func (q *Queries) GetLatestArtifactByTypeAndEntity(ctx context.Context, arg GetL
 	return i, err
 }
 
+const countArtifacts = `-- name: CountArtifacts :one
+SELECT COUNT(*) FROM artifacts
+`
+
+func (q *Queries) CountArtifacts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countArtifacts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countArtifactsByType = `-- name: CountArtifactsByType :one
+SELECT COUNT(*) FROM artifacts 
+WHERE type = $1
+`
+
+func (q *Queries) CountArtifactsByType(ctx context.Context, type_ string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countArtifactsByType, type_)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const listArtifactsByType = `-- name: ListArtifactsByType :many
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts 
+WHERE type = $1 
+ORDER BY created_at DESC 
+LIMIT $2 OFFSET $3
+`
+
+type ListArtifactsByTypeParams struct {
+	Type   string `json:"type"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
+}
+
+func (q *Queries) ListArtifactsByType(ctx context.Context, arg ListArtifactsByTypeParams) ([]Artifact, error) {
+	rows, err := q.db.QueryContext(ctx, listArtifactsByType, arg.Type, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Artifact
+	for rows.Next() {
+		var i Artifact
+		if err := rows.Scan(
+			&i.ID,
+			&i.Type,
+			&i.Status,
+			&i.EvalID,
+			&i.EvalItemID,
+			&i.AttemptID,
+			&i.ReviewerID,
+			&i.Text,
+			&i.OutputJson,
+			&i.Model,
+			&i.Prompt,
+			&i.InputHash,
+			&i.Meta,
+			&i.Error,
+			&i.CreatedAt,
+			&i.PromptTemplateID,
+			&i.SchemaTemplateID,
+			&i.ModelParams,
+			&i.PromptRender,
+			&i.GenerationType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listArtifacts = `-- name: ListArtifacts :many
 SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `

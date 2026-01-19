@@ -28,6 +28,15 @@ func WithAuth(ctx context.Context, userID string, roles, scopes []string) contex
 	return ctx
 }
 
+func UserIDFromContext(ctx context.Context) string {
+	userID, _ := ctx.Value(userIDKey).(string)
+	return userID
+}
+
+func UserIDContextKey() contextKey {
+	return userIDKey
+}
+
 func RolesFromContext(ctx context.Context) []string {
 	roles, _ := ctx.Value(rolesKey).([]string)
 	return roles

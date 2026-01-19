@@ -15,6 +15,7 @@ import (
 	"learning-core-api/internal/domain/artifacts"
 	"learning-core-api/internal/domain/attempts"
 	"learning-core-api/internal/domain/chunking_configs"
+	"learning-core-api/internal/domain/content_discovery"
 	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/evals"
 	"learning-core-api/internal/domain/model_configs"
@@ -157,6 +158,9 @@ func NewRouter(deps RouterDeps) http.Handler {
 	artifactsService := artifacts.NewService(deps.DB)
 	artifactsHandler := artifacts.NewHandler(artifactsService)
 
+	contentDiscoveryService := content_discovery.NewService(subjectsService)
+	contentDiscoveryHandler := content_discovery.NewHandler(contentDiscoveryService)
+
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)
 
@@ -174,6 +178,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 	registerRoleRoutes(r, deps.JWTSecret, subjectsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, modelConfigsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, artifactsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, contentDiscoveryHandler)
 
 	return r
 }

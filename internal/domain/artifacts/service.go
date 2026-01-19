@@ -90,15 +90,40 @@ func toNullGenerationType(value string) store.NullGenerationType {
 }
 
 // ListArtifacts returns paginated artifacts
-func (s *Service) ListArtifacts(ctx context.Context, limit, offset int32) ([]store.Artifact, error) {
+func (s *Service) ListArtifacts(ctx context.Context, limit, offset int32) ([]store.Artifact, int64, error) {
 	artifacts, err := s.queries.ListArtifacts(ctx, store.ListArtifactsParams{
 		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to list artifacts: %w", err)
+		return nil, 0, fmt.Errorf("failed to list artifacts: %w", err)
 	}
-	return artifacts, nil
+
+	total, err := s.queries.CountArtifacts(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count artifacts: %w", err)
+	}
+
+	return artifacts, total, nil
+}
+
+// ListArtifactsByType returns paginated artifacts filtered by type
+func (s *Service) ListArtifactsByType(ctx context.Context, artifactType string, limit, offset int32) ([]store.Artifact, int64, error) {
+	artifacts, err := s.queries.ListArtifactsByType(ctx, store.ListArtifactsByTypeParams{
+		Type:   artifactType,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to list artifacts by type: %w", err)
+	}
+
+	total, err := s.queries.CountArtifactsByType(ctx, artifactType)
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count artifacts by type: %w", err)
+	}
+
+	return artifacts, total, nil
 }
 
 // GetArtifactsByType returns artifacts filtered by type

@@ -47,28 +47,46 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Security OAuth2Auth[read]
 // @Param page query int false "Page number (default: 1)"
 // @Param page_size query int false "Page size (default: 20, max: 100)"
-// @Success 200 {object} httpPkg.PaginatedResponse[store.Artifact] "Paginated list of artifacts"
+// @Success 200 {object} artifacts.ArtifactListResponse "Paginated list of artifacts"
 // @Failure 400 {object} map[string]string "Bad request - invalid pagination parameters"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /artifacts [get]
 func (h *Handler) ListArtifacts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	
+
 	// Get pagination parameters
 	pagination := httpPkg.GetPaginationParams(r)
-	
+
 	// Get artifacts
-	artifacts, err := h.service.ListArtifacts(ctx, int32(pagination.Limit), int32(pagination.Offset))
+	storeArtifacts, total, err := h.service.ListArtifacts(ctx, int32(pagination.Limit), int32(pagination.Offset))
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	
-	// For now, we'll use the count of returned items as total
-	// In a real implementation, you'd want a separate count query
-	total := int64(len(artifacts))
-	
-	response := httpPkg.NewPaginatedResponse(artifacts, pagination, total)
+
+	// Convert store artifacts to domain artifacts
+	var domainArtifacts []Artifact
+	for _, storeArtifact := range storeArtifacts {
+		domainArtifacts = append(domainArtifacts, ConvertFromStore(storeArtifact))
+	}
+
+	// Calculate pagination metadata
+	totalPages := int(total) / pagination.PageSize
+	if int(total)%pagination.PageSize > 0 {
+		totalPages++
+	}
+
+	response := ArtifactListResponse{
+		Data: domainArtifacts,
+		Pagination: PaginationMeta{
+			Page:        pagination.Page,
+			PageSize:    pagination.PageSize,
+			Total:       total,
+			TotalPages:  totalPages,
+			HasNext:     pagination.Page < totalPages,
+			HasPrevious: pagination.Page > 1,
+		},
+	}
 	render.JSON(w, http.StatusOK, response)
 }
 
@@ -78,7 +96,7 @@ func (h *Handler) ListArtifacts(w http.ResponseWriter, r *http.Request) {
 // @Tags Artifacts
 // @Security OAuth2Auth[read]
 // @Param id path string true "Artifact ID (UUID)"
-// @Success 200 {object} store.Artifact "Artifact details"
+// @Success 200 {object} artifacts.Artifact "Artifact details"
 // @Failure 400 {object} map[string]string "Bad request - invalid ID format"
 // @Failure 404 {object} map[string]string "Artifact not found"
 // @Router /artifacts/{id} [get]
@@ -97,16 +115,18 @@ func (h *Handler) GetArtifactByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, http.StatusOK, artifact)
+	render.JSON(w, http.StatusOK, ConvertFromStore(*artifact))
 }
 
-// GetArtifactsByType retrieves artifacts filtered by type.
+// GetArtifactsByType godoc
 // @Summary Get artifacts by type
-// @Description Retrieve artifacts filtered by their type
+// @Description Retrieve artifacts filtered by their type with pagination
 // @Tags Artifacts
 // @Security OAuth2Auth[read]
 // @Param type path string true "Artifact type"
-// @Success 200 {array} store.Artifact "List of artifacts"
+// @Param page query int false "Page number (default: 1)"
+// @Param page_size query int false "Page size (default: 20, max: 100)"
+// @Success 200 {object} artifacts.ArtifactListResponse "Paginated list of artifacts"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /artifacts/type/{type} [get]
 func (h *Handler) GetArtifactsByType(w http.ResponseWriter, r *http.Request) {
@@ -117,13 +137,36 @@ func (h *Handler) GetArtifactsByType(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := r.Context()
-	artifacts, err := h.service.GetArtifactsByType(ctx, artifactType)
+	pagination := httpPkg.GetPaginationParams(r)
+
+	storeArtifacts, total, err := h.service.ListArtifactsByType(ctx, artifactType, int32(pagination.Limit), int32(pagination.Offset))
 	if err != nil {
 		render.Error(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	render.JSON(w, http.StatusOK, artifacts)
+	var domainArtifacts []Artifact
+	for _, storeArtifact := range storeArtifacts {
+		domainArtifacts = append(domainArtifacts, ConvertFromStore(storeArtifact))
+	}
+
+	totalPages := int(total) / pagination.PageSize
+	if int(total)%pagination.PageSize > 0 {
+		totalPages++
+	}
+
+	response := ArtifactListResponse{
+		Data: domainArtifacts,
+		Pagination: PaginationMeta{
+			Page:        pagination.Page,
+			PageSize:    pagination.PageSize,
+			Total:       total,
+			TotalPages:  totalPages,
+			HasNext:     pagination.Page < totalPages,
+			HasPrevious: pagination.Page > 1,
+		},
+	}
+	render.JSON(w, http.StatusOK, response)
 }
 
 // GetArtifactsByStatus retrieves artifacts filtered by status.
@@ -132,7 +175,7 @@ func (h *Handler) GetArtifactsByType(w http.ResponseWriter, r *http.Request) {
 // @Tags Artifacts
 // @Security OAuth2Auth[read]
 // @Param status path string true "Artifact status"
-// @Success 200 {array} store.Artifact "List of artifacts"
+// @Success 200 {array} artifacts.Artifact "List of artifacts"
 // @Failure 500 {object} map[string]string "Internal server error"
 // @Router /artifacts/status/{status} [get]
 func (h *Handler) GetArtifactsByStatus(w http.ResponseWriter, r *http.Request) {

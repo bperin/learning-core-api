@@ -1,5 +1,60 @@
 basePath: /
 definitions:
+  artifacts.Artifact:
+    properties:
+      attempt_id:
+        type: string
+      created_at:
+        type: string
+      error:
+        type: string
+      eval_id:
+        type: string
+      eval_item_id:
+        type: string
+      id:
+        type: string
+      input_hash:
+        type: string
+      model:
+        type: string
+      prompt:
+        type: string
+      prompt_template_id:
+        type: string
+      reviewer_id:
+        type: string
+      status:
+        type: string
+      text:
+        type: string
+      type:
+        type: string
+    type: object
+  artifacts.ArtifactListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/artifacts.Artifact'
+        type: array
+      pagination:
+        $ref: '#/definitions/artifacts.PaginationMeta'
+    type: object
+  artifacts.PaginationMeta:
+    properties:
+      has_next:
+        type: boolean
+      has_previous:
+        type: boolean
+      page:
+        type: integer
+      page_size:
+        type: integer
+      total:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
   authdto.TokenRequest:
     properties:
       email:
@@ -60,6 +115,46 @@ definitions:
         type: string
       is_active:
         type: boolean
+    type: object
+  content_discovery.BookListRequest:
+    properties:
+      max_books:
+        description: Default to 10 if not specified
+        type: integer
+      subject_ids:
+        items:
+          type: string
+        type: array
+    type: object
+  content_discovery.BookListResponse:
+    properties:
+      books:
+        items:
+          $ref: '#/definitions/content_discovery.BookWithSubject'
+        type: array
+      message:
+        type: string
+      total:
+        type: integer
+    type: object
+  content_discovery.BookWithSubject:
+    properties:
+      authors:
+        type: string
+      description:
+        type: string
+      selected:
+        type: boolean
+      subject_id:
+        type: string
+      subject_name:
+        type: string
+      subject_url:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
     type: object
   model_configs.CreateModelConfigRequest:
     properties:
@@ -198,6 +293,19 @@ definitions:
         example: 1
         type: integer
     type: object
+  store.GetArtifactStatsRow:
+    properties:
+      error_count:
+        type: integer
+      pending_count:
+        type: integer
+      ready_count:
+        type: integer
+      total_artifacts:
+        type: integer
+      with_errors:
+        type: integer
+    type: object
   subjects.SubSubject:
     properties:
       created_at:
@@ -226,6 +334,19 @@ definitions:
           $ref: '#/definitions/subjects.SubSubject'
         type: array
       updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  subjects.SubjectForSelection:
+    properties:
+      display_name:
+        type: string
+      full_name:
+        type: string
+      id:
+        type: string
+      parent_id:
         type: string
       url:
         type: string
@@ -312,6 +433,155 @@ info:
   title: Learning API
   version: "1.0"
 paths:
+  /artifacts:
+    get:
+      description: Get all artifacts with pagination support
+      parameters:
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Page size (default: 20, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: Paginated list of artifacts
+          schema:
+            $ref: '#/definitions/artifacts.ArtifactListResponse'
+        "400":
+          description: Bad request - invalid pagination parameters
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List all artifacts
+      tags:
+      - Artifacts
+  /artifacts/{id}:
+    get:
+      description: Retrieve a specific artifact by its UUID
+      parameters:
+      - description: Artifact ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Artifact details
+          schema:
+            $ref: '#/definitions/artifacts.Artifact'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Artifact not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get artifact by ID
+      tags:
+      - Artifacts
+  /artifacts/stats:
+    get:
+      description: Retrieve statistics about artifacts (counts by status, etc.)
+      responses:
+        "200":
+          description: Artifact statistics
+          schema:
+            $ref: '#/definitions/store.GetArtifactStatsRow'
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get artifact statistics
+      tags:
+      - Artifacts
+  /artifacts/status/{status}:
+    get:
+      description: Retrieve artifacts filtered by their status
+      parameters:
+      - description: Artifact status
+        in: path
+        name: status
+        required: true
+        type: string
+      responses:
+        "200":
+          description: List of artifacts
+          schema:
+            items:
+              $ref: '#/definitions/artifacts.Artifact'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get artifacts by status
+      tags:
+      - Artifacts
+  /artifacts/type/{type}:
+    get:
+      description: Retrieve artifacts filtered by their type with pagination
+      parameters:
+      - description: Artifact type
+        in: path
+        name: type
+        required: true
+        type: string
+      - description: 'Page number (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Page size (default: 20, max: 100)'
+        in: query
+        name: page_size
+        type: integer
+      responses:
+        "200":
+          description: Paginated list of artifacts
+          schema:
+            $ref: '#/definitions/artifacts.ArtifactListResponse'
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get artifacts by type
+      tags:
+      - Artifacts
   /attempts/{id}:
     get:
       consumes:
@@ -526,6 +796,43 @@ paths:
       summary: Get active chunking config
       tags:
       - Chunking Configs
+  /content-discovery/books:
+    post:
+      consumes:
+      - application/json
+      description: Fetch books from the provided subject URLs for test creation workflow
+      parameters:
+      - description: Subject IDs and max books
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/content_discovery.BookListRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of books with subject information
+          schema:
+            $ref: '#/definitions/content_discovery.BookListResponse'
+        "400":
+          description: Bad request - invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List books from selected subjects
+      tags:
+      - Content Discovery
   /eval-items/{id}/reviews:
     get:
       consumes:
@@ -1277,6 +1584,30 @@ paths:
       summary: List all subjects
       tags:
       - subjects
+  /subjects/for-selection:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve subjects formatted for selection UI (tag cloud style)
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/subjects.SubjectForSelection'
+            type: array
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List subjects for test creation selection
+      tags:
+      - subjects
   /system-instructions:
     get:
       description: Get all system instructions
@@ -1555,6 +1886,32 @@ paths:
       - OAuth2Auth:
         - read
       summary: Get user by email
+      tags:
+      - users
+  /users/me:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the current user's profile from their JWT token
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.User'
+        "401":
+          description: unauthorized
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get current authenticated user
       tags:
       - users
 securityDefinitions:

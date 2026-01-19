@@ -23,3 +23,11 @@ type SubSubject struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
+
+type SubjectForSelection struct {
+	ID          uuid.UUID  `json:"id"`
+	DisplayName string     `json:"display_name"`
+	FullName    string     `json:"full_name"`
+	URL         string     `json:"url"`
+	ParentID    *uuid.UUID `json:"parent_id,omitempty"`
+}

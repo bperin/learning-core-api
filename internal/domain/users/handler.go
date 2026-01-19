@@ -32,11 +32,16 @@ func (h *Handler) RegisterAdminRoutes(r chi.Router) {
 	r.With(authz.RequireScope("write")).Post("/users", h.CreateUser)
 	r.With(authz.RequireScope("read")).Get("/users/email/{email}", h.GetUserByEmail)
 	r.With(authz.RequireScope("write")).Delete("/users/{id}", h.DeleteUser)
+	r.Get("/users/me", h.GetCurrentUser)
 }
 
-func (h *Handler) RegisterTeacherRoutes(r chi.Router) {}
+func (h *Handler) RegisterTeacherRoutes(r chi.Router) {
+	r.Get("/users/me", h.GetCurrentUser)
+}
 
-func (h *Handler) RegisterLearnerRoutes(r chi.Router) {}
+func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
+	r.Get("/users/me", h.GetCurrentUser)
+}
 
 // CreateUser godoc
 // @Summary Create a new user
@@ -235,6 +240,44 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, http.StatusCreated, user)
+}
+
+// GetCurrentUser godoc
+// @Summary Get current authenticated user
+// @Description Retrieve the current user's profile from their JWT token
+// @Tags users
+// @Accept json
+// @Produce json
+// @Success 200 {object} users.User
+// @Failure 401 {string} string "unauthorized"
+// @Failure 500 {string} string "internal server error"
+// @Security OAuth2Auth[read]
+// @Router /users/me [get]
+func (h *Handler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	// Get user ID from context (set by JWT middleware)
+	userID, ok := ctx.Value(authz.UserIDContextKey()).(string)
+	if !ok || userID == "" {
+		render.Error(w, http.StatusUnauthorized, "User ID not found in token")
+		return
+	}
+
+	// Parse UUID
+	id, err := uuid.Parse(userID)
+	if err != nil {
+		render.Error(w, http.StatusUnauthorized, "Invalid user ID in token")
+		return
+	}
+
+	// Get user by ID
+	user, err := h.service.GetUserByID(ctx, id)
+	if err != nil {
+		render.Error(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	render.JSON(w, http.StatusOK, user)
 }
 
 // hashPassword hashes a password using bcrypt
