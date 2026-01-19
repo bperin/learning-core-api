@@ -154,6 +154,8 @@ type Querier interface {
 	ListModelConfigs(ctx context.Context) ([]ModelConfig, error)
 	ListPromptTemplates(ctx context.Context, arg ListPromptTemplatesParams) ([]PromptTemplate, error)
 	ListSchemaTemplatesByGenerationType(ctx context.Context, generationType GenerationType) ([]SchemaTemplate, error)
+	ListSubSubjectsBySubjectID(ctx context.Context, subjectID uuid.UUID) ([]SubSubject, error)
+	ListSubjects(ctx context.Context) ([]Subject, error)
 	ListSystemInstructions(ctx context.Context) ([]SystemInstruction, error)
 	ListTaxonomyNodesByPrefix(ctx context.Context, dollar_1 sql.NullString) ([]TaxonomyNode, error)
 	ListTestAttempts(ctx context.Context, arg ListTestAttemptsParams) ([]TestAttempt, error)

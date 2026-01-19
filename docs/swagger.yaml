@@ -61,6 +61,50 @@ definitions:
       is_active:
         type: boolean
     type: object
+  model_configs.CreateModelConfigRequest:
+    properties:
+      created_by:
+        type: string
+      is_active:
+        type: boolean
+      max_tokens:
+        type: integer
+      mime_type:
+        type: string
+      model_name:
+        type: string
+      temperature:
+        type: number
+      top_k:
+        type: number
+      top_p:
+        type: number
+    type: object
+  model_configs.ModelConfig:
+    properties:
+      created_at:
+        type: string
+      created_by:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+      max_tokens:
+        type: integer
+      mime_type:
+        type: string
+      model_name:
+        type: string
+      temperature:
+        type: number
+      top_k:
+        type: number
+      top_p:
+        type: number
+      version:
+        type: integer
+    type: object
   prompt_templates.CreatePromptTemplateVersionRequest:
     properties:
       created_by:
@@ -153,6 +197,38 @@ definitions:
       version:
         example: 1
         type: integer
+    type: object
+  subjects.SubSubject:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      subject_id:
+        type: string
+      updated_at:
+        type: string
+      url:
+        type: string
+    type: object
+  subjects.Subject:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sub_subjects:
+        items:
+          $ref: '#/definitions/subjects.SubSubject'
+        type: array
+      updated_at:
+        type: string
+      url:
+        type: string
     type: object
   system_instructions.CreateSystemInstructionRequest:
     properties:
@@ -604,6 +680,152 @@ paths:
       summary: Publish eval
       tags:
       - evals
+  /model-configs:
+    get:
+      description: Get all model configurations
+      responses:
+        "200":
+          description: List of model configs
+          schema:
+            items:
+              $ref: '#/definitions/model_configs.ModelConfig'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List all model configs
+      tags:
+      - Model Configs
+    post:
+      description: Create a new model configuration
+      parameters:
+      - description: Model config data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/model_configs.CreateModelConfigRequest'
+      responses:
+        "201":
+          description: Created model config
+          schema:
+            $ref: '#/definitions/model_configs.ModelConfig'
+        "400":
+          description: Bad request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create model config
+      tags:
+      - Model Configs
+  /model-configs/{id}:
+    get:
+      description: Retrieve a specific model configuration by its UUID
+      parameters:
+      - description: Config ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Model config details
+          schema:
+            $ref: '#/definitions/model_configs.ModelConfig'
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Config not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get model config by ID
+      tags:
+      - Model Configs
+  /model-configs/{id}/activate:
+    post:
+      description: Mark a model configuration as active
+      parameters:
+      - description: Config ID (UUID)
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad request - invalid ID format
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Config not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Activate model config
+      tags:
+      - Model Configs
+  /model-configs/active:
+    get:
+      description: Retrieve the currently active model configuration
+      responses:
+        "200":
+          description: Active model config
+          schema:
+            $ref: '#/definitions/model_configs.ModelConfig'
+        "404":
+          description: Active config not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get active model config
+      tags:
+      - Model Configs
   /oauth/token:
     post:
       consumes:
@@ -1031,6 +1253,30 @@ paths:
       summary: Sign up a new user
       tags:
       - users
+  /subjects:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all academic subjects with their nested sub-subjects
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/subjects.Subject'
+            type: array
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List all subjects
+      tags:
+      - subjects
   /system-instructions:
     get:
       description: Get all system instructions

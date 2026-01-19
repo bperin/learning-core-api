@@ -7,23 +7,25 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+
 	"learning-core-api/internal/auth"
 	"learning-core-api/internal/domain/attempts"
 	"learning-core-api/internal/domain/chunking_configs"
 	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/evals"
+	"learning-core-api/internal/domain/model_configs"
 	"learning-core-api/internal/domain/prompt_templates"
 	"learning-core-api/internal/domain/reviews"
 	"learning-core-api/internal/domain/schema_templates"
+	"learning-core-api/internal/domain/subjects"
 	"learning-core-api/internal/domain/system_instructions"
 	"learning-core-api/internal/domain/textbooks"
 	"learning-core-api/internal/domain/users"
 	"learning-core-api/internal/gcp"
 	"learning-core-api/internal/http/authz"
 	"learning-core-api/internal/persistance/store"
-
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 type RouterDeps struct {
@@ -43,10 +45,10 @@ type RoleRouteRegistrar interface {
 func loggingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		timestamp := time.Now().Format(time.RFC3339)
-		
+
 		log.Printf("\n[%s] [API Request] %s %s", timestamp, r.Method, r.URL.Path)
 		log.Printf("[API Headers] %v", r.Header)
-		
+
 		authHeader := r.Header.Get("Authorization")
 		if authHeader != "" {
 			tokenPreview := authHeader
@@ -57,7 +59,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		} else {
 			log.Printf("[API Auth] ✗ NO Authorization header!")
 		}
-		
+
 		var bodyBytes []byte
 		if r.Body != nil {
 			bodyBytes, _ = io.ReadAll(r.Body)
@@ -66,11 +68,11 @@ func loggingMiddleware(next http.Handler) http.Handler {
 				log.Printf("[API Request Body] %s", string(bodyBytes))
 			}
 		}
-		
+
 		wrappedWriter := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
-		
+
 		next.ServeHTTP(wrappedWriter, r)
-		
+
 		log.Printf("[API Response] %d %s %s", wrappedWriter.statusCode, r.Method, r.URL.Path)
 		log.Printf("[API Response Headers] %v", wrappedWriter.Header())
 	})
@@ -141,6 +143,14 @@ func NewRouter(deps RouterDeps) http.Handler {
 	systemInstructionsService := system_instructions.NewService(systemInstructionsRepo)
 	systemInstructionsHandler := system_instructions.NewHandler(systemInstructionsService)
 
+	subjectsRepo := subjects.NewRepository(deps.Queries)
+	subjectsService := subjects.NewService(subjectsRepo)
+	subjectsHandler := subjects.NewHandler(subjectsService)
+
+	modelConfigsRepo := model_configs.NewRepository(deps.Queries)
+	modelConfigsService := model_configs.NewService(modelConfigsRepo)
+	modelConfigsHandler := model_configs.NewHandler(modelConfigsService)
+
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)
 
@@ -155,6 +165,8 @@ func NewRouter(deps RouterDeps) http.Handler {
 	registerRoleRoutes(r, deps.JWTSecret, schemaTemplatesHandler)
 	registerRoleRoutes(r, deps.JWTSecret, chunkingConfigsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, systemInstructionsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, subjectsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, modelConfigsHandler)
 
 	return r
 }

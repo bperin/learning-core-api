@@ -619,6 +619,240 @@ const docTemplate = `{
                 }
             }
         },
+        "/model-configs": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Auth": [
+                            "read"
+                        ]
+                    }
+                ],
+                "description": "Get all model configurations",
+                "tags": [
+                    "Model Configs"
+                ],
+                "summary": "List all model configs",
+                "responses": {
+                    "200": {
+                        "description": "List of model configs",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/model_configs.ModelConfig"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Auth": [
+                            "write"
+                        ]
+                    }
+                ],
+                "description": "Create a new model configuration",
+                "tags": [
+                    "Model Configs"
+                ],
+                "summary": "Create model config",
+                "parameters": [
+                    {
+                        "description": "Model config data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model_configs.CreateModelConfigRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created model config",
+                        "schema": {
+                            "$ref": "#/definitions/model_configs.ModelConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model-configs/active": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Auth": [
+                            "read"
+                        ]
+                    }
+                ],
+                "description": "Retrieve the currently active model configuration",
+                "tags": [
+                    "Model Configs"
+                ],
+                "summary": "Get active model config",
+                "responses": {
+                    "200": {
+                        "description": "Active model config",
+                        "schema": {
+                            "$ref": "#/definitions/model_configs.ModelConfig"
+                        }
+                    },
+                    "404": {
+                        "description": "Active config not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model-configs/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Auth": [
+                            "read"
+                        ]
+                    }
+                ],
+                "description": "Retrieve a specific model configuration by its UUID",
+                "tags": [
+                    "Model Configs"
+                ],
+                "summary": "Get model config by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Model config details",
+                        "schema": {
+                            "$ref": "#/definitions/model_configs.ModelConfig"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Config not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/model-configs/{id}/activate": {
+            "post": {
+                "security": [
+                    {
+                        "OAuth2Auth": [
+                            "write"
+                        ]
+                    }
+                ],
+                "description": "Mark a model configuration as active",
+                "tags": [
+                    "Model Configs"
+                ],
+                "summary": "Activate model config",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Config ID (UUID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad request - invalid ID format",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Config not found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/oauth/token": {
             "post": {
                 "description": "Issue or refresh OAuth2 tokens using supported grant types.\nSupported grant types:\n- password: exchange email + password for tokens\n- refresh_token: exchange refresh_token for new access token",
@@ -1284,6 +1518,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/subjects": {
+            "get": {
+                "security": [
+                    {
+                        "OAuth2Auth": [
+                            "read"
+                        ]
+                    }
+                ],
+                "description": "Retrieve all academic subjects with their nested sub-subjects",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "subjects"
+                ],
+                "summary": "List all subjects",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/subjects.Subject"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "/system-instructions": {
             "get": {
                 "security": [
@@ -1822,6 +2095,73 @@ const docTemplate = `{
                 }
             }
         },
+        "model_configs.CreateModelConfigRequest": {
+            "type": "object",
+            "properties": {
+                "created_by": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "max_tokens": {
+                    "type": "integer"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "model_name": {
+                    "type": "string"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "top_k": {
+                    "type": "number"
+                },
+                "top_p": {
+                    "type": "number"
+                }
+            }
+        },
+        "model_configs.ModelConfig": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "created_by": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "is_active": {
+                    "type": "boolean"
+                },
+                "max_tokens": {
+                    "type": "integer"
+                },
+                "mime_type": {
+                    "type": "string"
+                },
+                "model_name": {
+                    "type": "string"
+                },
+                "temperature": {
+                    "type": "number"
+                },
+                "top_k": {
+                    "type": "number"
+                },
+                "top_p": {
+                    "type": "number"
+                },
+                "version": {
+                    "type": "integer"
+                }
+            }
+        },
         "prompt_templates.CreatePromptTemplateVersionRequest": {
             "type": "object",
             "properties": {
@@ -1951,6 +2291,55 @@ const docTemplate = `{
                 "version": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "subjects.SubSubject": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "subject_id": {
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "subjects.Subject": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sub_subjects": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/subjects.SubSubject"
+                    }
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
                 }
             }
         },
