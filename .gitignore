@@ -28,8 +28,23 @@ go.work.sum
 tmp/learning-api
 tmp/main
 test_docs/test.pdf
-tmp/main
 go1.21.0.linux-amd64.tar.gz
 
 # Ignore docs/md subfolder and everything in it
 docs/md/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+api
+bin/
+dist/
