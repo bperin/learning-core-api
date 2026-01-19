@@ -10,6 +10,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type Service struct {
@@ -31,7 +32,7 @@ func (s *Service) LoginWithEmail(ctx context.Context, email, password string) (*
 		return nil, nil, errors.New("invalid credentials")
 	}
 
-	if user.Password != password {
+	if !verifyPassword(user.Password, password) {
 		log.Printf("Invalid password for user: %s", email)
 		return nil, nil, errors.New("invalid credentials")
 	}
@@ -115,6 +116,11 @@ func scopesFromRoles(roles []string) []string {
 		return []string{"read", "write"}
 	}
 	return []string{"read"}
+}
+
+func verifyPassword(hashedPassword, plainPassword string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(plainPassword))
+	return err == nil
 }
 
 func (s *Service) RefreshToken(ctx context.Context, refreshTokenStr string) (*authdto.TokenResponse, error) {

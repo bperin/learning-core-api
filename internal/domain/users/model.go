@@ -39,6 +39,14 @@ type CreateUserRequest struct {
 	Role        UserRoleType `json:"role"`
 }
 
+// SignupRequest represents the request to sign up a new user
+type SignupRequest struct {
+	Email       string       `json:"email"`
+	Password    string       `json:"password"`
+	DisplayName *string      `json:"display_name,omitempty"`
+	Role        UserRoleType `json:"role"`
+}
+
 // UpdateUserRequest represents the request to update a user
 type UpdateUserRequest struct {
 	DisplayName *string `json:"display_name,omitempty"`

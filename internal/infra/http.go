@@ -37,6 +37,7 @@ func NewRouter(deps RouterDeps) http.Handler {
 
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(corsMiddleware)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -62,6 +63,9 @@ func NewRouter(deps RouterDeps) http.Handler {
 	reviewsHandler := reviews.NewHandler()
 	attemptsHandler := attempts.NewHandler()
 
+	authHandler.RegisterPublicRoutes(r)
+	usersHandler.RegisterPublicRoutes(r)
+
 	registerRoleRoutes(r, deps.JWTSecret, authHandler)
 	registerRoleRoutes(r, deps.JWTSecret, usersHandler)
 	registerRoleRoutes(r, deps.JWTSecret, documentsHandler)
@@ -74,7 +78,6 @@ func NewRouter(deps RouterDeps) http.Handler {
 }
 
 func registerRoleRoutes(r chi.Router, secret string, registrar RoleRouteRegistrar) {
-	registrar.RegisterPublicRoutes(r)
 	registerProtectedRoleRoutes(r, secret, authz.RoleAdmin, registrar.RegisterAdminRoutes)
 	registerProtectedRoleRoutes(r, secret, authz.RoleTeacher, registrar.RegisterTeacherRoutes)
 	registerProtectedRoleRoutes(r, secret, authz.RoleLearner, registrar.RegisterLearnerRoutes)

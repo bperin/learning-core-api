@@ -1,111 +1,855 @@
 {
-    "components": {
-        "schemas": {
-            "authdto.TokenRequest": {
-                "properties": {
-                    "email": {
-                        "example": "user@example.com",
-                        "type": "string"
-                    },
-                    "grant_type": {
-                        "example": "password",
-                        "type": "string"
-                    },
-                    "password": {
-                        "example": "secret123",
-                        "type": "string"
-                    },
-                    "refresh_token": {
-                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            },
-            "authdto.TokenResponse": {
-                "properties": {
-                    "access_token": {
-                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "type": "string"
-                    },
-                    "expires_in": {
-                        "example": 3600,
-                        "type": "integer"
-                    },
-                    "refresh_token": {
-                        "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                        "type": "string"
-                    },
-                    "role": {
-                        "example": "user",
-                        "type": "string"
-                    },
-                    "token_type": {
-                        "example": "Bearer",
-                        "type": "string"
-                    }
-                },
-                "type": "object"
-            }
-        }
-    },
-    "info": {
-        "contact": {},
-        "title": "",
-        "version": ""
-    },
-    "openapi": "3.0.3",
-    "paths": {
-        "/oauth/token": {
-            "post": {
-                "description": "Issue or refresh OAuth2 tokens using supported grant types.\nSupported grant types:\n- password: exchange email + password for tokens\n- refresh_token: exchange refresh_token for new access token",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "$ref": "#/components/schemas/authdto.TokenRequest"
-                            }
-                        }
-                    },
-                    "description": "OAuth Token Request",
-                    "required": true,
-                    "x-originalParamName": "request"
-                },
-                "responses": {
-                    "200": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/authdto.TokenResponse"
-                                }
-                            }
-                        },
-                        "description": "OAuth2 token response"
-                    },
-                    "400": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "description": "invalid request or unsupported grant_type"
-                    },
-                    "401": {
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "description": "invalid credentials"
-                    }
-                },
-                "summary": "OAuth token endpoint",
-                "tags": ["auth"]
-            }
-        }
+  "components": {
+    "schemas": {
+      "authdto.TokenRequest": {
+        "properties": {
+          "email": {
+            "example": "user@example.com",
+            "type": "string"
+          },
+          "grant_type": {
+            "example": "password",
+            "type": "string"
+          },
+          "password": {
+            "example": "secret123",
+            "type": "string"
+          },
+          "refresh_token": {
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "authdto.TokenResponse": {
+        "properties": {
+          "access_token": {
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "type": "string"
+          },
+          "expires_in": {
+            "example": 3600,
+            "type": "integer"
+          },
+          "refresh_token": {
+            "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+            "type": "string"
+          },
+          "role": {
+            "example": "user",
+            "type": "string"
+          },
+          "token_type": {
+            "example": "Bearer",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "users.CreateUserRequest": {
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/users.UserRoleType"
+          }
+        },
+        "type": "object"
+      },
+      "users.SignupRequest": {
+        "properties": {
+          "display_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "password": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/users.UserRoleType"
+          }
+        },
+        "type": "object"
+      },
+      "users.User": {
+        "properties": {
+          "created_at": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "id": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      },
+      "users.UserRoleType": {
+        "enum": [
+          "ADMIN",
+          "INSTRUCTOR",
+          "LEARNER"
+        ],
+        "type": "string",
+        "x-enum-varnames": [
+          "UserRoleAdmin",
+          "UserRoleInstructor",
+          "UserRoleLearner"
+        ]
+      }
     }
+  },
+  "info": {
+    "contact": {},
+    "title": "",
+    "version": ""
+  },
+  "openapi": "3.0.3",
+  "paths": {
+    "/attempts/{id}": {
+      "get": {
+        "description": "Learner+Teacher+Admin. Get a test attempt by ID.",
+        "parameters": [
+          {
+            "description": "Attempt ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get attempt",
+        "tags": [
+          "attempts"
+        ]
+      }
+    },
+    "/attempts/{id}/answers": {
+      "post": {
+        "description": "Learner-only. Submit an answer for an attempt.",
+        "parameters": [
+          {
+            "description": "Attempt ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Submit answer",
+        "tags": [
+          "attempts"
+        ]
+      }
+    },
+    "/attempts/{id}/submit": {
+      "post": {
+        "description": "Learner-only. Submit an attempt and finalize score.",
+        "parameters": [
+          {
+            "description": "Attempt ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Submit attempt",
+        "tags": [
+          "attempts"
+        ]
+      }
+    },
+    "/eval-items/{id}/reviews": {
+      "get": {
+        "description": "Admin-only. List review history for an eval item.",
+        "parameters": [
+          {
+            "description": "Eval Item ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List eval item reviews",
+        "tags": [
+          "reviews"
+        ]
+      },
+      "post": {
+        "description": "Teacher+Admin. Submit a review verdict for an eval item.",
+        "parameters": [
+          {
+            "description": "Eval Item ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create eval item review",
+        "tags": [
+          "reviews"
+        ]
+      }
+    },
+    "/evals": {
+      "get": {
+        "description": "Teacher+Learner. List published evals.",
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "List evals",
+        "tags": [
+          "evals"
+        ]
+      },
+      "post": {
+        "description": "Admin-only. Create a new eval in draft.",
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create eval",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/evals/{id}": {
+      "get": {
+        "description": "Teacher+Learner. Get a published eval by ID.",
+        "parameters": [
+          {
+            "description": "Eval ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get eval",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/evals/{id}/attempts": {
+      "post": {
+        "description": "Learner-only. Create a new attempt for an eval.",
+        "parameters": [
+          {
+            "description": "Eval ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Start test attempt",
+        "tags": [
+          "attempts"
+        ]
+      }
+    },
+    "/evals/{id}/publish": {
+      "post": {
+        "description": "Admin-only. Publish a draft eval (immutable after publish).",
+        "parameters": [
+          {
+            "description": "Eval ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "501": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not implemented"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Publish eval",
+        "tags": [
+          "evals"
+        ]
+      }
+    },
+    "/oauth/token": {
+      "post": {
+        "description": "Issue or refresh OAuth2 tokens using supported grant types.\nSupported grant types:\n- password: exchange email + password for tokens\n- refresh_token: exchange refresh_token for new access token",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/authdto.TokenRequest"
+              }
+            }
+          },
+          "description": "OAuth Token Request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/authdto.TokenResponse"
+                }
+              }
+            },
+            "description": "OAuth2 token response"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid request or unsupported grant_type"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid credentials"
+          }
+        },
+        "summary": "OAuth token endpoint",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/signup": {
+      "post": {
+        "description": "Create a new user account with email, password, and role",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/users.SignupRequest"
+              }
+            }
+          },
+          "description": "Signup Request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/users.User"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid request"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "summary": "Sign up a new user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users": {
+      "post": {
+        "description": "Create a new user with the provided details",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/users.CreateUserRequest"
+              }
+            }
+          },
+          "description": "Create User Request",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/users.User"
+                }
+              }
+            },
+            "description": "Created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid request"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Create a new user",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/email/{email}": {
+      "get": {
+        "description": "Retrieve a specific user by their email address",
+        "parameters": [
+          {
+            "description": "User Email",
+            "in": "path",
+            "name": "email",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/users.User"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get user by email",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/{id}": {
+      "delete": {
+        "description": "Remove a user from the system",
+        "parameters": [
+          {
+            "description": "User ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid request"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "write"
+            ]
+          }
+        ],
+        "summary": "Delete user",
+        "tags": [
+          "users"
+        ]
+      },
+      "get": {
+        "description": "Retrieve a specific user by their unique ID",
+        "parameters": [
+          {
+            "description": "User ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/users.User"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "invalid request"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "not found"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2Auth": [
+              "read"
+            ]
+          }
+        ],
+        "summary": "Get user by ID",
+        "tags": [
+          "users"
+        ]
+      }
+    }
+  }
 }

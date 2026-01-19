@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type mockAuthRepository struct {
@@ -35,6 +36,9 @@ func (m *mockAuthRepository) DeleteRefreshToken(ctx context.Context, token strin
 
 func TestService_LoginWithEmail(t *testing.T) {
 	userID := uuid.New()
+	plainPassword := "testpassword123"
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainPassword), bcrypt.DefaultCost)
+	require.NoError(t, err)
 
 	t.Run("success", func(t *testing.T) {
 		repo := &mockAuthRepository{
@@ -42,14 +46,14 @@ func TestService_LoginWithEmail(t *testing.T) {
 				return &store.User{
 					ID:       userID,
 					Email:    email,
-					Password: "secret",
+					Password: string(hashedPassword),
 					IsAdmin:  true,
 				}, nil
 			},
 		}
 		service := NewService("secret", repo)
 
-		tokens, user, err := service.LoginWithEmail(context.Background(), "admin@example.com", "secret")
+		tokens, user, err := service.LoginWithEmail(context.Background(), "admin@example.com", plainPassword)
 		require.NoError(t, err)
 		require.NotNil(t, tokens)
 		require.NotNil(t, user)
@@ -64,14 +68,15 @@ func TestService_LoginWithEmail(t *testing.T) {
 				return &store.User{
 					ID:       userID,
 					Email:    email,
-					Password: "secret",
+					Password: string(hashedPassword),
 				}, nil
 			},
 		}
 		service := NewService("secret", repo)
 
-		_, _, err := service.LoginWithEmail(context.Background(), "admin@example.com", "wrong")
+		_, _, err := service.LoginWithEmail(context.Background(), "admin@example.com", "wrongpassword")
 		assert.Error(t, err)
+		assert.Equal(t, "invalid credentials", err.Error())
 	})
 
 	t.Run("user not found", func(t *testing.T) {

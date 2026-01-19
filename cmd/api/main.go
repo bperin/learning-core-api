@@ -55,7 +55,7 @@ func main() {
 		log.Println("PubSub service initialized")
 	}
 
-	// 5. Start HTTP Server
+	// 5. Init GCS
 	var gcsService *gcp.GCSService
 	if cfg.GCSBucketName != "" && cfg.FileStoreName != "" {
 		var err error
@@ -74,6 +74,8 @@ func main() {
 	} else {
 		log.Println("File service not initialized (missing bucket or store name)")
 	}
+
+	// 6. Start HTTP Server
 	router := infra.NewRouter(infra.RouterDeps{
 		JWTSecret:    cfg.JWTSecret,
 		Queries:      queries,

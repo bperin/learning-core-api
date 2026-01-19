@@ -1,8 +1,6 @@
 package users
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
 	"learning-core-api/internal/http/authz"
 	"learning-core-api/internal/http/render"
@@ -10,15 +8,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"golang.org/x/crypto/argon2"
-)
-
-const (
-	argon2Time    = 3
-	argon2Memory  = 64 * 1024
-	argon2Threads = 4
-	argon2KeyLen  = 32
-	saltLen       = 16
+	"golang.org/x/crypto/bcrypt"
 )
 
 // Handler handles HTTP requests for users
@@ -208,12 +198,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 // @Failure 500 {string} string "internal server error"
 // @Router /signup [post]
 func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
-	var req struct {
-		Email       string       `json:"email"`
-		Password    string       `json:"password"`
-		DisplayName *string      `json:"display_name,omitempty"`
-		Role        UserRoleType `json:"role"`
-	}
+	var req SignupRequest
 	if err := render.DecodeJSON(r, &req); err != nil {
 		render.Error(w, http.StatusBadRequest, "Invalid JSON")
 		return
@@ -252,17 +237,11 @@ func (h *Handler) Signup(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, http.StatusCreated, user)
 }
 
-// hashPassword hashes a password using Argon2id
+// hashPassword hashes a password using bcrypt
 func hashPassword(password string) (string, error) {
-	salt := make([]byte, saltLen)
-	if _, err := rand.Read(salt); err != nil {
-		return "", fmt.Errorf("failed to generate salt: %w", err)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return "", fmt.Errorf("failed to hash password: %w", err)
 	}
-
-	hash := argon2.IDKey([]byte(password), salt, argon2Time, argon2Memory, argon2Threads, argon2KeyLen)
-
-	hashStr := base64.StdEncoding.EncodeToString(hash)
-	saltStr := base64.StdEncoding.EncodeToString(salt)
-
-	return fmt.Sprintf("$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s", argon2Memory, argon2Time, argon2Threads, saltStr, hashStr), nil
+	return string(hash), nil
 }

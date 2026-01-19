@@ -1,72 +1,511 @@
 definitions:
-    authdto.TokenRequest:
-        properties:
-            email:
-                example: user@example.com
-                type: string
-            grant_type:
-                example: password
-                type: string
-            password:
-                example: secret123
-                type: string
-            refresh_token:
-                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                type: string
-        type: object
-    authdto.TokenResponse:
-        properties:
-            access_token:
-                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                type: string
-            expires_in:
-                example: 3600
-                type: integer
-            refresh_token:
-                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                type: string
-            role:
-                example: user
-                type: string
-            token_type:
-                example: Bearer
-                type: string
-        type: object
+  authdto.TokenRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      grant_type:
+        example: password
+        type: string
+      password:
+        example: secret123
+        type: string
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    type: object
+  authdto.TokenResponse:
+    properties:
+      access_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      expires_in:
+        example: 3600
+        type: integer
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      role:
+        example: user
+        type: string
+      token_type:
+        example: Bearer
+        type: string
+    type: object
+  users.CreateUserRequest:
+    properties:
+      display_name:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      role:
+        $ref: '#/definitions/users.UserRoleType'
+    type: object
+  users.SignupRequest:
+    properties:
+      display_name:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+      role:
+        $ref: '#/definitions/users.UserRoleType'
+    type: object
+  users.User:
+    properties:
+      created_at:
+        type: string
+      display_name:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
+      is_active:
+        type: boolean
+    type: object
+  users.UserRoleType:
+    enum:
+    - ADMIN
+    - INSTRUCTOR
+    - LEARNER
+    type: string
+    x-enum-varnames:
+    - UserRoleAdmin
+    - UserRoleInstructor
+    - UserRoleLearner
 info:
-    contact: {}
+  contact: {}
 paths:
-    /oauth/token:
-        post:
-            consumes:
-                - application/json
-            description: |-
-                Issue or refresh OAuth2 tokens using supported grant types.
-                Supported grant types:
-                - password: exchange email + password for tokens
-                - refresh_token: exchange refresh_token for new access token
-            parameters:
-                - description: OAuth Token Request
-                  in: body
-                  name: request
-                  required: true
-                  schema:
-                      $ref: "#/definitions/authdto.TokenRequest"
-            produces:
-                - application/json
-            responses:
-                "200":
-                    description: OAuth2 token response
-                    schema:
-                        $ref: "#/definitions/authdto.TokenResponse"
-                "400":
-                    description: invalid request or unsupported grant_type
-                    schema:
-                        type: string
-                "401":
-                    description: invalid credentials
-                    schema:
-                        type: string
-            summary: OAuth token endpoint
-            tags:
-                - auth
+  /attempts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Learner+Teacher+Admin. Get a test attempt by ID.
+      parameters:
+      - description: Attempt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get attempt
+      tags:
+      - attempts
+  /attempts/{id}/answers:
+    post:
+      consumes:
+      - application/json
+      description: Learner-only. Submit an answer for an attempt.
+      parameters:
+      - description: Attempt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Submit answer
+      tags:
+      - attempts
+  /attempts/{id}/submit:
+    post:
+      consumes:
+      - application/json
+      description: Learner-only. Submit an attempt and finalize score.
+      parameters:
+      - description: Attempt ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Submit attempt
+      tags:
+      - attempts
+  /eval-items/{id}/reviews:
+    get:
+      consumes:
+      - application/json
+      description: Admin-only. List review history for an eval item.
+      parameters:
+      - description: Eval Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List eval item reviews
+      tags:
+      - reviews
+    post:
+      consumes:
+      - application/json
+      description: Teacher+Admin. Submit a review verdict for an eval item.
+      parameters:
+      - description: Eval Item ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create eval item review
+      tags:
+      - reviews
+  /evals:
+    get:
+      consumes:
+      - application/json
+      description: Teacher+Learner. List published evals.
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: List evals
+      tags:
+      - evals
+    post:
+      consumes:
+      - application/json
+      description: Admin-only. Create a new eval in draft.
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create eval
+      tags:
+      - evals
+  /evals/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Teacher+Learner. Get a published eval by ID.
+      parameters:
+      - description: Eval ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get eval
+      tags:
+      - evals
+  /evals/{id}/attempts:
+    post:
+      consumes:
+      - application/json
+      description: Learner-only. Create a new attempt for an eval.
+      parameters:
+      - description: Eval ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Start test attempt
+      tags:
+      - attempts
+  /evals/{id}/publish:
+    post:
+      consumes:
+      - application/json
+      description: Admin-only. Publish a draft eval (immutable after publish).
+      parameters:
+      - description: Eval ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "501":
+          description: not implemented
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Publish eval
+      tags:
+      - evals
+  /oauth/token:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Issue or refresh OAuth2 tokens using supported grant types.
+        Supported grant types:
+        - password: exchange email + password for tokens
+        - refresh_token: exchange refresh_token for new access token
+      parameters:
+      - description: OAuth Token Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/authdto.TokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OAuth2 token response
+          schema:
+            $ref: '#/definitions/authdto.TokenResponse'
+        "400":
+          description: invalid request or unsupported grant_type
+          schema:
+            type: string
+        "401":
+          description: invalid credentials
+          schema:
+            type: string
+      summary: OAuth token endpoint
+      tags:
+      - auth
+  /signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user account with email, password, and role
+      parameters:
+      - description: Signup Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/users.SignupRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/users.User'
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      summary: Sign up a new user
+      tags:
+      - users
+  /users:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user with the provided details
+      parameters:
+      - description: Create User Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/users.CreateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/users.User'
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Create a new user
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove a user from the system
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - write
+      summary: Delete user
+      tags:
+      - users
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific user by their unique ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.User'
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get user by ID
+      tags:
+      - users
+  /users/email/{email}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve a specific user by their email address
+      parameters:
+      - description: User Email
+        in: path
+        name: email
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/users.User'
+        "400":
+          description: invalid request
+          schema:
+            type: string
+        "404":
+          description: not found
+          schema:
+            type: string
+        "500":
+          description: internal server error
+          schema:
+            type: string
+      security:
+      - OAuth2Auth:
+        - read
+      summary: Get user by email
+      tags:
+      - users
 swagger: "2.0"
