@@ -6,6 +6,7 @@ type GenerationType string
 
 const GenerationTypeClassification GenerationType = "CLASSIFICATION"
 const GenerationTypeQuestions GenerationType = "QUESTIONS"
+const GenerationTypeSectionTopics GenerationType = "SECTION_TOPICS"
 
 func (g GenerationType) String() string {
 	return string(g)

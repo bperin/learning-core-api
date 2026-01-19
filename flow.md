@@ -16,7 +16,7 @@ This is a strong fit for this system, but only for certain kinds of checks.
 
 ## 1.1 Where the system is now
 
-- Generation supports classification (taxonomy extraction) and question generation.
+- Generation supports classification (taxonomy extraction), question generation, and section topic extraction with difficulty scoring.
 - Evaluation is scoped to groundedness and answerability checks against source documents.
 - Groundedness evals against GCP are implemented or near implementation.
 
@@ -38,7 +38,7 @@ Human gating and removal over time:
 
 ## 2. Generation classes and eval contracts
 
-Your system has two generation classes with different eval contracts.
+Your system has three generation classes with different eval contracts.
 
 ### 2.1 Classification (taxonomy extraction)
 

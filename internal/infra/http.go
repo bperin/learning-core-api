@@ -18,6 +18,7 @@ import (
 	"learning-core-api/internal/domain/content_discovery"
 	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/evals"
+	"learning-core-api/internal/domain/generation"
 	"learning-core-api/internal/domain/model_configs"
 	"learning-core-api/internal/domain/prompt_templates"
 	"learning-core-api/internal/domain/reviews"
@@ -37,6 +38,7 @@ type RouterDeps struct {
 	DB           *sql.DB
 	GoogleAPIKey string
 	GCSService   *gcp.GCSService
+	FileService  *gcp.FileService
 }
 
 type RoleRouteRegistrar interface {
@@ -111,6 +113,8 @@ func NewRouter(deps RouterDeps) http.Handler {
 		w.Write([]byte("OK"))
 	})
 
+	r.Get("/ws/progress", HandleProgressWebSocket)
+
 	authRepo := auth.NewRepository(deps.Queries)
 	authService := auth.NewService(deps.JWTSecret, authRepo)
 	authHandler := auth.NewHandler(authService)
@@ -158,8 +162,20 @@ func NewRouter(deps RouterDeps) http.Handler {
 	artifactsService := artifacts.NewService(deps.DB)
 	artifactsHandler := artifacts.NewHandler(artifactsService)
 
-	contentDiscoveryService := content_discovery.NewService(subjectsService)
-	contentDiscoveryHandler := content_discovery.NewHandler(contentDiscoveryService)
+	// Create generation service with a nil generator for now (will need proper generator later)
+	generationService, err := generation.NewService(deps.DB, artifactsService, nil)
+	var contentDiscoveryService *content_discovery.Service
+	var contentDiscoveryHandler *content_discovery.Handler
+	
+	if err != nil {
+		log.Printf("Warning: Failed to create generation service: %v", err)
+		// For now, create content discovery without generation service
+		contentDiscoveryService = content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, nil)
+	} else {
+		contentDiscoveryService = content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, generationService)
+	}
+	
+	contentDiscoveryHandler = content_discovery.NewHandler(contentDiscoveryService)
 
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)

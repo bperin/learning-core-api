@@ -4,7 +4,7 @@ Core API for the learning system. This repo defines the authoritative data flow,
 
 ## Where the system is now
 
-- Generation supports two classes: classification (taxonomy extraction) and question generation (questions + expected answers).
+- Generation supports three classes: classification (taxonomy extraction), question generation (questions + expected answers), and section topic extraction (section topics with difficulty scores).
 - Evaluation is scoped to groundedness and answerability checks against source documents.
 - Immutability rules and ownership boundaries are enforced via domain and persistence layers.
 - Groundedness evals against GCP are implemented or near implementation.

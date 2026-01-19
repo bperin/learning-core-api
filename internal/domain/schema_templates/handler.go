@@ -45,7 +45,7 @@ func (h *Handler) RegisterLearnerRoutes(r chi.Router) {
 // @Description Get all schema templates for a specific generation type
 // @Tags Schema Templates
 // @Security OAuth2[read]
-// @Param generation_type query string true "Generation type (CLASSIFICATION or QUESTIONS)"
+// @Param generation_type query string true "Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)"
 // @Success 200 {array} SchemaTemplate "List of schema templates"
 // @Failure 400 {object} map[string]string "Bad request - missing generation_type"
 // @Failure 500 {object} map[string]string "Internal server error"
@@ -100,7 +100,7 @@ func (h *Handler) GetByID(w http.ResponseWriter, r *http.Request) {
 // @Description Retrieve the currently active schema template for a specific generation type
 // @Tags Schema Templates
 // @Security OAuth2[read]
-// @Param generationType path string true "Generation type (CLASSIFICATION or QUESTIONS)"
+// @Param generationType path string true "Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)"
 // @Success 200 {object} SchemaTemplate "Active schema template"
 // @Failure 400 {object} map[string]string "Bad request - missing generation_type"
 // @Failure 404 {object} map[string]string "Active template not found"

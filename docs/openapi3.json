@@ -174,6 +174,20 @@
         },
         "type": "object"
       },
+      "content_discovery.BookDownloadInfo": {
+        "properties": {
+          "pdf_link": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
       "content_discovery.BookListRequest": {
         "properties": {
           "max_books": {
@@ -233,6 +247,54 @@
             "type": "string"
           },
           "url": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "content_discovery.DocumentDownloadResult": {
+        "properties": {
+          "document_id": {
+            "type": "string"
+          },
+          "error": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "content_discovery.PDFDownloadRequest": {
+        "properties": {
+          "books": {
+            "items": {
+              "$ref": "#/components/schemas/content_discovery.BookDownloadInfo"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "content_discovery.PDFDownloadResponse": {
+        "properties": {
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/content_discovery.DocumentDownloadResult"
+            },
+            "type": "array"
+          },
+          "job_id": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "status": {
             "type": "string"
           }
         },
@@ -1418,6 +1480,70 @@
           }
         ],
         "summary": "List books from selected subjects",
+        "tags": [
+          "Content Discovery"
+        ]
+      }
+    },
+    "/content-discovery/download-pdfs": {
+      "post": {
+        "description": "Downloads PDFs from the provided book links, creates document records, and processes them through the file search service for classification generation",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/content_discovery.PDFDownloadRequest"
+              }
+            }
+          },
+          "description": "Books to download",
+          "required": true,
+          "x-originalParamName": "request"
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/content_discovery.PDFDownloadResponse"
+                }
+              }
+            },
+            "description": "PDF download job started"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Bad request - invalid request body"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": {
+                    "type": "string"
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "OAuth2": []
+          }
+        ],
+        "summary": "Download PDFs from selected books",
         "tags": [
           "Content Discovery"
         ]

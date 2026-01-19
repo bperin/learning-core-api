@@ -34,3 +34,31 @@ type BookWithSubject struct {
 	SubjectName string    `json:"subject_name"`
 	SubjectURL  string    `json:"subject_url"`
 }
+
+// PDFDownloadRequest represents a request to download PDFs from selected books
+type PDFDownloadRequest struct {
+	Books []BookDownloadInfo `json:"books"`
+}
+
+// BookDownloadInfo contains the information needed to download a book PDF
+type BookDownloadInfo struct {
+	Title   string `json:"title"`
+	URL     string `json:"url"`
+	PDFLink string `json:"pdfLink"`
+}
+
+// PDFDownloadResponse represents the response from PDF download operation
+type PDFDownloadResponse struct {
+	JobID     string                   `json:"job_id"`
+	Status    string                   `json:"status"`
+	Documents []DocumentDownloadResult `json:"documents"`
+	Message   string                   `json:"message"`
+}
+
+// DocumentDownloadResult represents the result of downloading a single document
+type DocumentDownloadResult struct {
+	Title      string    `json:"title"`
+	DocumentID uuid.UUID `json:"document_id"`
+	Status     string    `json:"status"`
+	Error      string    `json:"error,omitempty"`
+}

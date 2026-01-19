@@ -13,6 +13,29 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+const countArtifacts = `-- name: CountArtifacts :one
+SELECT COUNT(*) FROM artifacts
+`
+
+func (q *Queries) CountArtifacts(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countArtifacts)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countArtifactsByType = `-- name: CountArtifactsByType :one
+SELECT COUNT(*) FROM artifacts 
+WHERE type = $1
+`
+
+func (q *Queries) CountArtifactsByType(ctx context.Context, type_ string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countArtifactsByType, type_)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createArtifact = `-- name: CreateArtifact :one
 INSERT INTO artifacts (
   type, generation_type, status, eval_id, eval_item_id, attempt_id, reviewer_id,
@@ -611,44 +634,17 @@ func (q *Queries) GetLatestArtifactByTypeAndEntity(ctx context.Context, arg GetL
 	return i, err
 }
 
-const countArtifacts = `-- name: CountArtifacts :one
-SELECT COUNT(*) FROM artifacts
+const listArtifacts = `-- name: ListArtifacts :many
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
 `
 
-func (q *Queries) CountArtifacts(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countArtifacts)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+type ListArtifactsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
 }
 
-const countArtifactsByType = `-- name: CountArtifactsByType :one
-SELECT COUNT(*) FROM artifacts 
-WHERE type = $1
-`
-
-func (q *Queries) CountArtifactsByType(ctx context.Context, type_ string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countArtifactsByType, type_)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const listArtifactsByType = `-- name: ListArtifactsByType :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts 
-WHERE type = $1 
-ORDER BY created_at DESC 
-LIMIT $2 OFFSET $3
-`
-
-type ListArtifactsByTypeParams struct {
-	Type   string `json:"type"`
-	Limit  int32  `json:"limit"`
-	Offset int32  `json:"offset"`
-}
-
-func (q *Queries) ListArtifactsByType(ctx context.Context, arg ListArtifactsByTypeParams) ([]Artifact, error) {
-	rows, err := q.db.QueryContext(ctx, listArtifactsByType, arg.Type, arg.Limit, arg.Offset)
+func (q *Queries) ListArtifacts(ctx context.Context, arg ListArtifactsParams) ([]Artifact, error) {
+	rows, err := q.db.QueryContext(ctx, listArtifacts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -691,17 +687,21 @@ func (q *Queries) ListArtifactsByType(ctx context.Context, arg ListArtifactsByTy
 	return items, nil
 }
 
-const listArtifacts = `-- name: ListArtifacts :many
-SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts ORDER BY created_at DESC LIMIT $1 OFFSET $2
+const listArtifactsByType = `-- name: ListArtifactsByType :many
+SELECT id, type, status, eval_id, eval_item_id, attempt_id, reviewer_id, text, output_json, model, prompt, input_hash, meta, error, created_at, prompt_template_id, schema_template_id, model_params, prompt_render, generation_type FROM artifacts 
+WHERE type = $1 
+ORDER BY created_at DESC 
+LIMIT $2 OFFSET $3
 `
 
-type ListArtifactsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+type ListArtifactsByTypeParams struct {
+	Type   string `json:"type"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
 }
 
-func (q *Queries) ListArtifacts(ctx context.Context, arg ListArtifactsParams) ([]Artifact, error) {
-	rows, err := q.db.QueryContext(ctx, listArtifacts, arg.Limit, arg.Offset)
+func (q *Queries) ListArtifactsByType(ctx context.Context, arg ListArtifactsByTypeParams) ([]Artifact, error) {
+	rows, err := q.db.QueryContext(ctx, listArtifactsByType, arg.Type, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}

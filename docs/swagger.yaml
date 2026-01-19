@@ -116,6 +116,15 @@ definitions:
       is_active:
         type: boolean
     type: object
+  content_discovery.BookDownloadInfo:
+    properties:
+      pdf_link:
+        type: string
+      title:
+        type: string
+      url:
+        type: string
+    type: object
   content_discovery.BookListRequest:
     properties:
       max_books:
@@ -156,6 +165,37 @@ definitions:
       title:
         type: string
       url:
+        type: string
+    type: object
+  content_discovery.DocumentDownloadResult:
+    properties:
+      document_id:
+        type: string
+      error:
+        type: string
+      status:
+        type: string
+      title:
+        type: string
+    type: object
+  content_discovery.PDFDownloadRequest:
+    properties:
+      books:
+        items:
+          $ref: '#/definitions/content_discovery.BookDownloadInfo'
+        type: array
+    type: object
+  content_discovery.PDFDownloadResponse:
+    properties:
+      documents:
+        items:
+          $ref: '#/definitions/content_discovery.DocumentDownloadResult'
+        type: array
+      job_id:
+        type: string
+      message:
+        type: string
+      status:
         type: string
     type: object
   model_configs.CreateModelConfigRequest:
@@ -833,6 +873,43 @@ paths:
       security:
       - OAuth2: []
       summary: List books from selected subjects
+      tags:
+      - Content Discovery
+  /content-discovery/download-pdfs:
+    post:
+      consumes:
+      - application/json
+      description: Downloads PDFs from the provided book links, creates document records,
+        and processes them through the file search service for classification generation
+      parameters:
+      - description: Books to download
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/content_discovery.PDFDownloadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: PDF download job started
+          schema:
+            $ref: '#/definitions/content_discovery.PDFDownloadResponse'
+        "400":
+          description: Bad request - invalid request body
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - OAuth2: []
+      summary: Download PDFs from selected books
       tags:
       - Content Discovery
   /eval-items/{id}/reviews:

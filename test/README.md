@@ -23,7 +23,7 @@ The system now supports full CRUD operations for all configuration types:
 - Get latest classification and generation prompts
 - Create new prompt template versions
 - Activate/deactivate specific versions
-- Query by generation type (`CLASSIFICATION`, `QUESTIONS`)
+- Query by generation type (`CLASSIFICATION`, `QUESTIONS`, `SECTION_TOPICS`)
 
 #### ✅ System Instructions (`/system-instructions`)
 

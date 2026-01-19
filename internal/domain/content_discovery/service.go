@@ -2,16 +2,23 @@ package content_discovery
 
 import (
 	"context"
+	"encoding/json"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
-	"github.com/google/uuid"
-
+	"learning-core-api/internal/domain/documents"
+	"learning-core-api/internal/domain/generation"
 	"learning-core-api/internal/domain/subjects"
+	"learning-core-api/internal/gcp"
+	"learning-core-api/internal/infra/progress"
+
+	"github.com/google/uuid"
 )
 
 // Atom feed structures for parsing Open Textbook Library
@@ -31,12 +38,20 @@ type AtomLink struct {
 }
 
 type Service struct {
-	subjectsService subjects.Service
+	subjectsService   subjects.Service
+	documentsService  documents.Service
+	gcsService        *gcp.GCSService
+	fileService       *gcp.FileService
+	generationService *generation.Service
 }
 
-func NewService(subjectsService subjects.Service) *Service {
+func NewService(subjectsService subjects.Service, documentsService documents.Service, gcsService *gcp.GCSService, fileService *gcp.FileService, generationService *generation.Service) *Service {
 	return &Service{
-		subjectsService: subjectsService,
+		subjectsService:   subjectsService,
+		documentsService:  documentsService,
+		gcsService:        gcsService,
+		fileService:       fileService,
+		generationService: generationService,
 	}
 }
 
@@ -65,7 +80,7 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 	// Create a map for quick lookup
 	subjectMap := make(map[uuid.UUID]subjects.Subject)
 	subSubjectMap := make(map[uuid.UUID]subjects.SubSubject)
-	
+
 	for _, subject := range allSubjects {
 		subjectMap[subject.ID] = subject
 		for _, subSubject := range subject.SubSubjects {
@@ -74,7 +89,7 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 	}
 
 	var allBooks []BookWithSubject
-	
+
 	// Process each requested subject
 	for _, subjectIDStr := range req.SubjectIDs {
 		// Parse string UUID to uuid.UUID
@@ -84,7 +99,7 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 		}
 
 		var subjectURL, subjectName string
-		
+
 		// Check if it's a main subject or sub-subject
 		if subject, exists := subjectMap[subjectID]; exists {
 			subjectURL = subject.Url
@@ -108,7 +123,7 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 			if len(allBooks) >= maxBooks {
 				break
 			}
-			
+
 			allBooks = append(allBooks, BookWithSubject{
 				Book:        book,
 				SubjectID:   subjectID,
@@ -123,8 +138,8 @@ func (s *Service) ListBooksFromSubjects(ctx context.Context, req BookListRequest
 	}
 
 	return &BookListResponse{
-		Books: allBooks,
-		Total: len(allBooks),
+		Books:   allBooks,
+		Total:   len(allBooks),
 		Message: fmt.Sprintf("Found %d books from %d subjects", len(allBooks), len(req.SubjectIDs)),
 	}, nil
 }
@@ -213,6 +228,276 @@ func (s *Service) getPDFLinkFromBookPage(bookURL string) (string, error) {
 	}
 
 	return "", nil
+}
+
+// DownloadPDFs downloads PDFs from the provided book links and processes them
+func (s *Service) DownloadPDFs(ctx context.Context, req PDFDownloadRequest, userIDStr string) (*PDFDownloadResponse, error) {
+	if len(req.Books) == 0 {
+		log.Printf("[PDF_DOWNLOAD] No books provided in request")
+		return &PDFDownloadResponse{
+			Status:  "error",
+			Message: "No books provided",
+		}, nil
+	}
+
+	jobID := uuid.New().String()
+	log.Printf("[PDF_DOWNLOAD] Starting job %s with %d books", jobID, len(req.Books))
+
+	// Initialize progress tracking
+	tracker := progress.GetTracker()
+	tracker.StartJob(jobID, "pdf_download")
+	tracker.UpdateProgress(jobID, "started", fmt.Sprintf("Starting PDF download for %d books", len(req.Books)), 0, nil)
+
+	// Parse user ID from string
+	userID, err := uuid.Parse(userIDStr)
+	if err != nil {
+		log.Printf("[PDF_DOWNLOAD] Failed to parse user ID: %v", err)
+		tracker.FailJob(jobID, fmt.Sprintf("Invalid user ID: %v", err))
+		return &PDFDownloadResponse{
+			Status:  "error",
+			Message: fmt.Sprintf("Invalid user ID: %v", err),
+		}, err
+	}
+
+	results := make([]DocumentDownloadResult, len(req.Books))
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	completedCount := 0
+
+	// Process books in parallel with goroutines
+	for i, book := range req.Books {
+		wg.Add(1)
+		go func(index int, b BookDownloadInfo) {
+			defer wg.Done()
+
+			log.Printf("[PDF_DOWNLOAD] [Job:%s] [Book:%d] Starting download: %s", jobID, index+1, b.Title)
+
+			result := DocumentDownloadResult{
+				Title:  b.Title,
+				Status: "processing",
+			}
+
+			documentID, err := s.downloadAndProcessPDF(ctx, b, userID)
+			if err != nil {
+				log.Printf("[PDF_DOWNLOAD] [Job:%s] [Book:%d] FAILED: %s - Error: %v", jobID, index+1, b.Title, err)
+				result.Status = "failed"
+				result.Error = err.Error()
+				tracker.UpdateProgressWithError(jobID, "processing", fmt.Sprintf("Failed to download %s", b.Title), err.Error(), 0)
+			} else {
+				log.Printf("[PDF_DOWNLOAD] [Job:%s] [Book:%d] SUCCESS: %s - DocumentID: %s", jobID, index+1, b.Title, documentID)
+				result.DocumentID = documentID
+				result.Status = "success"
+
+				mu.Lock()
+				completedCount++
+				progress := (completedCount * 100) / len(req.Books)
+				mu.Unlock()
+
+				tracker.UpdateProgress(jobID, "processing", fmt.Sprintf("Downloaded %d/%d books", completedCount, len(req.Books)), progress, nil)
+			}
+
+			results[index] = result
+		}(i, book)
+	}
+
+	// Wait for all downloads to complete
+	log.Printf("[PDF_DOWNLOAD] [Job:%s] Waiting for all %d downloads to complete...", jobID, len(req.Books))
+	wg.Wait()
+
+	// Count successful downloads
+	successCount := 0
+	failedCount := 0
+	for _, result := range results {
+		if result.Status == "completed" {
+			successCount++
+		} else {
+			failedCount++
+		}
+	}
+
+	log.Printf("[PDF_DOWNLOAD] [Job:%s] COMPLETED - Success: %d, Failed: %d", jobID, successCount, failedCount)
+
+	return &PDFDownloadResponse{
+		JobID:     jobID,
+		Status:    "completed",
+		Documents: results,
+		Message:   fmt.Sprintf("Processed %d books, %d successful downloads", len(req.Books), successCount),
+	}, nil
+}
+
+// downloadAndProcessPDF downloads a single PDF and processes it through the pipeline
+func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadInfo, userID uuid.UUID) (uuid.UUID, error) {
+	log.Printf("[PDF_PROCESS] Starting processing for: %s", book.Title)
+	log.Printf("[PDF_PROCESS] PDF URL: %s", book.PDFLink)
+
+	// Validate PDF URL before attempting download
+	if book.PDFLink == "" {
+		return uuid.Nil, fmt.Errorf("PDF link is empty")
+	}
+
+	if !strings.HasPrefix(book.PDFLink, "http://") && !strings.HasPrefix(book.PDFLink, "https://") {
+		return uuid.Nil, fmt.Errorf("invalid PDF URL scheme: %s", book.PDFLink)
+	}
+
+	// Step 1: Download PDF from URL
+	log.Printf("[PDF_PROCESS] Step 1: Downloading PDF from URL...")
+	resp, err := http.Get(book.PDFLink)
+	if err != nil {
+		log.Printf("[PDF_PROCESS] Step 1 FAILED: HTTP request failed - %v", err)
+		return uuid.Nil, fmt.Errorf("failed to download PDF: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("[PDF_PROCESS] Step 1 FAILED: HTTP status %d", resp.StatusCode)
+		return uuid.Nil, fmt.Errorf("failed to download PDF: status %d", resp.StatusCode)
+	}
+
+	log.Printf("[PDF_PROCESS] Step 1 SUCCESS: PDF downloaded, Content-Length: %s", resp.Header.Get("Content-Length"))
+
+	// Step 2: Create document record in database
+	log.Printf("[PDF_PROCESS] Step 2: Creating document record in database...")
+	filename := fmt.Sprintf("%s.pdf", sanitizeFilename(book.Title))
+	title := book.Title
+	mimeType := "application/pdf"
+
+	// Create document using documents service
+	createReq := documents.CreateDocumentRequest{
+		Filename:  filename,
+		Title:     &title,
+		MimeType:  &mimeType,
+		RagStatus: documents.RagStatusPending,
+		UserID:    userID,
+	}
+
+	doc, err := s.documentsService.CreateDocument(ctx, createReq)
+	if err != nil {
+		log.Printf("[PDF_PROCESS] Step 2 FAILED: Database insert failed - %v", err)
+		return uuid.Nil, fmt.Errorf("failed to create document record: %w", err)
+	}
+
+	log.Printf("[PDF_PROCESS] Step 2 SUCCESS: Document created with ID: %s", doc.ID)
+
+	// Step 3: Upload PDF to GCS first (following test pattern)
+	objectName := fmt.Sprintf("documents/%s/%s", doc.ID, filename)
+	log.Printf("[PDF_PROCESS] Step 3: Uploading to GCS with object name: %s", objectName)
+
+	// Upload to GCS using GCSService (like line 79 in test)
+	_, err = s.gcsService.UploadFile(ctx, objectName, "application/pdf", resp.Body)
+	if err != nil {
+		log.Printf("[PDF_PROCESS] Step 3 FAILED: GCS upload failed - %v", err)
+		return uuid.Nil, fmt.Errorf("failed to upload to GCS: %w", err)
+	}
+
+	log.Printf("[PDF_PROCESS] Step 3 SUCCESS: File uploaded to GCS")
+
+	// Step 4: Upload to File Search Store using the GCS object name (like line 82 in test)
+	log.Printf("[PDF_PROCESS] Step 4: Uploading to File Search Store...")
+	result, err := s.fileService.UploadToFileSearchStore(ctx, objectName, book.Title, "application/pdf")
+	if err != nil {
+		log.Printf("[PDF_PROCESS] Step 4 FAILED: File Search Store upload failed - %v", err)
+		return uuid.Nil, fmt.Errorf("failed to upload to file search store: %w", err)
+	}
+
+	log.Printf("[PDF_PROCESS] Step 4 SUCCESS: File uploaded to File Search Store")
+	if result != nil && result.Operation != nil {
+		log.Printf("[PDF_PROCESS] File Search Store operation started: %s", result.Operation.Name)
+	}
+
+	// Step 5: Trigger classification generation asynchronously (if generation service is available)
+	if s.generationService != nil {
+		go func() {
+			log.Printf("[PDF_CLASSIFICATION] Starting classification generation for document: %s", doc.ID)
+			err := s.generateClassificationArtifacts(context.Background(), doc.ID, book.Title)
+			if err != nil {
+				log.Printf("[PDF_CLASSIFICATION] FAILED for document %s: %v", doc.ID, err)
+			} else {
+				log.Printf("[PDF_CLASSIFICATION] SUCCESS for document %s", doc.ID)
+			}
+		}()
+	} else {
+		log.Printf("[PDF_CLASSIFICATION] Skipping classification generation - generation service not available")
+	}
+
+	log.Printf("[PDF_PROCESS] COMPLETED: All steps successful for %s (DocumentID: %s)", book.Title, doc.ID)
+	return doc.ID, nil
+}
+
+// sanitizeFilename removes invalid characters from filename
+func sanitizeFilename(title string) string {
+	// Replace invalid filename characters
+	filename := strings.ReplaceAll(title, "/", "-")
+	filename = strings.ReplaceAll(filename, "\\", "-")
+	filename = strings.ReplaceAll(filename, ":", "-")
+	filename = strings.ReplaceAll(filename, "*", "-")
+	filename = strings.ReplaceAll(filename, "?", "-")
+	filename = strings.ReplaceAll(filename, "\"", "-")
+	filename = strings.ReplaceAll(filename, "<", "-")
+	filename = strings.ReplaceAll(filename, ">", "-")
+	filename = strings.ReplaceAll(filename, "|", "-")
+
+	// Limit length
+	if len(filename) > 100 {
+		filename = filename[:100]
+	}
+
+	return filename
+}
+
+// generateClassificationArtifacts triggers classification generation for a document using the file search store
+func (s *Service) generateClassificationArtifacts(ctx context.Context, documentID uuid.UUID, title string) error {
+	log.Printf("[PDF_CLASSIFICATION] Generating classification artifacts for document: %s (%s)", documentID, title)
+
+	// Create file search tool config with the document's file search store reference
+	fileSearchConfig := map[string]interface{}{
+		"file_search_store": s.fileService.StoreName(),
+	}
+
+	fileSearchConfigJSON, err := json.Marshal(fileSearchConfig)
+	if err != nil {
+		return fmt.Errorf("failed to marshal file search config: %w", err)
+	}
+
+	// Create generation request for classification
+	generateReq := generation.GenerateRequest{
+		UserID: uuid.New(), // TODO: Get actual user ID from context
+		Target: generation.Target{
+			DocumentID: &documentID,
+		},
+		Instructions: generation.Instructions{
+			GenerationType: "classification", // This should reference a classification prompt template in DB
+			PromptVersion:  0,                // Use latest version
+			Variables: map[string]interface{}{
+				"document_title": title,
+				"document_id":    documentID.String(),
+			},
+		},
+		Output: generation.OutputConfig{
+			GenerationType: "classification", // This should reference a classification schema template in DB
+			SchemaVersion:  0,                // Use latest version
+			Format:         "json",
+		},
+		Tools: []generation.ToolConfig{
+			{
+				Type:   "file_search",
+				Config: fileSearchConfigJSON,
+			},
+		},
+		ModelConfigID: uuid.New(), // TODO: Get actual model config ID from database
+	}
+
+	log.Printf("[PDF_CLASSIFICATION] Calling generation service for document: %s", documentID)
+	response, err := s.generationService.Generate(ctx, generateReq)
+	if err != nil {
+		return fmt.Errorf("failed to generate classification: %w", err)
+	}
+
+	log.Printf("[PDF_CLASSIFICATION] Classification generated successfully for document: %s, ArtifactID: %s", documentID, response.ArtifactID)
+
+	// The generation service automatically saves the artifact to the database
+	// The artifact contains the classification results and can be retrieved later for question generation
+
+	return nil
 }
 
 // getDownloadLinkFromFormatPage fetches the format page and extracts the actual PDF download link

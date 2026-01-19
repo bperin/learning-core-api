@@ -19,7 +19,7 @@ func setupSubjectsHandler(t *testing.T) (*Handler, func()) {
 
 	tx, cleanup := testutil.NewTestTx(t)
 	queries := store.New(tx)
-	
+
 	repo := NewRepository(queries)
 	service := NewService(repo)
 	handler := NewHandler(service)
@@ -37,11 +37,11 @@ func TestHandler_ListAll(t *testing.T) {
 	handler.ListAll(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	
+
 	var result []Subject
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	
+
 	// Should have seeded subjects
 	assert.GreaterOrEqual(t, len(result), 1)
 }
@@ -56,14 +56,14 @@ func TestHandler_ListForSelection(t *testing.T) {
 	handler.ListForSelection(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	
+
 	var result []SubjectForSelection
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	
+
 	// Should have seeded subjects
 	assert.GreaterOrEqual(t, len(result), 1)
-	
+
 	// Verify the structure includes required fields
 	if len(result) > 0 {
 		subject := result[0]
@@ -71,7 +71,7 @@ func TestHandler_ListForSelection(t *testing.T) {
 		assert.NotEmpty(t, subject.DisplayName)
 		assert.NotEmpty(t, subject.FullName)
 		assert.NotEmpty(t, subject.URL)
-		
+
 		// Display name should be different from full name for seeded data
 		// (assuming seeded data follows "Open Textbook Library - Subject Textbooks" pattern)
 		if subject.FullName != subject.DisplayName {
@@ -129,12 +129,12 @@ func TestHandler_ListForSelection_EmptyDatabase(t *testing.T) {
 	// Truncate subjects table to test empty case
 	tx, txCleanup := testutil.NewTestTx(t)
 	defer txCleanup()
-	
+
 	queries := store.New(tx)
 	// Clear any seeded data for this test
 	_, err := tx.Exec("TRUNCATE TABLE sub_subjects, subjects RESTART IDENTITY CASCADE")
 	require.NoError(t, err)
-	
+
 	repo := NewRepository(queries)
 	service := NewService(repo)
 	emptyHandler := NewHandler(service)
@@ -145,11 +145,11 @@ func TestHandler_ListForSelection_EmptyDatabase(t *testing.T) {
 	emptyHandler.ListForSelection(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	
+
 	var result []SubjectForSelection
 	err = json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, 0, len(result))
 }
 
@@ -163,11 +163,11 @@ func TestHandler_ListForSelection_WithSubSubjects(t *testing.T) {
 	handler.ListForSelection(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	
+
 	var result []SubjectForSelection
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	
+
 	// Check if we have both main subjects and sub-subjects
 	var mainSubjects, subSubjects []SubjectForSelection
 	for _, subject := range result {
@@ -177,10 +177,10 @@ func TestHandler_ListForSelection_WithSubSubjects(t *testing.T) {
 			subSubjects = append(subSubjects, subject)
 		}
 	}
-	
+
 	// Should have at least some main subjects
 	assert.GreaterOrEqual(t, len(mainSubjects), 1)
-	
+
 	// If there are sub-subjects, they should have parent IDs
 	for _, subSubject := range subSubjects {
 		assert.NotNil(t, subSubject.ParentID)

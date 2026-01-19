@@ -26,6 +26,8 @@ const (
 	taxonomySchemaSeed     = "taxonomy_schema.json"
 	questionsPromptSeed    = "questions_prompt.txt"
 	questionsSchemaSeed    = "questions_schema.json"
+	sectionTopicsPromptSeed = "section_topics_prompt.txt"
+	sectionTopicsSchemaSeed = "section_topics_schema.json"
 	chunkingConfigSeedFile = "chunking_config.json"
 
 	systemSeedEmail    = "admin@test.local"
@@ -269,6 +271,12 @@ func seedPromptTemplates(ctx context.Context, queries *store.Queries) error {
 			title:          "Question Generation Prompt",
 			description:    "Seed prompt template for question generation",
 		},
+		{
+			filename:       sectionTopicsPromptSeed,
+			generationType: utils.GenerationTypeSectionTopics,
+			title:          "Section Topics Prompt",
+			description:    "Seed prompt template for section topic extraction",
+		},
 	}
 
 	for _, def := range seeds {
@@ -371,6 +379,10 @@ func seedSchemaTemplates(ctx context.Context, queries *store.Queries, createdBy 
 		{
 			filename:       questionsSchemaSeed,
 			generationType: utils.GenerationTypeQuestions,
+		},
+		{
+			filename:       sectionTopicsSchemaSeed,
+			generationType: utils.GenerationTypeSectionTopics,
 		},
 	}
 

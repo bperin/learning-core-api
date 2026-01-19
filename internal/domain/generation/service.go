@@ -28,9 +28,6 @@ type Service struct {
 }
 
 func NewService(db *sql.DB, artifactsService *artifacts.Service, generator Generator) (*Service, error) {
-	if generator == nil {
-		return nil, fmt.Errorf("generator is required")
-	}
 	if db == nil {
 		return nil, fmt.Errorf("db is required")
 	}
