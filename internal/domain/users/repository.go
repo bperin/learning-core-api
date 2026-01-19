@@ -9,7 +9,7 @@ import (
 
 // Repository defines the interface for user persistence
 type Repository interface {
-	CreateUser(ctx context.Context, user User) (*User, error)
+	CreateUser(ctx context.Context, user User, password string, role UserRoleType) (*User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (*User, error)
 	GetUserByEmail(ctx context.Context, email string) (*User, error)
 	UpdateUser(ctx context.Context, id uuid.UUID, displayName *string, isActive *bool) error
@@ -32,11 +32,22 @@ func NewRepository(queries *store.Queries) Repository {
 	}
 }
 
-func (r *sqlRepository) CreateUser(ctx context.Context, user User) (*User, error) {
+func (r *sqlRepository) CreateUser(ctx context.Context, user User, password string, role UserRoleType) (*User, error) {
+	if user.ID == uuid.Nil {
+		user.ID = uuid.New()
+	}
+
+	isAdmin := role == UserRoleAdmin
+	isLearner := role == UserRoleLearner
+	isTeacher := role == UserRoleInstructor
+
 	params := store.CreateUserParams{
-		ID:    user.ID,
-		Email: user.Email,
-		// Password field handling depends on your schema/queries
+		ID:        user.ID,
+		Email:     user.Email,
+		Password:  password,
+		IsAdmin:   isAdmin,
+		IsLearner: isLearner,
+		IsTeacher: isTeacher,
 	}
 
 	dbUser, err := r.queries.CreateUser(ctx, params)

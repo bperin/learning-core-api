@@ -53,6 +53,14 @@ func (s *service) CreateUser(ctx context.Context, req CreateUserRequest) (*User,
 		return nil, errors.New("user with this email already exists")
 	}
 
+	if req.Password == "" {
+		return nil, errors.New("password is required")
+	}
+
+	if req.Role == "" {
+		return nil, errors.New("role is required")
+	}
+
 	// Create the user
 	user := User{
 		Email:       req.Email,
@@ -60,7 +68,7 @@ func (s *service) CreateUser(ctx context.Context, req CreateUserRequest) (*User,
 		IsActive:    true, // Default to active
 	}
 
-	return s.repo.CreateUser(ctx, user)
+	return s.repo.CreateUser(ctx, user, req.Password, req.Role)
 }
 
 // isValidEmail validates email format

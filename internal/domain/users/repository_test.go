@@ -32,7 +32,7 @@ func TestRepository_CreateAndGetUser(t *testing.T) {
 	created, err := repo.CreateUser(ctx, users.User{
 		ID:    uuid.New(),
 		Email: "user@example.com",
-	})
+	}, "hashedpassword123", users.UserRoleLearner)
 	require.NoError(t, err)
 	require.NotEqual(t, uuid.Nil, created.ID)
 	assert.Equal(t, "user@example.com", created.Email)
@@ -54,7 +54,7 @@ func TestRepository_GetUserByEmail(t *testing.T) {
 	created, err := repo.CreateUser(ctx, users.User{
 		ID:    uuid.New(),
 		Email: "lookup@example.com",
-	})
+	}, "hashedpassword123", users.UserRoleInstructor)
 	require.NoError(t, err)
 
 	fetched, err := repo.GetUserByEmail(ctx, created.Email)
@@ -73,7 +73,7 @@ func TestRepository_DeleteUser(t *testing.T) {
 	created, err := repo.CreateUser(ctx, users.User{
 		ID:    uuid.New(),
 		Email: "delete@example.com",
-	})
+	}, "hashedpassword123", users.UserRoleAdmin)
 	require.NoError(t, err)
 
 	err = repo.DeleteUser(ctx, created.ID)

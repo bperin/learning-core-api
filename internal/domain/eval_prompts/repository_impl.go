@@ -105,7 +105,7 @@ func (r *RepositoryImpl) Create(ctx context.Context, req *CreateEvalPromptReques
 		return nil, fmt.Errorf("failed to create eval prompt: %w", err)
 	}
 
-	return r.mapToEvalPrompt(prompt), nil
+	return r.mapToEvalPrompt(&prompt), nil
 }
 
 // Activate activates a specific eval prompt version

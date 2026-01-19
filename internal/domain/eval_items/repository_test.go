@@ -78,7 +78,10 @@ func TestEvalItemRepository_Create(t *testing.T) {
 		assert.NotNil(t, item.Explanation)
 		assert.Equal(t, "2 + 2 equals 4", *item.Explanation)
 		assert.NotNil(t, item.Metadata)
-		assert.Equal(t, "easy", item.Metadata["difficulty"])
+		var metadata map[string]interface{}
+		err = json.Unmarshal(item.Metadata, &metadata)
+		require.NoError(t, err)
+		assert.Equal(t, "easy", metadata["difficulty"])
 	})
 
 	t.Run("validation error - empty prompt", func(t *testing.T) {

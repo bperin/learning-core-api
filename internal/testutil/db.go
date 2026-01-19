@@ -12,6 +12,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 
@@ -84,11 +85,35 @@ func NewTestTx(t *testing.T) (*sql.Tx, func()) {
 }
 
 func getTestDBURL() string {
+	// Find project root by locating go.mod
+	envPath := findEnvFile()
+	if envPath != "" {
+		_ = godotenv.Load(envPath)
+	}
+
 	url := os.Getenv("TEST_DB_URL")
 	if url == "" {
 		log.Fatal("TEST_DB_URL is required for database tests")
 	}
 	return url
+}
+
+func findEnvFile() string {
+	_, file, _, ok := runtime.Caller(0)
+	if !ok {
+		return ""
+	}
+
+	// Start from testutil directory and walk up to find .env
+	dir := filepath.Dir(file)
+	for i := 0; i < 5; i++ {
+		envPath := filepath.Join(dir, ".env")
+		if _, err := os.Stat(envPath); err == nil {
+			return envPath
+		}
+		dir = filepath.Dir(dir)
+	}
+	return ""
 }
 
 func DropAllTables(db *sql.DB) error {

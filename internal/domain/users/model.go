@@ -33,8 +33,10 @@ const (
 
 // CreateUserRequest represents the request to create a user
 type CreateUserRequest struct {
-	Email       string  `json:"email"`
-	DisplayName *string `json:"display_name,omitempty"`
+	Email       string       `json:"email"`
+	Password    string       `json:"password"`
+	DisplayName *string      `json:"display_name,omitempty"`
+	Role        UserRoleType `json:"role"`
 }
 
 // UpdateUserRequest represents the request to update a user

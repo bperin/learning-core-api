@@ -5,9 +5,12 @@ import (
 
 	"learning-core-api/internal/auth"
 	"learning-core-api/internal/domain/attempts"
+	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/evals"
 	"learning-core-api/internal/domain/reviews"
+	"learning-core-api/internal/domain/textbooks"
 	"learning-core-api/internal/domain/users"
+	"learning-core-api/internal/gcp"
 	"learning-core-api/internal/http/authz"
 	"learning-core-api/internal/persistance/store"
 
@@ -19,6 +22,7 @@ type RouterDeps struct {
 	JWTSecret    string
 	Queries      *store.Queries
 	GoogleAPIKey string
+	GCSService   *gcp.GCSService
 }
 
 type RoleRouteRegistrar interface {
@@ -47,12 +51,21 @@ func NewRouter(deps RouterDeps) http.Handler {
 	usersService := users.NewService(usersRepo)
 	usersHandler := users.NewHandler(usersService)
 
+	documentsService := documents.NewService(documents.NewRepository(deps.Queries))
+	documentsHandler := documents.NewHandler(documentsService, deps.GCSService)
+
+	textbooksRepo := textbooks.NewRepository()
+	textbooksService := textbooks.NewService(textbooksRepo)
+	textbooksHandler := textbooks.NewHandler(textbooksService)
+
 	evalsHandler := evals.NewHandler()
 	reviewsHandler := reviews.NewHandler()
 	attemptsHandler := attempts.NewHandler()
 
 	registerRoleRoutes(r, deps.JWTSecret, authHandler)
 	registerRoleRoutes(r, deps.JWTSecret, usersHandler)
+	registerRoleRoutes(r, deps.JWTSecret, documentsHandler)
+	registerRoleRoutes(r, deps.JWTSecret, textbooksHandler)
 	registerRoleRoutes(r, deps.JWTSecret, evalsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, reviewsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, attemptsHandler)

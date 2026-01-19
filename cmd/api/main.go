@@ -50,8 +50,10 @@ func main() {
 
 	// 5. Start HTTP Server
 	queries := store.New(db)
+	var gcsService *gcp.GCSService
 	if cfg.GCSBucketName != "" && cfg.FileStoreName != "" {
-		gcsService, err := gcp.NewGCSServiceFromConfig(ctx, cfg)
+		var err error
+		gcsService, err = gcp.NewGCSServiceFromConfig(ctx, cfg)
 		if err != nil {
 			log.Printf("Warning: could not initialize gcs service: %v", err)
 		} else {
@@ -70,6 +72,7 @@ func main() {
 		JWTSecret:    cfg.JWTSecret,
 		Queries:      queries,
 		GoogleAPIKey: cfg.GoogleAPIKey,
+		GCSService:   gcsService,
 	})
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
