@@ -10,8 +10,6 @@ import (
 
 	"github.com/google/uuid"
 	"google.golang.org/genai"
-
-	"learning-core-api/internal/config"
 )
 
 type FileService struct {
@@ -35,42 +33,36 @@ type FileSearchUploadResult struct {
 	ObjectName string
 }
 
-func NewFileService(gcs *GCSService, client *genai.Client, storeName string) *FileService {
-	return &FileService{
+func NewFileService(ctx context.Context, gcs *GCSService, apiKey string, storeName string) (*FileService, error) {
+	if gcs == nil {
+		return nil, fmt.Errorf("gcs service is required")
+	}
+	if storeName == "" {
+		return nil, fmt.Errorf("file search store name is required")
+	}
+
+	client, err := newGenAIClient(ctx, apiKey)
+	if err != nil {
+		return nil, err
+	}
+
+	s := &FileService{
 		gcs:             gcs,
 		client:          client,
 		fileSearchStore: client.FileSearchStores,
 		storeName:       storeName,
 		chunkingConfig:  defaultChunkingConfig(),
 	}
+
+	if err := s.EnsureStore(ctx); err != nil {
+		return nil, err
+	}
+
+	return s, nil
 }
 
 func (s *FileService) StoreName() string {
 	return s.storeName
-}
-
-func NewFileServiceFromConfig(ctx context.Context, cfg *config.Config, gcs *GCSService) (*FileService, error) {
-	if cfg == nil {
-		return nil, fmt.Errorf("config is required")
-	}
-	if gcs == nil {
-		var err error
-		gcs, err = NewGCSServiceFromConfig(ctx, cfg)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	client, err := newGenAIClient(ctx, cfg.GoogleAPIKey)
-	if err != nil {
-		return nil, err
-	}
-
-	service := NewFileService(gcs, client, cfg.FileStoreName)
-	if err := service.EnsureStore(ctx); err != nil {
-		return nil, err
-	}
-	return service, nil
 }
 
 func (s *FileService) EnsureStore(ctx context.Context) error {

@@ -9,8 +9,6 @@ import (
 
 	"cloud.google.com/go/storage"
 	"google.golang.org/api/iterator"
-
-	"learning-core-api/internal/config"
 )
 
 type GCSService struct {
@@ -29,13 +27,6 @@ func NewGCSService(ctx context.Context, bucketName string) (*GCSService, error) 
 	}
 
 	return &GCSService{client: client, bucketName: bucketName}, nil
-}
-
-func NewGCSServiceFromConfig(ctx context.Context, cfg *config.Config) (*GCSService, error) {
-	if cfg == nil {
-		return nil, fmt.Errorf("config is required")
-	}
-	return NewGCSService(ctx, cfg.GCSBucketName)
 }
 
 func (s *GCSService) BucketName() string {

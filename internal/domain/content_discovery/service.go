@@ -1,6 +1,7 @@
 package content_discovery
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"encoding/xml"
@@ -46,6 +47,18 @@ type Service struct {
 }
 
 func NewService(subjectsService subjects.Service, documentsService documents.Service, gcsService *gcp.GCSService, fileService *gcp.FileService, generationService *generation.Service) *Service {
+	if subjectsService == nil {
+		panic("subjectsService is required")
+	}
+	if documentsService == nil {
+		panic("documentsService is required")
+	}
+	if gcsService == nil {
+		panic("gcsService is required")
+	}
+	if fileService == nil {
+		panic("fileService is required")
+	}
 	return &Service{
 		subjectsService:   subjectsService,
 		documentsService:  documentsService,
@@ -353,7 +366,19 @@ func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadIn
 		return uuid.Nil, fmt.Errorf("failed to download PDF: status %d", resp.StatusCode)
 	}
 
-	log.Printf("[PDF_PROCESS] Step 1 SUCCESS: PDF downloaded, Content-Length: %s", resp.Header.Get("Content-Length"))
+	// Buffer the response body so we can use it multiple times
+	pdfData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Printf("[PDF_PROCESS] Step 1 FAILED: Failed to read response body - %v", err)
+		return uuid.Nil, fmt.Errorf("failed to read PDF data: %w", err)
+	}
+
+	if len(pdfData) == 0 {
+		log.Printf("[PDF_PROCESS] Step 1 FAILED: PDF data is empty")
+		return uuid.Nil, fmt.Errorf("PDF data is empty")
+	}
+
+	log.Printf("[PDF_PROCESS] Step 1 SUCCESS: PDF downloaded, Size: %d bytes", len(pdfData))
 
 	// Step 2: Create document record in database
 	log.Printf("[PDF_PROCESS] Step 2: Creating document record in database...")
@@ -382,8 +407,8 @@ func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadIn
 	objectName := fmt.Sprintf("documents/%s/%s", doc.ID, filename)
 	log.Printf("[PDF_PROCESS] Step 3: Uploading to GCS with object name: %s", objectName)
 
-	// Upload to GCS using GCSService (like line 79 in test)
-	_, err = s.gcsService.UploadFile(ctx, objectName, "application/pdf", resp.Body)
+	// Upload to GCS using GCSService with buffered data
+	_, err = s.gcsService.UploadFile(ctx, objectName, "application/pdf", bytes.NewReader(pdfData))
 	if err != nil {
 		log.Printf("[PDF_PROCESS] Step 3 FAILED: GCS upload failed - %v", err)
 		return uuid.Nil, fmt.Errorf("failed to upload to GCS: %w", err)
@@ -396,6 +421,11 @@ func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadIn
 	result, err := s.fileService.UploadToFileSearchStore(ctx, objectName, book.Title, "application/pdf")
 	if err != nil {
 		log.Printf("[PDF_PROCESS] Step 4 FAILED: File Search Store upload failed - %v", err)
+		// Cleanup: Delete from GCS if File Search Store upload fails
+		log.Printf("[PDF_PROCESS] Cleaning up: Deleting %s from GCS...", objectName)
+		if cleanupErr := s.gcsService.DeleteObject(ctx, objectName); cleanupErr != nil {
+			log.Printf("[PDF_PROCESS] Cleanup FAILED: Failed to delete %s from GCS: %v", objectName, cleanupErr)
+		}
 		return uuid.Nil, fmt.Errorf("failed to upload to file search store: %w", err)
 	}
 
@@ -450,7 +480,7 @@ func (s *Service) generateClassificationArtifacts(ctx context.Context, documentI
 
 	// Create file search tool config with the document's file search store reference
 	fileSearchConfig := map[string]interface{}{
-		"file_search_store": s.fileService.StoreName(),
+		"store_names": []string{s.fileService.StoreName()},
 	}
 
 	fileSearchConfigJSON, err := json.Marshal(fileSearchConfig)
@@ -483,7 +513,7 @@ func (s *Service) generateClassificationArtifacts(ctx context.Context, documentI
 				Config: fileSearchConfigJSON,
 			},
 		},
-		ModelConfigID: uuid.New(), // TODO: Get actual model config ID from database
+		ModelConfigID: uuid.Nil, // Use active model config
 	}
 
 	log.Printf("[PDF_CLASSIFICATION] Calling generation service for document: %s", documentID)

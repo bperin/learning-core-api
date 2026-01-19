@@ -68,32 +68,27 @@ func main() {
 		log.Println("PubSub service initialized")
 	}
 
-	// 5. Init GCS
-	var gcsService *gcp.GCSService
-	if cfg.GCSBucketName != "" && cfg.FileStoreName != "" {
-		var err error
-		gcsService, err = gcp.NewGCSServiceFromConfig(ctx, cfg)
-		if err != nil {
-			log.Printf("Warning: could not initialize gcs service: %v", err)
-		} else {
-			defer gcsService.Close()
-			_, err := gcp.NewFileServiceFromConfig(ctx, cfg, gcsService)
-			if err != nil {
-				log.Printf("Warning: could not initialize file service for store %q: %v", cfg.FileStoreName, err)
-			} else {
-				log.Println("File service initialized")
-			}
-		}
-	} else {
-		log.Println("File service not initialized (missing bucket or store name)")
+	// 5. Init GCS & File Service
+	gcsService, err := gcp.NewGCSService(ctx, cfg.GCSBucketName)
+	if err != nil {
+		log.Fatalf("Fatal: could not initialize gcs service: %v", err)
 	}
+	defer gcsService.Close()
+
+	fileService, err := gcp.NewFileService(ctx, gcsService, cfg.GoogleAPIKey, cfg.FileStoreName)
+	if err != nil {
+		log.Fatalf("Fatal: could not initialize file service: %v", err)
+	}
+	log.Println("File service initialized")
 
 	// 6. Start HTTP Server
 	router := infra.NewRouter(infra.RouterDeps{
 		JWTSecret:    cfg.JWTSecret,
 		Queries:      queries,
+		DB:           db,
 		GoogleAPIKey: cfg.GoogleAPIKey,
 		GCSService:   gcsService,
+		FileService:  fileService,
 	})
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,

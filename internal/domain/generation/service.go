@@ -119,13 +119,19 @@ func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateR
 }
 
 func (s *Service) resolveModelConfig(ctx context.Context, id uuid.UUID) (*ModelConfig, error) {
-	if id == uuid.Nil {
-		return nil, fmt.Errorf("model configuration id is required")
-	}
+	var dbConfig *model_configs.ModelConfig
+	var err error
 
-	dbConfig, err := s.modelConfigs.GetByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to fetch model config %q: %w", id, err)
+	if id == uuid.Nil {
+		dbConfig, err = s.modelConfigs.GetActive(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch active model config: %w", err)
+		}
+	} else {
+		dbConfig, err = s.modelConfigs.GetByID(ctx, id)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch model config %q: %w", id, err)
+		}
 	}
 
 	baseConfig := &ModelConfig{

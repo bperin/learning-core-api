@@ -1269,7 +1269,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+                        "description": "Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)",
                         "name": "generation_type",
                         "in": "query",
                         "required": true
@@ -1377,7 +1377,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+                        "description": "Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)",
                         "name": "generationType",
                         "in": "path",
                         "required": true
@@ -1581,7 +1581,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+                        "description": "Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)",
                         "name": "generation_type",
                         "in": "query",
                         "required": true
@@ -1689,7 +1689,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Generation type (CLASSIFICATION or QUESTIONS)",
+                        "description": "Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)",
                         "name": "generationType",
                         "in": "path",
                         "required": true
@@ -2616,7 +2616,7 @@ const docTemplate = `{
         "content_discovery.BookDownloadInfo": {
             "type": "object",
             "properties": {
-                "pdf_link": {
+                "pdfLink": {
                     "type": "string"
                 },
                 "title": {

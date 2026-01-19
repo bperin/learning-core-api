@@ -118,7 +118,7 @@ definitions:
     type: object
   content_discovery.BookDownloadInfo:
     properties:
-      pdf_link:
+      pdfLink:
         type: string
       title:
         type: string
@@ -1250,7 +1250,7 @@ paths:
     get:
       description: Get all prompt templates for a specific generation type
       parameters:
-      - description: Generation type (CLASSIFICATION or QUESTIONS)
+      - description: Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)
         in: query
         name: generation_type
         required: true
@@ -1416,7 +1416,7 @@ paths:
       description: Retrieve the currently active prompt template for a specific generation
         type
       parameters:
-      - description: Generation type (CLASSIFICATION or QUESTIONS)
+      - description: Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)
         in: path
         name: generationType
         required: true
@@ -1448,7 +1448,7 @@ paths:
     get:
       description: Get all schema templates for a specific generation type
       parameters:
-      - description: Generation type (CLASSIFICATION or QUESTIONS)
+      - description: Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)
         in: query
         name: generation_type
         required: true
@@ -1581,7 +1581,7 @@ paths:
       description: Retrieve the currently active schema template for a specific generation
         type
       parameters:
-      - description: Generation type (CLASSIFICATION or QUESTIONS)
+      - description: Generation type (CLASSIFICATION, QUESTIONS, or SECTION_TOPICS)
         in: path
         name: generationType
         required: true

@@ -162,20 +162,13 @@ func NewRouter(deps RouterDeps) http.Handler {
 	artifactsService := artifacts.NewService(deps.DB)
 	artifactsHandler := artifacts.NewHandler(artifactsService)
 
-	// Create generation service with a nil generator for now (will need proper generator later)
 	generationService, err := generation.NewService(deps.DB, artifactsService, nil)
-	var contentDiscoveryService *content_discovery.Service
-	var contentDiscoveryHandler *content_discovery.Handler
-	
 	if err != nil {
 		log.Printf("Warning: Failed to create generation service: %v", err)
-		// For now, create content discovery without generation service
-		contentDiscoveryService = content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, nil)
-	} else {
-		contentDiscoveryService = content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, generationService)
 	}
-	
-	contentDiscoveryHandler = content_discovery.NewHandler(contentDiscoveryService)
+
+	contentDiscoveryService := content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, generationService)
+	contentDiscoveryHandler := content_discovery.NewHandler(contentDiscoveryService)
 
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)
