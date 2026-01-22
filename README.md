@@ -45,6 +45,23 @@ Not checkable yet:
 
 We evaluate whether generated artifacts (taxonomy nodes, questions, expected answers) are factually supported and answerable using the provided documents. We do not evaluate prompt quality, pedagogical optimality, or model performance against static datasets.
 
+## Graph RAG for structured documents
+
+Structured documents (manuals, textbooks, schematics) benefit from graph-aware retrieval because their meaning is embedded in headings, sections, tables, and layout order. This project supports a Graph RAG pipeline where Document AI extracts structure, the system persists a document graph, and generation queries expand context across neighboring nodes.
+
+Pipeline overview:
+- Ingest document into GCS and run Document AI OCR/layout processing.
+- Convert layout into graph nodes (document/page/paragraph) and edges (contains/next).
+- Store graph in Postgres and use `graph_rag` to expand retrieval context.
+- Feed the graph context into generation prompts for structure-aware grounding.
+
+Why this helps:
+- Preserves section boundaries, ordering, and hierarchy across large documents.
+- Enables targeted retrieval of related content instead of flat chunking.
+- Provides a bridge to structured downstream artifacts (e.g., CAD outputs).
+
+Long-term: graph-backed RAG enables pipelines that transform structured source documents into raw CAD assets. The graph preserves the structural context required to map diagrams, tables, and references into machine-usable formats during later processing stages.
+
 ## Roadmap shape (fan-out and human gating)
 
 Near-term focus (implemented or close):
