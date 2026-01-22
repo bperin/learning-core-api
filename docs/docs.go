@@ -2745,6 +2745,9 @@ const docTemplate = `{
                 "created_by": {
                     "type": "string"
                 },
+                "display_name": {
+                    "type": "string"
+                },
                 "is_active": {
                     "type": "boolean"
                 },
@@ -2775,6 +2778,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "created_by": {
+                    "type": "string"
+                },
+                "display_name": {
                     "type": "string"
                 },
                 "id": {

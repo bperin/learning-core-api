@@ -24,6 +24,7 @@ func NewRepository(queries *store.Queries) Repository {
 func (r *RepositoryImpl) Create(ctx context.Context, req CreateModelConfigRequest) (*ModelConfig, error) {
 	storeConfig, err := r.queries.CreateModelConfig(ctx, store.CreateModelConfigParams{
 		ModelName:   req.ModelName,
+		DisplayName: req.DisplayName,
 		Temperature: utils.SqlNullFloat64(&req.Temperature),
 		MaxTokens:   utils.SqlNullInt32(&req.MaxTokens),
 		TopP:        utils.SqlNullFloat64(&req.TopP),
@@ -86,6 +87,7 @@ func toDomainModelConfig(storeConfig *store.ModelConfig) *ModelConfig {
 		ID:          storeConfig.ID,
 		Version:     storeConfig.Version,
 		ModelName:   storeConfig.ModelName,
+		DisplayName: storeConfig.DisplayName,
 		Temperature: utils.NullFloat64ToFloat64(storeConfig.Temperature),
 		MaxTokens:   utils.NullInt32ToInt32(storeConfig.MaxTokens),
 		TopP:        utils.NullFloat64ToFloat64(storeConfig.TopP),
@@ -102,6 +104,7 @@ func toDomainModelConfigRow(storeConfig *store.CreateModelConfigRow) *ModelConfi
 		ID:          storeConfig.ID,
 		Version:     storeConfig.Version,
 		ModelName:   storeConfig.ModelName,
+		DisplayName: storeConfig.DisplayName,
 		Temperature: utils.NullFloat64ToFloat64(storeConfig.Temperature),
 		MaxTokens:   utils.NullInt32ToInt32(storeConfig.MaxTokens),
 		TopP:        utils.NullFloat64ToFloat64(storeConfig.TopP),

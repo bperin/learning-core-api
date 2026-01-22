@@ -28,12 +28,12 @@ func (q *Queries) ActivateModelConfig(ctx context.Context, id uuid.UUID) error {
 const createModelConfig = `-- name: CreateModelConfig :one
 WITH inserted AS (
   INSERT INTO model_configs (
-    version, model_name, temperature, max_tokens, top_p, top_k, mime_type, is_active, created_by
+    version, model_name, display_name, temperature, max_tokens, top_p, top_k, mime_type, is_active, created_by
   ) VALUES (
     (SELECT COALESCE(MAX(version), 0) + 1 FROM model_configs),
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
   )
-  RETURNING id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type
+  RETURNING id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type, display_name
 ),
 deactivated AS (
   UPDATE model_configs SET
@@ -41,11 +41,12 @@ deactivated AS (
   WHERE model_configs.id != (SELECT id FROM inserted)
     AND (SELECT is_active FROM inserted) = true
 )
-SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type FROM inserted
+SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type, display_name FROM inserted
 `
 
 type CreateModelConfigParams struct {
 	ModelName   string          `json:"model_name"`
+	DisplayName string          `json:"display_name"`
 	Temperature sql.NullFloat64 `json:"temperature"`
 	MaxTokens   sql.NullInt32   `json:"max_tokens"`
 	TopP        sql.NullFloat64 `json:"top_p"`
@@ -67,11 +68,13 @@ type CreateModelConfigRow struct {
 	CreatedBy   uuid.UUID       `json:"created_by"`
 	CreatedAt   time.Time       `json:"created_at"`
 	MimeType    sql.NullString  `json:"mime_type"`
+	DisplayName string          `json:"display_name"`
 }
 
 func (q *Queries) CreateModelConfig(ctx context.Context, arg CreateModelConfigParams) (CreateModelConfigRow, error) {
 	row := q.db.QueryRowContext(ctx, createModelConfig,
 		arg.ModelName,
+		arg.DisplayName,
 		arg.Temperature,
 		arg.MaxTokens,
 		arg.TopP,
@@ -93,6 +96,7 @@ func (q *Queries) CreateModelConfig(ctx context.Context, arg CreateModelConfigPa
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.MimeType,
+		&i.DisplayName,
 	)
 	return i, err
 }
@@ -107,7 +111,7 @@ func (q *Queries) DeactivateOtherModelConfigs(ctx context.Context, id uuid.UUID)
 }
 
 const getActiveModelConfig = `-- name: GetActiveModelConfig :one
-SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type FROM model_configs WHERE is_active = true LIMIT 1
+SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type, display_name FROM model_configs WHERE is_active = true LIMIT 1
 `
 
 func (q *Queries) GetActiveModelConfig(ctx context.Context) (ModelConfig, error) {
@@ -125,12 +129,13 @@ func (q *Queries) GetActiveModelConfig(ctx context.Context) (ModelConfig, error)
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.MimeType,
+		&i.DisplayName,
 	)
 	return i, err
 }
 
 const getModelConfig = `-- name: GetModelConfig :one
-SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type FROM model_configs WHERE id = $1 LIMIT 1
+SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type, display_name FROM model_configs WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetModelConfig(ctx context.Context, id uuid.UUID) (ModelConfig, error) {
@@ -148,12 +153,13 @@ func (q *Queries) GetModelConfig(ctx context.Context, id uuid.UUID) (ModelConfig
 		&i.CreatedBy,
 		&i.CreatedAt,
 		&i.MimeType,
+		&i.DisplayName,
 	)
 	return i, err
 }
 
 const listModelConfigs = `-- name: ListModelConfigs :many
-SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type FROM model_configs ORDER BY created_at DESC
+SELECT id, version, model_name, temperature, max_tokens, top_p, top_k, is_active, created_by, created_at, mime_type, display_name FROM model_configs ORDER BY created_at DESC
 `
 
 func (q *Queries) ListModelConfigs(ctx context.Context) ([]ModelConfig, error) {
@@ -177,6 +183,7 @@ func (q *Queries) ListModelConfigs(ctx context.Context) ([]ModelConfig, error) {
 			&i.CreatedBy,
 			&i.CreatedAt,
 			&i.MimeType,
+			&i.DisplayName,
 		); err != nil {
 			return nil, err
 		}

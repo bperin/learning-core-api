@@ -1,10 +1,10 @@
 -- name: CreateModelConfig :one
 WITH inserted AS (
   INSERT INTO model_configs (
-    version, model_name, temperature, max_tokens, top_p, top_k, mime_type, is_active, created_by
+    version, model_name, display_name, temperature, max_tokens, top_p, top_k, mime_type, is_active, created_by
   ) VALUES (
     (SELECT COALESCE(MAX(version), 0) + 1 FROM model_configs),
-    $1, $2, $3, $4, $5, $6, $7, $8
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
   )
   RETURNING *
 ),

@@ -6,11 +6,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"text/template"
 
 	"github.com/google/uuid"
 
 	"learning-core-api/internal/domain/artifacts"
+	"learning-core-api/internal/domain/document_graph"
 	"learning-core-api/internal/domain/model_configs"
 	"learning-core-api/internal/domain/prompt_templates"
 	"learning-core-api/internal/domain/schema_templates"
@@ -25,9 +27,10 @@ type Service struct {
 	schemaTemplates    schema_templates.Repository
 	artifactsService   *artifacts.Service
 	generator          Generator
+	graphRepo          *document_graph.Repository
 }
 
-func NewService(db *sql.DB, artifactsService *artifacts.Service, generator Generator) (*Service, error) {
+func NewService(db *sql.DB, artifactsService *artifacts.Service, generator Generator, graphRepo *document_graph.Repository) (*Service, error) {
 	if db == nil {
 		return nil, fmt.Errorf("db is required")
 	}
@@ -40,6 +43,7 @@ func NewService(db *sql.DB, artifactsService *artifacts.Service, generator Gener
 		schemaTemplates:    schema_templates.NewRepository(queries),
 		artifactsService:   artifactsService,
 		generator:          generator,
+		graphRepo:          graphRepo,
 	}, nil
 }
 
@@ -66,12 +70,18 @@ func (s *Service) Generate(ctx context.Context, req GenerateRequest) (*GenerateR
 		return nil, err
 	}
 
-	// 4. Call the generator implementation
+	// 4. Apply Graph RAG tool context
+	tools, promptText, err := s.applyGraphTools(ctx, req, promptText)
+	if err != nil {
+		return nil, err
+	}
+
+	// 5. Call the generator implementation
 	resp, err := s.generator.Generate(ctx, GeneratorRequest{
 		Prompt:            promptText,
 		SystemInstruction: systemInstr,
 		OutputSchema:      responseSchema,
-		Tools:             req.Tools,
+		Tools:             tools,
 		Model:             resolvedModel,
 	})
 	if err != nil {
@@ -227,6 +237,128 @@ func (s *Service) resolveOutputConfig(ctx context.Context, out OutputConfig) (js
 	}
 
 	return schemaTmpl.SchemaJSON, schemaTmpl.ID, nil
+}
+
+type graphToolConfig struct {
+	Query string `json:"query"`
+	Limit int    `json:"limit,omitempty"`
+}
+
+func (s *Service) applyGraphTools(ctx context.Context, req GenerateRequest, prompt string) ([]ToolConfig, string, error) {
+	if len(req.Tools) == 0 {
+		return req.Tools, prompt, nil
+	}
+
+	filtered := make([]ToolConfig, 0, len(req.Tools))
+	graphContext := ""
+
+	for _, tool := range req.Tools {
+		if tool.Type != "graph_rag" {
+			filtered = append(filtered, tool)
+			continue
+		}
+
+		if s.graphRepo == nil {
+			return nil, "", fmt.Errorf("graph repository is required for graph_rag")
+		}
+		if req.Target.DocumentID == nil {
+			return nil, "", fmt.Errorf("document_id is required for graph_rag")
+		}
+
+		var cfg graphToolConfig
+		if len(tool.Config) > 0 {
+			if err := json.Unmarshal(tool.Config, &cfg); err != nil {
+				return nil, "", fmt.Errorf("failed to parse graph_rag config: %w", err)
+			}
+		}
+
+		query := strings.TrimSpace(cfg.Query)
+		if query == "" {
+			query = prompt
+		}
+		if query == "" {
+			return nil, "", fmt.Errorf("graph_rag query is required")
+		}
+
+		limit := cfg.Limit
+		if limit <= 0 {
+			limit = 8
+		}
+
+		matched, err := s.graphRepo.SearchNodes(ctx, *req.Target.DocumentID, query, limit)
+		if err != nil {
+			return nil, "", err
+		}
+
+		baseIDs := make([]uuid.UUID, 0, len(matched))
+		for _, node := range matched {
+			baseIDs = append(baseIDs, node.ID)
+		}
+
+		neighborNodes, edges, err := s.graphRepo.FetchNeighbors(ctx, *req.Target.DocumentID, baseIDs, limit*4)
+		if err != nil {
+			return nil, "", err
+		}
+
+		nodeMap := map[uuid.UUID]document_graph.Node{}
+		for _, node := range matched {
+			nodeMap[node.ID] = node
+		}
+		for _, node := range neighborNodes {
+			nodeMap[node.ID] = node
+		}
+
+		graphContext = buildGraphContext(nodeMap, edges)
+	}
+
+	if graphContext == "" {
+		return filtered, prompt, nil
+	}
+
+	augmented := fmt.Sprintf("%s\n\n[Graph Context]\n%s", prompt, graphContext)
+	return filtered, augmented, nil
+}
+
+func buildGraphContext(nodes map[uuid.UUID]document_graph.Node, edges []document_graph.Edge) string {
+	if len(nodes) == 0 {
+		return ""
+	}
+
+	var builder strings.Builder
+	for _, node := range nodes {
+		label := truncate(node.Text, 240)
+		if label == "" {
+			label = node.NodeType
+		}
+		builder.WriteString(fmt.Sprintf("%s: %s\n", node.NodeType, label))
+	}
+
+	if len(edges) > 0 {
+		builder.WriteString("Relations:\n")
+		for _, edge := range edges {
+			fromNode, okFrom := nodes[edge.FromNodeID]
+			toNode, okTo := nodes[edge.ToNodeID]
+			if !okFrom || !okTo {
+				continue
+			}
+			fromLabel := truncate(fromNode.Text, 120)
+			toLabel := truncate(toNode.Text, 120)
+			builder.WriteString(fmt.Sprintf("- %s -> %s (%s)\n", fromLabel, toLabel, edge.Relation))
+		}
+	}
+
+	return strings.TrimSpace(builder.String())
+}
+
+func truncate(text string, max int) string {
+	value := strings.TrimSpace(text)
+	if max <= 0 || len(value) <= max {
+		return value
+	}
+	if max < 4 {
+		return value[:max]
+	}
+	return value[:max-3] + "..."
 }
 
 func (s *Service) saveArtifact(ctx context.Context, req GenerateRequest, promptText string, promptTmplID, schemaTmplID uuid.UUID, modelName string, modelParams json.RawMessage, meta json.RawMessage, outputText string, outputJSON json.RawMessage, errorMsg string, groundingMetadata json.RawMessage) (uuid.UUID, error) {

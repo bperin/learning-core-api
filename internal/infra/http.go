@@ -16,6 +16,7 @@ import (
 	"learning-core-api/internal/domain/attempts"
 	"learning-core-api/internal/domain/chunking_configs"
 	"learning-core-api/internal/domain/content_discovery"
+	"learning-core-api/internal/domain/document_graph"
 	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/evals"
 	"learning-core-api/internal/domain/generation"
@@ -33,12 +34,13 @@ import (
 )
 
 type RouterDeps struct {
-	JWTSecret    string
-	Queries      *store.Queries
-	DB           *sql.DB
-	GoogleAPIKey string
-	GCSService   *gcp.GCSService
-	FileService  *gcp.FileService
+	JWTSecret         string
+	Queries           *store.Queries
+	DB                *sql.DB
+	GoogleAPIKey      string
+	GCSService        *gcp.GCSService
+	FileService       *gcp.FileService
+	DocumentAIService *gcp.DocumentAIService
 }
 
 type RoleRouteRegistrar interface {
@@ -162,13 +164,31 @@ func NewRouter(deps RouterDeps) http.Handler {
 	artifactsService := artifacts.NewService(deps.DB)
 	artifactsHandler := artifacts.NewHandler(artifactsService)
 
-	generationService, err := generation.NewService(deps.DB, artifactsService, nil)
+	graphRepo, err := document_graph.NewRepository(deps.DB)
+	if err != nil {
+		log.Printf("Warning: Failed to create document graph repository: %v", err)
+	}
+
+	generationService, err := generation.NewService(deps.DB, artifactsService, nil, graphRepo)
 	if err != nil {
 		log.Printf("Warning: Failed to create generation service: %v", err)
 	}
 
-	contentDiscoveryService := content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, generationService)
+	var graphService *document_graph.Service
+	if graphRepo != nil {
+		graphService, err = document_graph.NewService(graphRepo, documents.NewRepository(deps.Queries), deps.GCSService, deps.DocumentAIService)
+		if err != nil {
+			log.Printf("Warning: Failed to create document graph service: %v", err)
+		}
+	}
+
+	contentDiscoveryService := content_discovery.NewService(subjectsService, documentsService, deps.GCSService, deps.FileService, generationService, graphService)
 	contentDiscoveryHandler := content_discovery.NewHandler(contentDiscoveryService)
+
+	var graphHandler *document_graph.Handler
+	if graphService != nil {
+		graphHandler = document_graph.NewHandler(graphService)
+	}
 
 	authHandler.RegisterPublicRoutes(r)
 	usersHandler.RegisterPublicRoutes(r)
@@ -188,6 +208,9 @@ func NewRouter(deps RouterDeps) http.Handler {
 	registerRoleRoutes(r, deps.JWTSecret, modelConfigsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, artifactsHandler)
 	registerRoleRoutes(r, deps.JWTSecret, contentDiscoveryHandler)
+	if graphHandler != nil {
+		registerRoleRoutes(r, deps.JWTSecret, graphHandler)
+	}
 
 	return r
 }

@@ -81,14 +81,21 @@ func main() {
 	}
 	log.Println("File service initialized")
 
+	documentAIService, err := gcp.NewDocumentAIService(ctx, cfg.GoogleProjectID, cfg.DocumentAILocation, cfg.DocumentAIProcessorID, cfg.GoogleAPIKey)
+	if err != nil {
+		log.Fatalf("Fatal: could not initialize document ai service: %v", err)
+	}
+	log.Println("Document AI service initialized")
+
 	// 6. Start HTTP Server
 	router := infra.NewRouter(infra.RouterDeps{
-		JWTSecret:    cfg.JWTSecret,
-		Queries:      queries,
-		DB:           db,
-		GoogleAPIKey: cfg.GoogleAPIKey,
-		GCSService:   gcsService,
-		FileService:  fileService,
+		JWTSecret:         cfg.JWTSecret,
+		Queries:           queries,
+		DB:                db,
+		GoogleAPIKey:      cfg.GoogleAPIKey,
+		GCSService:        gcsService,
+		FileService:       fileService,
+		DocumentAIService: documentAIService,
 	})
 	srv := &http.Server{
 		Addr:    ":" + cfg.Port,
@@ -123,7 +130,7 @@ func logConfig(cfg *config.Config) {
 		return
 	}
 	log.Printf(
-		"Config loaded: port=%s db_url=%s project_id=%s pubsub_topic=%s file_store_name=%s gcs_bucket=%s signed_url_ttl=%s google_api_key=%s jwt_secret=%s",
+		"Config loaded: port=%s db_url=%s project_id=%s pubsub_topic=%s file_store_name=%s gcs_bucket=%s signed_url_ttl=%s docai_location=%s docai_processor_id=%s google_api_key=%s jwt_secret=%s",
 		cfg.Port,
 		redact(cfg.DBURL),
 		cfg.GoogleProjectID,
@@ -131,6 +138,8 @@ func logConfig(cfg *config.Config) {
 		cfg.FileStoreName,
 		cfg.GCSBucketName,
 		cfg.SignedURLTTL,
+		cfg.DocumentAILocation,
+		cfg.DocumentAIProcessorID,
 		redact(cfg.GoogleAPIKey),
 		redact(cfg.JWTSecret),
 	)

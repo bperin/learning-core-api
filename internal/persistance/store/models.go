@@ -314,6 +314,7 @@ type ModelConfig struct {
 	CreatedBy   uuid.UUID       `json:"created_by"`
 	CreatedAt   time.Time       `json:"created_at"`
 	MimeType    sql.NullString  `json:"mime_type"`
+	DisplayName string          `json:"display_name"`
 }
 
 type PromptTemplate struct {

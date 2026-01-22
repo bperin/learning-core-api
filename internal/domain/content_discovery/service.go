@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"learning-core-api/internal/domain/document_graph"
 	"learning-core-api/internal/domain/documents"
 	"learning-core-api/internal/domain/generation"
 	"learning-core-api/internal/domain/subjects"
@@ -44,9 +45,10 @@ type Service struct {
 	gcsService        *gcp.GCSService
 	fileService       *gcp.FileService
 	generationService *generation.Service
+	graphService      *document_graph.Service
 }
 
-func NewService(subjectsService subjects.Service, documentsService documents.Service, gcsService *gcp.GCSService, fileService *gcp.FileService, generationService *generation.Service) *Service {
+func NewService(subjectsService subjects.Service, documentsService documents.Service, gcsService *gcp.GCSService, fileService *gcp.FileService, generationService *generation.Service, graphService *document_graph.Service) *Service {
 	if subjectsService == nil {
 		panic("subjectsService is required")
 	}
@@ -65,6 +67,7 @@ func NewService(subjectsService subjects.Service, documentsService documents.Ser
 		gcsService:        gcsService,
 		fileService:       fileService,
 		generationService: generationService,
+		graphService:      graphService,
 	}
 }
 
@@ -416,6 +419,17 @@ func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadIn
 
 	log.Printf("[PDF_PROCESS] Step 3 SUCCESS: File uploaded to GCS")
 
+	storagePath := s.gcsService.ObjectURI(objectName)
+	storageBucket := s.gcsService.BucketName()
+	_, err = s.documentsService.UpdateDocument(ctx, doc.ID, documents.UpdateDocumentRequest{
+		StoragePath:   &storagePath,
+		StorageBucket: &storageBucket,
+	}, userID)
+	if err != nil {
+		log.Printf("[PDF_PROCESS] Step 3 FAILED: Document update failed - %v", err)
+		return uuid.Nil, fmt.Errorf("failed to update document storage info: %w", err)
+	}
+
 	// Step 4: Upload to File Search Store using the GCS object name (like line 82 in test)
 	log.Printf("[PDF_PROCESS] Step 4: Uploading to File Search Store...")
 	result, err := s.fileService.UploadToFileSearchStore(ctx, objectName, book.Title, "application/pdf")
@@ -430,6 +444,17 @@ func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadIn
 	}
 
 	log.Printf("[PDF_PROCESS] Step 4 SUCCESS: File uploaded to File Search Store")
+	if result != nil {
+		fileStoreName := result.StoreName
+		fileStoreFileName := result.FileName
+		_, err = s.documentsService.UpdateDocument(ctx, doc.ID, documents.UpdateDocumentRequest{
+			FileStoreName:     &fileStoreName,
+			FileStoreFileName: &fileStoreFileName,
+		}, userID)
+		if err != nil {
+			log.Printf("[PDF_PROCESS] Step 4 WARNING: Failed to update file store info - %v", err)
+		}
+	}
 	if result != nil && result.Operation != nil {
 		log.Printf("[PDF_PROCESS] File Search Store operation started: %s", result.Operation.Name)
 	}
@@ -447,6 +472,19 @@ func (s *Service) downloadAndProcessPDF(ctx context.Context, book BookDownloadIn
 		}()
 	} else {
 		log.Printf("[PDF_CLASSIFICATION] Skipping classification generation - generation service not available")
+	}
+
+	if s.graphService != nil {
+		go func(documentID uuid.UUID) {
+			log.Printf("[PDF_GRAPH] Starting graph build for document: %s", documentID)
+			if _, err := s.graphService.BuildGraph(context.Background(), documentID); err != nil {
+				log.Printf("[PDF_GRAPH] FAILED for document %s: %v", documentID, err)
+			} else {
+				log.Printf("[PDF_GRAPH] SUCCESS for document %s", documentID)
+			}
+		}(doc.ID)
+	} else {
+		log.Printf("[PDF_GRAPH] Skipping graph build - graph service not available")
 	}
 
 	log.Printf("[PDF_PROCESS] COMPLETED: All steps successful for %s (DocumentID: %s)", book.Title, doc.ID)

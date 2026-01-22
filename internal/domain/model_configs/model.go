@@ -11,6 +11,7 @@ type ModelConfig struct {
 	ID          uuid.UUID `json:"id"`
 	Version     int32     `json:"version"`
 	ModelName   string    `json:"model_name"`
+	DisplayName string    `json:"display_name"`
 	Temperature float64   `json:"temperature"`
 	MaxTokens   int32     `json:"max_tokens"`
 	TopP        float64   `json:"top_p"`
@@ -24,6 +25,7 @@ type ModelConfig struct {
 // CreateModelConfigRequest represents the data needed to create a model config.
 type CreateModelConfigRequest struct {
 	ModelName   string    `json:"model_name"`
+	DisplayName string    `json:"display_name"`
 	Temperature float64   `json:"temperature"`
 	MaxTokens   int32     `json:"max_tokens"`
 	TopP        float64   `json:"top_p"`

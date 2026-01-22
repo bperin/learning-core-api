@@ -127,7 +127,7 @@ func TestQuestionsGenerationAndEvalIntegration(t *testing.T) {
 	generator, err := NewGenerationServiceFromAPIKey(ctx, apiKey)
 	require.NoError(t, err)
 	artifactService := artifacts.NewService(db)
-	genService, err := generation.NewService(db, artifactService, generator)
+	genService, err := generation.NewService(db, artifactService, generator, nil)
 	require.NoError(t, err)
 
 	resp, err := genService.Generate(ctx, generation.GenerateRequest{
